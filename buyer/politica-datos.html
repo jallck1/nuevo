@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Política de Protección de Datos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link href="css/styles.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container py-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="mb-0">Política de Protección de Datos</h2>
+            <div class="btn-group" role="group">
+                <a href="dashboard.html" class="btn btn-outline-primary">
+                    <i class="bi bi-house-door"></i> Inicio
+                </a>
+                <a href="catalogo_fix.html" class="btn btn-outline-success">
+                    <i class="bi bi-grid"></i> Catálogo
+                </a>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <div id="contenido-politica" class="py-3">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Cargando...</span>
+                        </div>
+                        <p class="mt-2">Cargando política de protección de datos...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cargar Supabase primero -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // Esperar a que todo el DOM esté cargado
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Cargar Bootstrap después de que Supabase esté listo
+            const bootstrapScript = document.createElement('script');
+            bootstrapScript.src = 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js';
+            bootstrapScript.onload = async () => {
+                // Cargar nuestro script después de Bootstrap
+                const contenidoScript = document.createElement('script');
+                contenidoScript.src = 'js/contenido-institucional.js';
+                contenidoScript.onload = async () => {
+                    // Una vez que todo está cargado, intentar cargar el contenido
+                    try {
+                        await cargarContenidoInstitucional('dataPolicy', 'contenido-politica');
+                    } catch (error) {
+                        console.error('Error al cargar el contenido:', error);
+                        const element = document.getElementById('contenido-politica');
+                        if (element) {
+                            element.innerHTML = `
+                                <div class="bg-red-50 border-l-4 border-red-400 p-4">
+                                    <div class="flex">
+                                        <div class="flex-shrink-0">
+                                            <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                                            </svg>
+                                        </div>
+                                        <div class="ml-3">
+                                            <p class="text-sm text-red-700">
+                                                Error al cargar el contenido. Por favor, recarga la página.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>`;
+                        }
+                    }
+                };
+                document.body.appendChild(contenidoScript);
+            };
+            document.body.appendChild(bootstrapScript);
+        });
+    </script>
+</body>
+</html>

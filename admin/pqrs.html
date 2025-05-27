@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestión de PQRS - Panel de Administración</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Estilos personalizados -->
+  <style>
+    .sidebar {
+      transition: all 0.3s;
+    }
+    .content {
+      margin-left: 16rem;
+      transition: all 0.3s;
+    }
+    @media (max-width: 768px) {
+      .sidebar {
+        transform: translateX(-100%);
+      }
+      .sidebar.active {
+        transform: translateX(0);
+      }
+      .content {
+        margin-left: 0;
+      }
+    }
+    /* Estilos para el scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #888;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #555;
+    }
+    /* Estilos para mensajes de error */
+    .error-message {
+      display: none;
+      animation: slideIn 0.3s ease-out;
+    }
+    @keyframes slideIn {
+      from { transform: translateY(-10px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+  </style>
+</head>
+<body class="bg-gray-100 font-sans">
+  <!-- Sidebar -->
+  <div id="sidebar" class="sidebar fixed inset-y-0 left-0 w-64 bg-gray-800 text-white overflow-y-auto">
+    <div class="p-4">
+      <h1 class="text-2xl font-bold">Horizont</h1>
+      <p class="text-gray-400 text-sm">Panel de Administración</p>
+    </div>
+    <nav class="mt-6">
+      <a href="dashboard.html" class="flex items-center px-6 py-3 text-gray-300 hover:bg-gray-700">
+        <i class="fas fa-tachometer-alt w-5 mr-3"></i>
+        <span>Dashboard</span>
+      </a>
+      <a href="productos.html" class="flex items-center px-6 py-3 text-gray-300 hover:bg-gray-700">
+        <i class="fas fa-box-open w-5 mr-3"></i>
+        <span>Productos</span>
+      </a>
+      <a href="categorias.html" class="flex items-center px-6 py-3 text-gray-300 hover:bg-gray-700">
+        <i class="fas fa-tags w-5 mr-3"></i>
+        <span>Categorías</span>
+      </a>
+      <a href="pedidos.html" class="flex items-center px-6 py-3 text-gray-300 hover:bg-gray-700">
+        <i class="fas fa-shopping-cart w-5 mr-3"></i>
+        <span>Pedidos</span>
+      </a>
+      <a href="clientes.html" class="flex items-center px-6 py-3 text-gray-300 hover:bg-gray-700">
+        <i class="fas fa-users w-5 mr-3"></i>
+        <span>Clientes</span>
+      </a>
+      <a href="pqrs.html" class="flex items-center px-6 py-3 bg-gray-900 text-white">
+        <i class="fas fa-comment-alt w-5 mr-3"></i>
+        <span>PQRS</span>
+        <span class="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+          <span id="pqrs-count">0</span>
+        </span>
+      </a>
+      <a href="contenido-institucional.html" class="flex items-center px-6 py-3 text-gray-300 hover:bg-gray-700">
+        <i class="fas fa-building w-5 mr-3"></i>
+        <span>Contenido Institucional</span>
+      </a>
+      <a href="reportes.html" class="flex items-center px-6 py-3 text-gray-300 hover:bg-gray-700">
+        <i class="fas fa-chart-bar w-5 mr-3"></i>
+        <span>Reportes</span>
+      </a>
+      <a href="configuracion.html" class="flex items-center px-6 py-3 text-gray-300 hover:bg-gray-700">
+        <i class="fas fa-cog w-5 mr-3"></i>
+        <span>Configuración</span>
+      </a>
+    </nav>
+    <div class="absolute bottom-0 w-full p-4 border-t border-gray-700">
+      <div class="flex items-center">
+        <div class="flex-shrink-0">
+          <div class="h-10 w-10 rounded-full bg-gray-600 flex items-center justify-center text-white">
+            <span id="user-initials" class="font-medium">A</span>
+          </div>
+        </div>
+        <div class="ml-3">
+          <p class="text-sm font-medium text-white" id="user-name">Administrador</p>
+          <button id="logout-button" class="text-xs text-gray-400 hover:text-white">Cerrar sesión</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contenido principal -->
+  <div class="content min-h-screen bg-gray-100">
+    <!-- Barra superior -->
+    <header class="bg-white shadow-sm">
+      <div class="flex justify-between items-center px-6 py-4">
+        <div class="flex items-center">
+          <button id="menu-toggle" class="lg:hidden text-gray-600 hover:text-gray-900 mr-4">
+            <i class="fas fa-bars text-xl"></i>
+          </button>
+          <h1 class="text-xl font-semibold text-gray-800">Gestión de PQRS</h1>
+        </div>
+        <div class="flex items-center space-x-4">
+          <div class="relative">
+            <button class="p-2 text-gray-600 hover:text-gray-900 focus:outline-none">
+              <i class="fas fa-bell text-xl"></i>
+              <span class="absolute top-0 right-0 h-3 w-3 bg-red-500 rounded-full"></span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Contenido -->
+    <main class="p-6">
+      <!-- Mensajes de error -->
+      <div id="error-message" class="error-message bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded" role="alert">
+        <p id="error-text"></p>
+      </div>
+
+      <!-- Filtros y búsqueda -->
+      <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label for="pqrs-filter" class="block text-sm font-medium text-gray-700 mb-1">Ordenar por</label>
+            <select id="pqrs-filter" class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500">
+              <option value="recent">Más recientes primero</option>
+              <option value="oldest">Más antiguos primero</option>
+            </select>
+          </div>
+          <div>
+            <label for="pqrs-status-filter" class="block text-sm font-medium text-gray-700 mb-1">Filtrar por estado</label>
+            <select id="pqrs-status-filter" class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500">
+              <option value="all">Todos los estados</option>
+              <option value="Recibido">Recibido</option>
+              <option value="En Proceso">En Proceso</option>
+              <option value="Resuelto">Resuelto</option>
+              <option value="Cerrado">Cerrado</option>
+            </select>
+          </div>
+          <div>
+            <label for="pqrs-search" class="block text-sm font-medium text-gray-700 mb-1">Buscar</label>
+            <div class="relative">
+              <input type="text" id="pqrs-search" class="w-full border-gray-300 rounded-md shadow-sm pl-10 focus:border-blue-500 focus:ring-blue-500" placeholder="Buscar por asunto o descripción...">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <i class="fas fa-search text-gray-400"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lista de PQRS -->
+      <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+        <!-- Encabezado -->
+        <div class="px-6 py-4 border-b border-gray-200">
+          <div class="flex items-center justify-between">
+            <h2 class="text-lg font-medium text-gray-900">Listado de PQRS</h2>
+            <div id="loading" class="hidden">
+              <div class="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-blue-500"></div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Contenido -->
+        <div class="divide-y divide-gray-200">
+          <div id="pqrs-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+            <!-- Las PQRS se cargarán aquí dinámicamente -->
+            <div class="col-span-1 md:col-span-2 lg:col-span-3 flex justify-center items-center py-12">
+              <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal de detalles de PQRS -->
+  <div id="view-pqrs-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden overflow-y-auto">
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+        <!-- Encabezado del modal -->
+        <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+          <h3 id="pqrs-modal-title" class="text-lg font-medium text-gray-900">Detalles de la PQRS</h3>
+          <button id="close-view-pqrs" class="text-gray-400 hover:text-gray-500">
+            <i class="fas fa-times text-xl"></i>
+          </button>
+        </div>
+        
+        <!-- Contenido del modal -->
+        <div class="flex-1 overflow-y-auto p-6">
+          <!-- Información de la PQRS -->
+          <div class="bg-gray-50 p-4 rounded-lg mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <p class="text-sm text-gray-500">Tipo</p>
+                <p id="pqrs-type" class="font-medium">-</p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-500">Estado</p>
+                <p id="pqrs-status" class="font-medium">-</p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-500">Fecha de creación</p>
+                <p id="pqrs-date" class="font-medium">-</p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-500">Cliente</p>
+                <div id="user-info" class="mt-1">
+                  <!-- Se llenará con JavaScript -->
+                </div>
+              </div>
+            </div>
+            
+            <div class="mt-4">
+              <p class="text-sm text-gray-500">Asunto</p>
+              <p id="pqrs-subject" class="font-medium">-</p>
+            </div>
+            
+            <div class="mt-4">
+              <p class="text-sm text-gray-500">Descripción</p>
+              <p id="pqrs-description" class="mt-1 text-gray-700 whitespace-pre-line">-</p>
+            </div>
+          </div>
+          
+          <!-- Historial de respuestas -->
+          <div class="mb-6">
+            <h4 class="text-md font-medium text-gray-900 mb-3">Historial de respuestas</h4>
+            <div id="responses-container" class="space-y-4 max-h-96 overflow-y-auto p-2">
+              <p id="no-responses" class="text-sm text-gray-500 text-center py-4">No hay respuestas aún.</p>
+              <!-- Las respuestas se cargarán aquí dinámicamente -->
+            </div>
+          </div>
+          
+          <!-- Formulario de respuesta -->
+          <form id="response-form">
+            <div class="mt-4">
+              <label for="response-text" class="block text-sm font-medium text-gray-700 mb-1">Escribe una respuesta</label>
+              <textarea id="response-text" rows="3" class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="Escribe tu respuesta aquí..."></textarea>
+            </div>
+            <div class="mt-4 flex justify-end space-x-3">
+              <button type="button" id="cancel-response-btn" class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                Cancelar
+              </button>
+              <button type="submit" id="submit-response-btn" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                <i class="fas fa-paper-plane mr-2"></i>
+                Enviar respuesta
+              </button>
+            </div>
+          </form>
+        </div>
+        
+        <!-- Pie del modal -->
+        <div class="px-6 py-3 border-t border-gray-200 bg-gray-50 flex justify-between items-center">
+          <div class="flex space-x-2">
+            <span class="text-sm text-gray-500">Cambiar estado:</span>
+            <select id="status-select" class="text-sm border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500">
+              <option value="Recibido">Recibido</option>
+              <option value="En Proceso">En Proceso</option>
+              <option value="Resuelto">Resuelto</option>
+              <option value="Cerrado">Cerrado</option>
+            </select>
+          </div>
+          <button id="close-modal-btn" class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900">
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <!-- Cargar Supabase primero -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <!-- Script de inicialización -->
+  <script>
+    // Esperar a que se cargue el DOM
+    document.addEventListener('DOMContentLoaded', function() {
+      // Toggle del menú en móviles
+      const menuToggle = document.getElementById('menu-toggle');
+      if (menuToggle) {
+        menuToggle.addEventListener('click', function() {
+          const sidebar = document.getElementById('sidebar');
+          if (sidebar) sidebar.classList.toggle('active');
+        });
+      }
+      
+      // Cerrar modal con el botón de cerrar
+      const closeModalBtn = document.getElementById('close-modal-btn');
+      if (closeModalBtn) {
+        closeModalBtn.addEventListener('click', function() {
+          const modal = document.getElementById('view-pqrs-modal');
+          if (modal) modal.classList.add('hidden');
+        });
+      }
+      
+      // Verificar si Supabase está cargado
+      if (typeof supabase === 'undefined') {
+        console.error('Error: No se pudo cargar Supabase');
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6';
+        errorDiv.role = 'alert';
+        errorDiv.textContent = 'Error: No se pudo cargar el servicio de base de datos. Por favor, recarga la página.';
+        document.querySelector('main')?.prepend(errorDiv);
+      }
+    });
+  </script>
+  
+  <!-- Cargar nuestro script de PQRS -->
+  <script src="js/pqrs.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mi Perfil - CrediControl</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+  <!-- Header -->
+  <header class="bg-white shadow-sm sticky top-0 z-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <!-- Logo y menú principal -->
+        <div class="flex items-center space-x-6">
+          <!-- Logo -->
+          <div class="flex-shrink-0">
+            <a href="dashboard.html" class="flex items-center">
+              <span class="text-xl font-bold text-blue-600">CrediControl</span>
+            </a>
+          </div>
+
+          <!-- Menú de navegación -->
+          <nav class="hidden md:flex items-center space-x-4">
+            <a href="dashboard.html" class="text-gray-500 hover:text-gray-700 px-3 py-2 text-sm font-medium">Inicio</a>
+            <a href="catalogo_fix.html" class="text-gray-500 hover:text-gray-700 px-3 py-2 text-sm font-medium">Catálogo</a>
+            <a href="pedidos.html" class="text-gray-500 hover:text-gray-700 px-3 py-2 text-sm font-medium">Mis Pedidos</a>
+            <a href="pqrs.html" class="text-gray-500 hover:text-gray-700 px-3 py-2 text-sm font-medium">PQRS</a>
+            <a href="pagos.html" class="text-gray-500 hover:text-gray-700 px-3 py-2 text-sm font-medium">Mis Pagos</a>
+            
+            <!-- Botón IACHAT -->
+            <button id="iachat-button" class="flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+              <i class="fas fa-robot mr-2"></i>
+              IACHAT
+            </button>
+            
+            <!-- Botón Mapa -->
+            <a href="https://www.google.com/maps/place/Cra.+45+%2348-43,+La+Candelaria,+Medell%C3%ADn,+La+Candelaria,+Medell%C3%ADn,+Antioquia/@6.2442039,-75.5732233,17z/data=!3m1!4b1!4m6!3m5!1s0x8e4428f3d2f9b7c5:0x4b5d8e8a9e8e8e8e!8m2!3d6.2442039!4d-75.5706426!16s%2Fg%2F11c5k5k5k5?entry=ttu" 
+               target="_blank" 
+               class="flex items-center px-3 py-2 text-sm font-medium text-gray-700 hover:text-blue-600">
+              <i class="fas fa-map-marker-alt text-red-500 mr-1"></i>
+              Nuestra Tienda
+            </a>
+            
+            <!-- Botón Carrito -->
+            <a href="carrito.html" class="relative p-2 text-gray-600 hover:text-gray-900 focus:outline-none">
+              <i class="fas fa-shopping-cart text-xl"></i>
+              <span id="cart-count" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">0</span>
+            </a>
+          </nav>
+        </div>
+
+        <!-- Menú de usuario -->
+        <div class="flex items-center">
+          <div class="relative">
+            <button id="user-menu-button" class="flex items-center justify-center h-8 w-8 rounded-full bg-blue-100 text-blue-700 font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" data-initials="U">
+              <span id="user-initials" class="text-sm font-medium">U</span>
+              <img id="user-avatar" class="h-8 w-8 rounded-full hidden" src="" alt="Usuario">
+            </button>
+            <div id="user-menu" class="hidden origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none" role="menu" aria-orientation="vertical" tabindex="-1" style="position: absolute; right: 0px; margin-top: 0.5rem; z-index: 50;">
+              <div class="py-1" role="none">
+                <a href="perfil.html" class="block px-4 py-2 text-sm text-blue-600 bg-blue-50" role="menuitem" tabindex="-1">
+                  <i class="fas fa-user-circle mr-2"></i>Mi perfil
+                </a>
+                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem" tabindex="-1">
+                  <i class="fas fa-cog mr-2"></i>Configuración
+                </a>
+                <button id="sign-out-button" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50" role="menuitem" tabindex="-1">
+                  <i class="fas fa-sign-out-alt mr-2"></i>Cerrar sesión
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Botón menú móvil -->
+          <div class="md:hidden ml-4">
+            <button type="button" id="mobile-menu-button" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500">
+              <span class="sr-only">Abrir menú principal</span>
+              <i class="fas fa-bars h-6 w-6"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Menú móvil (oculto por defecto) -->
+    <div id="mobile-menu" class="hidden md:hidden bg-white shadow-md">
+      <div class="px-2 pt-2 pb-3 space-y-1">
+        <a href="dashboard.html" class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md">Inicio</a>
+        <a href="catalogo_fix.html" class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md">Catálogo</a>
+        <a href="pedidos.html" class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md">Mis Pedidos</a>
+        <a href="pqrs.html" class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md">PQRS</a>
+        <a href="pagos.html" class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md flex items-center">
+          <i class="fas fa-credit-card mr-2"></i>Mis Pagos
+        </a>
+        <button class="w-full text-left px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md flex items-center">
+          <i class="fas fa-robot mr-2"></i>IACHAT
+        </button>
+        <a href="carrito.html" class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md flex items-center">
+          <i class="fas fa-shopping-cart mr-2"></i>Carrito
+          <span class="ml-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">0</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Contenido principal -->
+  <main class="flex-grow py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="md:flex md:items-center md:justify-between mb-8">
+        <div class="flex-1 min-w-0">
+          <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">Mi Perfil</h2>
+        </div>
+        <div class="mt-4 flex md:mt-0 md:ml-4">
+          <span id="profile-status" class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+            Activo
+          </span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 gap-6 lg:grid-cols-4">
+        <!-- Información del perfil -->
+        <div class="lg:col-span-1">
+          <div class="bg-white shadow rounded-lg overflow-hidden">
+            <div class="p-6">
+              <div class="flex flex-col items-center">
+                <div class="h-32 w-32 rounded-full bg-blue-100 flex items-center justify-center mb-4 relative overflow-hidden" id="avatar-container">
+                  <span class="text-4xl font-bold text-blue-600" id="profile-initials">U</span>
+                  <img id="profile-avatar" class="h-full w-full object-cover hidden" src="" alt="Foto de perfil">
+                  <label for="avatar-upload" class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 hover:bg-opacity-30 cursor-pointer transition-all duration-200">
+                    <input type="file" id="avatar-upload" accept="image/*" class="hidden" />
+                    <span class="text-white text-2xl opacity-0 hover:opacity-100 transition-opacity duration-200">
+                      <i class="fas fa-camera"></i>
+                    </span>
+                  </label>
+                </div>
+                <h3 class="text-lg font-medium text-gray-900" id="profile-name">Usuario Ejemplo</h3>
+                <p class="text-sm text-gray-500" id="profile-email">usuario@ejemplo.com</p>
+                <p class="text-sm text-gray-500" id="profile-role">Comprador</p>
+                <p class="text-xs text-gray-400 mt-1">Miembro desde <span id="join-date">01/01/2023</span></p>
+              </div>
+              
+              <div class="mt-6 border-t border-gray-200 pt-6">
+                <h4 class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">Información de crédito</h4>
+                <div class="space-y-3">
+                  <div>
+                    <p class="text-sm font-medium text-gray-500">Crédito asignado</p>
+                    <p class="text-lg font-semibold text-gray-900" id="credit-assigned">$0.00</p>
+                  </div>
+                  <div>
+                    <p class="text-sm font-medium text-gray-500">Crédito utilizado</p>
+                    <p class="text-lg font-semibold text-gray-900" id="credit-used">$0.00</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="mt-6 border-t border-gray-200 pt-6">
+                <h4 class="text-xs font-medium text-gray-500 uppercase tracking-wider">Información de contacto</h4>
+                <ul class="mt-3 space-y-2">
+                  <li class="flex items-start">
+                    <i class="fas fa-phone-alt text-gray-400 mt-1 mr-2"></i>
+                    <div>
+                      <p class="text-sm text-gray-500">Teléfono</p>
+                      <p class="text-sm text-gray-900" id="profile-phone">Sin teléfono registrado</p>
+                    </div>
+                  </li>
+                  <li class="flex items-start">
+                    <i class="fas fa-map-marker-alt text-gray-400 mt-1 mr-2"></i>
+                    <div>
+                      <p class="text-sm text-gray-500">Dirección</p>
+                      <p class="text-sm text-gray-900" id="profile-address">Sin dirección registrada</p>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Formulario de edición -->
+        <div class="lg:col-span-3">
+          <div class="bg-white shadow rounded-lg overflow-hidden">
+            <div class="px-6 py-5 border-b border-gray-200">
+              <h3 class="text-lg font-medium leading-6 text-gray-900">Información personal</h3>
+              <p class="mt-1 text-sm text-gray-500">Actualiza tu información personal y de contacto.</p>
+            </div>
+            <div class="px-6 py-5">
+              <form id="profile-form" class="space-y-6">
+                <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                  <div class="sm:col-span-6">
+                    <label for="name" class="block text-sm font-medium text-gray-700">Nombre <span class="text-red-500">*</span></label>
+                    <div class="mt-1">
+                      <input type="text" name="name" id="name" autocomplete="name" required
+                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                    </div>
+                  </div>
+
+                  <div class="sm:col-span-6">
+                    <label for="email" class="block text-sm font-medium text-gray-700">Correo electrónico <span class="text-red-500">*</span></label>
+                    <div class="mt-1">
+                      <input id="email" name="email" type="email" autocomplete="email" required
+                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                    </div>
+                  </div>
+
+                  <div class="sm:col-span-6">
+                    <label for="phone" class="block text-sm font-medium text-gray-700">Teléfono</label>
+                    <div class="mt-1 relative rounded-md shadow-sm">
+                      <div class="absolute inset-y-0 left-0 flex items-center">
+                        <label for="country" class="sr-only">País</label>
+                        <select id="country" name="country" class="h-full py-0 pl-3 pr-7 border-transparent bg-transparent text-gray-500 sm:text-sm rounded-l-md">
+                          <option>CO +57</option>
+                        </select>
+                      </div>
+                      <input type="text" name="phone" id="phone" autocomplete="tel"
+                        class="block w-full rounded-md border-gray-300 pl-24 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                        placeholder="300 123 4567">
+                    </div>
+                    <p class="mt-1 text-xs text-gray-500">Ejemplo: 300 123 4567</p>
+                  </div>
+
+                  <!-- Sección de Dirección -->
+                  <div class="sm:col-span-6 pt-4 border-t border-gray-200">
+                    <h4 class="text-base font-medium text-gray-900 mb-4">Dirección de Envío</h4>
+                    
+                    <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                      <!-- Dirección -->
+                      <div class="sm:col-span-6">
+                        <label for="address" class="block text-sm font-medium text-gray-700">Dirección <span class="text-red-500">*</span></label>
+                        <div class="mt-1">
+                          <input type="text" name="address" id="address" autocomplete="street-address"
+                            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                        </div>
+                      </div>
+
+                      <!-- Ciudad -->
+                      <div class="sm:col-span-3">
+                        <label for="city" class="block text-sm font-medium text-gray-700">Ciudad <span class="text-red-500">*</span></label>
+                        <div class="mt-1">
+                          <input type="text" name="city" id="city" autocomplete="address-level2"
+                            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                        </div>
+                      </div>
+
+                      <!-- Departamento/Estado -->
+                      <div class="sm:col-span-3">
+                        <label for="state" class="block text-sm font-medium text-gray-700">Departamento <span class="text-red-500">*</span></label>
+                        <div class="mt-1">
+                          <select id="state" name="state" autocomplete="address-level1"
+                            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                            <option value="">Seleccionar...</option>
+                            <option value="Amazonas">Amazonas</option>
+                            <option value="Antioquia">Antioquia</option>
+                            <option value="Arauca">Arauca</option>
+                            <option value="Atlántico">Atlántico</option>
+                            <option value="Bolívar">Bolívar</option>
+                            <option value="Boyacá">Boyacá</option>
+                            <option value="Caldas">Caldas</option>
+                            <option value="Caquetá">Caquetá</option>
+                            <option value="Casanare">Casanare</option>
+                            <option value="Cauca">Cauca</option>
+                            <option value="Cesar">Cesar</option>
+                            <option value="Chocó">Chocó</option>
+                            <option value="Córdoba">Córdoba</option>
+                            <option value="Cundinamarca">Cundinamarca</option>
+                            <option value="Guainía">Guainía</option>
+                            <option value="Guaviare">Guaviare</option>
+                            <option value="Huila">Huila</option>
+                            <option value="La Guajira">La Guajira</option>
+                            <option value="Magdalena">Magdalena</option>
+                            <option value="Meta">Meta</option>
+                            <option value="Nariño">Nariño</option>
+                            <option value="Norte de Santander">Norte de Santander</option>
+                            <option value="Putumayo">Putumayo</option>
+                            <option value="Quindío">Quindío</option>
+                            <option value="Risaralda">Risaralda</option>
+                            <option value="San Andrés y Providencia">San Andrés y Providencia</option>
+                            <option value="Santander">Santander</option>
+                            <option value="Sucre">Sucre</option>
+                            <option value="Tolima">Tolima</option>
+                            <option value="Valle del Cauca">Valle del Cauca</option>
+                            <option value="Vaupés">Vaupés</option>
+                            <option value="Vichada">Vichada</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <!-- Código Postal -->
+                      <div class="sm:col-span-2">
+                        <label for="postal-code" class="block text-sm font-medium text-gray-700">Código Postal</label>
+                        <div class="mt-1">
+                          <input type="text" name="postal-code" id="postal-code" autocomplete="postal-code"
+                            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="pt-5">
+                  <div class="flex justify-end">
+                    <button type="button"
+                      class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                      Cancelar
+                    </button>
+                    <button type="submit"
+                      class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                      Guardar cambios
+                    </button>
+                  </div>
+                </div>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <!-- Cambio de contraseña -->
+          <div class="mt-6 bg-white shadow rounded-lg overflow-hidden">
+            <div class="px-6 py-5 border-b border-gray-200">
+              <h3 class="text-lg font-medium leading-6 text-gray-900">Cambiar contraseña</h3>
+              <p class="mt-1 text-sm text-gray-500">Asegúrate de que tu contraseña sea segura y no la compartas con nadie.</p>
+            </div>
+            <div class="px-6 py-5">
+              <form id="password-form" class="space-y-6">
+                <div class="space-y-4">
+                  <div>
+                    <label for="current-password" class="block text-sm font-medium text-gray-700">Contraseña actual <span class="text-red-500">*</span></label>
+                    <div class="mt-1 relative">
+                      <input id="current-password" name="current-password" type="password" autocomplete="current-password" required
+                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm pr-10">
+                      <button type="button" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-500" id="toggle-current-password">
+                        <i class="far fa-eye"></i>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label for="new-password" class="block text-sm font-medium text-gray-700">Nueva contraseña <span class="text-red-500">*</span></label>
+                    <div class="mt-1 relative">
+                      <input id="new-password" name="new-password" type="password" autocomplete="new-password" required
+                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm pr-10">
+                      <button type="button" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-500" id="toggle-new-password">
+                        <i class="far fa-eye"></i>
+                      </button>
+                    </div>
+                    <p class="mt-1 text-xs text-gray-500" id="password-strength">
+                      La contraseña debe tener al menos 8 caracteres, incluyendo mayúsculas, minúsculas, números y caracteres especiales.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label for="confirm-password" class="block text-sm font-medium text-gray-700">Confirmar nueva contraseña <span class="text-red-500">*</span></label>
+                    <div class="mt-1 relative">
+                      <input id="confirm-password" name="confirm-password" type="password" autocomplete="new-password" required
+                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm pr-10">
+                      <button type="button" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-500" id="toggle-confirm-password">
+                        <i class="far fa-eye"></i>
+                      </button>
+                    </div>
+                    <p class="mt-1 text-xs text-red-600 hidden" id="password-match-error">
+                      Las contraseñas no coinciden.
+                    </p>
+                  </div>
+                </div>
+
+                <div class="pt-2">
+                  <div class="flex justify-end">
+                    <button type="button" id="cancel-password"
+                      class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                      Cancelar
+                    </button>
+                    <button type="submit" id="save-password"
+                      class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                      Cambiar contraseña
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-white border-t border-gray-200 mt-12">
+    <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <!-- Columna 1: Información -->
+        <div>
+          <h3 class="text-lg font-semibold text-gray-900">CrediControl</h3>
+          <p class="mt-4 text-sm text-gray-500">Tu tienda en línea confiable para todas tus necesidades de compra.</p>
+        </div>
+        
+        <!-- Columna 2: Enlaces rápidos -->
+        <div>
+          <h3 class="text-lg font-semibold text-gray-900">Enlaces rápidos</h3>
+          <ul class="mt-4 space-y-2">
+            <li><a href="dashboard.html" class="text-sm text-gray-500 hover:text-gray-900">Inicio</a></li>
+            <li><a href="catalogo_fix.html" class="text-sm text-gray-500 hover:text-gray-900">Catálogo</a></li>
+            <li><a href="pedidos.html" class="text-sm text-gray-500 hover:text-gray-900">Mis Pedidos</a></li>
+          </ul>
+        </div>
+        
+        <!-- Columna 3: Información institucional -->
+        <div>
+          <h3 class="text-lg font-semibold text-gray-900">Institucional</h3>
+          <ul class="mt-4 space-y-2">
+            <li><a href="#" class="text-sm text-gray-500 hover:text-gray-900">Quiénes Somos</a></li>
+            <li><a href="#" class="text-sm text-gray-500 hover:text-gray-900">Contáctenos</a></li>
+            <li><a href="pqrs.html" class="text-sm text-blue-600 font-medium">PQRS</a></li>
+          </ul>
+        </div>
+        
+        <!-- Columna 4: Términos y privacidad -->
+        <div>
+          <h3 class="text-lg font-semibold text-gray-900">Términos y Privacidad</h3>
+          <ul class="mt-4 space-y-2">
+            <li><a href="politica-datos.html" class="text-sm text-gray-500 hover:text-gray-900">Políticas de Privacidad</a></li>
+            <li><a href="terminos-condiciones.html" class="text-sm text-gray-500 hover:text-gray-900">Términos y Condiciones</a></li>
+            <li><a href="quienes-somos.html" class="text-sm text-gray-500 hover:text-gray-900">Quiénes Somos</a></li>
+            <li><a href="contacto.html" class="text-sm text-gray-500 hover:text-gray-900">Contacto</a></li>
+          </ul>
+        </div>
+      </div>
+      
+      <div class="mt-12 pt-8 border-t border-gray-200">
+        <div class="flex flex-col md:flex-row justify-between items-center">
+          <p class="text-sm text-gray-500">&copy; 2023 CrediControl. Todos los derechos reservados.</p>
+          <div class="mt-4 md:mt-0 flex space-x-6">
+            <a href="#" class="text-gray-400 hover:text-gray-500">
+              <span class="sr-only">Facebook</span>
+              <i class="fab fa-facebook"></i>
+            </a>
+            <a href="#" class="text-gray-400 hover:text-gray-500">
+              <span class="sr-only">Instagram</span>
+              <i class="fab fa-instagram"></i>
+            </a>
+            <a href="#" class="text-gray-400 hover:text-gray-500">
+              <span class="sr-only">Twitter</span>
+              <i class="fab fa-twitter"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Loading overlay -->
+  <div id="loading" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white p-6 rounded-lg shadow-lg">
+      <div class="flex items-center space-x-4">
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+        <span class="text-gray-700">Cargando...</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error message -->
+  <div id="error-message" class="fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-md shadow-lg hidden z-50">
+    <div class="flex items-center justify-between">
+      <span id="error-text"></span>
+      <button onclick="document.getElementById('error-message').classList.add('hidden')" class="ml-4">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/user-avatar.js"></script>
+  <script src="js/perfil.js"></script>
+</body>
+</html>

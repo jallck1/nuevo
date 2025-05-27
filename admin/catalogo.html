@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catálogo - Panel de Administración</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Estilos personalizados -->
+    <style>
+        .sidebar {
+            transition: transform 0.3s ease, opacity 0.3s ease, width 0.3s ease;
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            z-index: 40;
+            width: 16rem;
+            transform: translateX(-100%);
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        @media (min-width: 768px) {
+            .sidebar {
+                transform: translateX(0) !important;
+                position: relative;
+                opacity: 1 !important;
+                pointer-events: auto !important;
+                display: flex !important;
+            }
+            
+            .main-content {
+                margin-left: 16rem;
+                width: calc(100% - 16rem);
+                transition: all 0.3s ease;
+            }
+        }
+        
+        @media (max-width: 767px) {
+            .sidebar:not(.hidden) {
+                display: flex;
+                transform: translateX(0);
+                opacity: 1;
+                pointer-events: auto;
+            }
+            
+            .sidebar-overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 39;
+            }
+        }
+        
+        .loading-spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #3b82f6;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Loading Overlay -->
+    <div id="loading" class="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-50 hidden">
+        <div class="text-center">
+            <div class="loading-spinner mx-auto"></div>
+            <p class="mt-2 text-gray-600">Cargando...</p>
+        </div>
+    </div>
+
+    <div class="flex h-screen overflow-hidden relative">
+        <!-- Sidebar -->
+        <div id="sidebar" class="sidebar bg-blue-800 text-white flex-shrink-0 flex flex-col h-full">
+            <div class="p-4 border-b border-blue-700 flex justify-between items-center">
+                <div>
+                    <h2 class="text-xl font-bold">Panel de Control</h2>
+                    <p id="user-role" class="text-sm text-blue-200">Administrador</p>
+                </div>
+                <button id="toggle-sidebar" class="text-blue-200 hover:text-white md:hidden">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+            </div>
+            <nav class="flex-1 overflow-y-auto">
+                <a href="dashboard.html" class="block py-3 px-6 hover:bg-blue-700 flex items-center">
+                    <i class="fas fa-tachometer-alt w-6 text-center mr-3"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="ordenes.html" class="block py-3 px-6 hover:bg-blue-700 flex items-center">
+                    <i class="fas fa-shopping-cart w-6 text-center mr-3"></i>
+                    <span>Órdenes</span>
+                    <span id="pending-orders-count" class="ml-auto bg-yellow-500 text-white text-xs font-bold px-2 py-1 rounded-full">0</span>
+                </a>
+                <a href="catalogo.html" class="block py-3 px-6 hover:bg-blue-700 flex items-center bg-blue-900">
+                    <i class="fas fa-box w-6 text-center mr-3"></i>
+                    <span>Catálogo</span>
+                </a>
+                <a href="usuarios.html" class="block py-3 px-6 hover:bg-blue-700 flex items-center">
+                    <i class="fas fa-users w-6 text-center mr-3"></i>
+                    <span>Usuarios</span>
+                </a>
+                <a href="pqrs.html" class="block py-3 px-6 hover:bg-blue-700 flex items-center">
+                    <i class="fas fa-comments w-6 text-center mr-3"></i>
+                    <span>PQRS</span>
+                    <span id="pending-pqrs" class="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">0</span>
+                </a>
+                <div class="mt-auto border-t border-blue-700">
+                    <a href="#" id="logout-btn" class="block py-3 px-6 hover:bg-blue-700 flex items-center">
+                        <i class="fas fa-sign-out-alt w-6 text-center mr-3"></i>
+                        <span>Cerrar Sesión</span>
+                    </a>
+                    <div class="p-4 text-xs text-blue-300">
+                        <p>Versión 1.0.0</p>
+                    </div>
+                </div>
+            </nav>
+        </div>
+        
+        <!-- Overlay para móvil -->
+        <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+        <!-- Contenido principal -->
+        <div id="main-content" class="flex-1 flex flex-col overflow-hidden">
+            <!-- Barra superior -->
+            <header class="bg-white shadow-sm sticky top-0 z-10">
+                <div class="flex justify-between items-center p-4">
+                    <div class="flex items-center">
+                        <button id="mobile-menu-button" class="md:hidden text-gray-600 hover:text-gray-900 mr-4">
+                            <i class="fas fa-bars text-xl"></i>
+                        </button>
+                        <h1 class="text-xl font-semibold text-gray-800">Catálogo de Productos</h1>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <button id="notifications-btn" class="relative text-gray-600 hover:text-gray-900">
+                            <i class="fas fa-bell text-xl"></i>
+                            <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">3</span>
+                        </button>
+                        <div class="relative" id="user-menu-button">
+                            <button type="button" class="flex items-center text-sm rounded-full focus:outline-none" id="user-menu" aria-expanded="false" aria-haspopup="true">
+                                <span class="sr-only">Abrir menú de usuario</span>
+                                <span class="mr-2 text-gray-700 hidden md:inline">Administrador</span>
+                                <i class="fas fa-user-circle text-2xl text-gray-500"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Contenido -->
+            <main class="flex-1 overflow-y-auto p-4 md:p-6">
+                <!-- Encabezado y acciones -->
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+                    <div class="mb-4 md:mb-0">
+                        <h2 class="text-2xl font-bold text-gray-800">Gestión de Productos</h2>
+                        <p class="text-sm text-gray-600 mt-1">Administra los productos de tu catálogo</p>
+                    </div>
+                    <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+                        <button id="export-btn" class="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 flex items-center justify-center">
+                            <i class="fas fa-file-export mr-2"></i>
+                            <span>Exportar</span>
+                        </button>
+                        <button id="add-product-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center">
+                            <i class="fas fa-plus mr-2"></i>
+                            <span>Nuevo Producto</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Filtros y búsqueda -->
+                <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
+                    <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                        <div class="md:col-span-2">
+                            <label for="search" class="block text-sm font-medium text-gray-700 mb-1">Buscar productos</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-search text-gray-400"></i>
+                                </div>
+                                <input type="text" id="search" class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Buscar por nombre, SKU...">
+                            </div>
+                        </div>
+                        <div>
+                            <label for="category" class="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
+                            <select id="category" class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-lg">
+                                <option value="">Todas las categorías</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+                            <select id="status" class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-lg">
+                                <option value="">Todos los estados</option>
+                                <option value="active">Activo</option>
+                                <option value="inactive">Inactivo</option>
+                                <option value="out-of-stock">Agotado</option>
+                            </select>
+                        </div>
+                        <div class="flex items-end">
+                            <button id="apply-filters" class="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                                Aplicar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabla de productos -->
+                <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categoría</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Precio</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                                    <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="products-table-body" class="bg-white divide-y divide-gray-200">
+                                <tr>
+                                    <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+                                        <div class="flex justify-center">
+                                            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                                        </div>
+                                        <p class="mt-2">Cargando productos...</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                            <tfoot class="bg-gray-50">
+                                <tr>
+                                    <td colspan="6" class="px-6 py-3 text-xs text-gray-500">
+                                        <div class="flex items-center justify-between">
+                                            <div>
+                                                <span class="text-sm text-gray-700">Mostrando <span id="showing-from">1</span> a <span id="showing-to">10</span> de <span id="total-items">0</span> productos</span>
+                                            </div>
+                                            <div class="flex space-x-2">
+                                                <button id="prev-page" class="px-3 py-1 border rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                                                    Anterior
+                                                </button>
+                                                <div class="flex items-center space-x-1">
+                                                    <span class="px-3 py-1 text-sm text-gray-700">Página</span>
+                                                    <input type="number" id="current-page" min="1" value="1" class="w-16 px-2 py-1 border rounded-md text-sm text-center">
+                                                    <span class="px-1 text-sm text-gray-700">de <span id="total-pages">1</span></span>
+                                                </div>
+                                                <button id="next-page" class="px-3 py-1 border rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                                                    Siguiente
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    
+
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Modal para agregar/editar producto -->
+    <div id="product-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white rounded-lg w-full max-w-2xl max-h-screen overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-gray-200 px-6 py-4">
+                <h3 id="modal-title" class="text-lg font-medium text-gray-900">Nuevo Producto</h3>
+                <button id="close-modal" class="text-gray-400 hover:text-gray-500">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <form id="product-form">
+                    <input type="hidden" id="product-id">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="col-span-2">
+                            <label for="name" class="block text-sm font-medium text-gray-700">Nombre del producto</label>
+                            <input type="text" id="name" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
+                        </div>
+                        
+                        <div>
+                            <label for="categories" class="text-sm font-medium text-gray-700">Categorías</label>
+                            <select id="categories" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
+                                <option value="">Selecciona una categoría</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label for="supplier" class="text-sm font-medium text-gray-700">Proveedor</label>
+                            <select id="supplier" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">Selecciona un proveedor</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label for="price" class="block text-sm font-medium text-gray-700">Precio</label>
+                            <div class="mt-1 relative rounded-md shadow-sm">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <span class="text-gray-500 sm:text-sm">$</span>
+                                </div>
+                                <input type="number" step="0.01" id="price" class="focus:ring-blue-500 focus:border-blue-500 block w-full pl-7 pr-12 sm:text-sm border-gray-300 rounded-md" placeholder="0.00" required>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label for="stock" class="block text-sm font-medium text-gray-700">Stock</label>
+                            <input type="number" id="stock" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
+                        </div>
+                        
+                        <input type="hidden" id="status" value="Activo">
+                        
+                        <div class="col-span-2">
+                            <label for="description" class="block text-sm font-medium text-gray-700">Descripción</label>
+                            <textarea id="description" rows="3" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"></textarea>
+                        </div>
+                        
+                        <div class="col-span-2">
+                            <label class="block text-sm font-medium text-gray-700">Imágenes del producto</label>
+                            <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+                                <div class="space-y-1 text-center">
+                                    <i class="fas fa-cloud-upload-alt text-gray-400 text-4xl mx-auto"></i>
+                                    <div class="flex text-sm text-gray-600">
+                                        <label for="product-images" class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
+                                            <span>Subir imágenes</span>
+                                            <input id="product-images" name="product-images" type="file" class="sr-only" multiple accept="image/*">
+                                        </label>
+                                        <p class="pl-1">o arrastra y suelta</p>
+                                    </div>
+                                    <p class="text-xs text-gray-500">PNG, JPG, GIF hasta 10MB</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 flex justify-end space-x-3">
+                        <button type="button" id="cancel-edit" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                            Guardar Producto
+                        <button type="submit" class="bg-blue-600 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            Guardar producto
+                        </button>
+                        <div>
+                            <label for="image" class="block text-sm font-medium text-gray-700">Imagen del producto</label>
+                            <input type="file" id="image" name="image" class="mt-1 block w-full" accept="image/*">
+                            <p class="mt-1 text-sm text-gray-500">Formatos soportados: JPG, PNG, GIF. Máximo 5MB</p>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <!-- Cargar SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- Cargar Supabase desde CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Script para funcionalidad del menú móvil -->
+    <script>
+        // Toggle sidebar en móviles
+        document.addEventListener('DOMContentLoaded', function() {
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const sidebar = document.getElementById('sidebar');
+            const sidebarOverlay = document.getElementById('sidebar-overlay');
+            
+            if (mobileMenuButton && sidebar) {
+                mobileMenuButton.addEventListener('click', () => {
+                    sidebar.classList.toggle('hidden');
+                    if (sidebarOverlay) {
+                        sidebarOverlay.style.display = sidebar.classList.contains('hidden') ? 'none' : 'block';
+                    }
+                });
+            }
+            
+            if (sidebarOverlay) {
+                sidebarOverlay.addEventListener('click', () => {
+                    sidebar.classList.add('hidden');
+                    sidebarOverlay.style.display = 'none';
+                });
+            }
+            
+            // Cerrar menú al hacer clic en un enlace en móviles
+            const navLinks = document.querySelectorAll('#sidebar a');
+            navLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    if (window.innerWidth < 768) {
+                        sidebar.classList.add('hidden');
+                        if (sidebarOverlay) {
+                            sidebarOverlay.style.display = 'none';
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+    
+    <!-- Configuración de Supabase -->
+    <script type="module">
+        // Importar Supabase
+        import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+        
+        // Configuración de Supabase
+        const SUPABASE_URL = 'https://ywmspibcnhfmqmnutpyg.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl3bXNwaWJjbmhmbXFtbnV0cHlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc2ODE0OTMsImV4cCI6MjA2MzI1NzQ5M30.HtHovCDBs11eNh_KjrqNn6BgWFYyFuFpKo5iQLFmFpU';
+        
+        // Inicializar Supabase
+        window.supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        // Función para verificar autenticación
+        window.checkAuth = async function() {
+            const { data: { session } } = await window.supabase.auth.getSession();
+            if (!session) {
+                window.location.href = 'login.html';
+                return false;
+            }
+            return true;
+        };
+        
+        // Función para cerrar sesión
+        window.logout = async function() {
+            const { error } = await window.supabase.auth.signOut();
+            if (!error) {
+                window.location.href = 'login.html';
+            }
+        };
+        
+        // Función para obtener el usuario actual
+        window.getCurrentUser = async function() {
+            const { data: { user } } = await window.supabase.auth.getUser();
+            return user;
+        };
+        
+        console.log('Supabase inicializado correctamente');
+    </script>
+    
+    <!-- Cargar el módulo principal de la aplicación -->
+    <script type="module" src="js/catalogo.js"></script>
+</body>
+</html>

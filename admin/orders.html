@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device=device-width, initial-scale=1.0">
+    <title>Órdenes - Administración</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Script de configuración -->
+    <script>
+        // Configuración de Supabase
+        const SUPABASE_URL = 'https://ywmspibcnhfmqmnutpyg.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl3bXNwaWJjbmhmbXFtbnV0cHlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc2ODE0OTMsImV4cCI6MjA2MzI1NzQ5M30.HtHovCDBs11eNh_KjrqNn6BgWFYyFuFpKo5iQLFmFpU';
+        
+        // Inicializar Supabase
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        window.supabase = supabase;  // Hacerlo disponible globalmente
+    </script>
+    
+    <!-- Script de la aplicación -->
+    <script>
+        // Esperar a que todo esté listo
+        document.addEventListener('DOMContentLoaded', () => {
+            // Inicializar elementos del DOM
+            const ordersTableBody = document.getElementById('ordersTableBody');
+            const loading = document.getElementById('loading');
+            const currentPageInput = document.getElementById('currentPage');
+            const totalItemsSpan = document.getElementById('totalItems');
+            const showingFromSpan = document.getElementById('showingFrom');
+            const showingToSpan = document.getElementById('showingTo');
+            const totalPagesSpan = document.getElementById('totalPages');
+            const prevPageBtn = document.getElementById('prevPage');
+            const nextPageBtn = document.getElementById('nextPage');
+            const searchOrdersInput = document.getElementById('searchOrders');
+            const filterAllBtn = document.getElementById('filterAll');
+            const filterPendingBtn = document.getElementById('filterPending');
+            const filterCompletedBtn = document.getElementById('filterCompleted');
+            const filterCancelledBtn = document.getElementById('filterCancelled');
+            
+            // Hacer las variables globales disponibles para orders.js
+            window.ordersTableBody = ordersTableBody;
+            window.loading = loading;
+            window.currentPageInput = currentPageInput;
+            window.totalItemsSpan = totalItemsSpan;
+            window.showingFromSpan = showingFromSpan;
+            window.showingToSpan = showingToSpan;
+            window.totalPagesSpan = totalPagesSpan;
+            window.prevPageBtn = prevPageBtn;
+            window.nextPageBtn = nextPageBtn;
+            window.searchOrdersInput = searchOrdersInput;
+            window.filterAllBtn = filterAllBtn;
+            window.filterPendingBtn = filterPendingBtn;
+            window.filterCompletedBtn = filterCompletedBtn;
+            window.filterCancelledBtn = filterCancelledBtn;
+            
+            // Cargar el script de órdenes
+            const script = document.createElement('script');
+            script.src = 'js/orders.js';
+            script.onload = function() {
+                if (typeof initApp === 'function') {
+                    initApp();
+                } else {
+                    console.error('La función initApp no está definida');
+                }
+            };
+            document.head.appendChild(script);
+        });
+    </script>
+    
+    <!-- Estilos personalizados -->
+    <style>
+        .sidebar {
+            transition: transform 0.3s ease, opacity 0.3s ease, width 0.3s ease;
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            z-index: 40;
+            width: 16rem;
+            transform: translateX(-100%);
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        @media (min-width: 768px) {
+            .sidebar {
+                transform: translateX(0) !important;
+                position: relative;
+                opacity: 1 !important;
+                pointer-events: auto !important;
+                display: flex !important;
+            }
+            
+            .main-content {
+                margin-left: 16rem;
+                width: calc(100% - 16rem);
+                transition: all 0.3s ease;
+            }
+        }
+        
+        @media (max-width: 767px) {
+            .sidebar:not(.hidden) {
+                display: flex;
+                transform: translateX(0);
+                opacity: 1;
+                pointer-events: auto;
+            }
+            
+            .sidebar-overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 39;
+            }
+        }
+        
+        .loading-spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #3b82f6;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Loading Overlay -->
+    <div id="loading" class="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-50 hidden">
+        <div class="text-center">
+            <div class="loading-spinner mx-auto"></div>
+            <p class="mt-2 text-gray-600">Cargando...</p>
+        </div>
+    </div>
+
+    <div class="flex h-screen overflow-hidden relative">
+        <!-- Sidebar -->
+        <div id="sidebar" class="sidebar bg-blue-800 text-white flex-shrink-0 flex flex-col h-full">
+            <div class="p-4 border-b border-blue-700 flex justify-between items-center">
+                <div>
+                    <h2 class="text-xl font-bold">Panel de Control</h2>
+                    <p id="user-role" class="text-sm text-blue-200">Administrador</p>
+                </div>
+                <button id="toggle-sidebar" class="text-white hover:text-blue-200">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+            </div>
+
+            <nav class="flex-1 overflow-y-auto">
+                <ul class="space-y-1">
+                    <li>
+                        <a href="perfil.html" class="flex items-center px-4 py-2 text-gray-300 hover:bg-blue-700 hover:text-white rounded-md">
+                            <i class="fas fa-user mr-3"></i>
+                            Perfil
+                        </a>
+                    </li>
+                    <li>
+                        <a href="usuarios.html" class="flex items-center px-4 py-2 text-gray-300 hover:bg-blue-700 hover:text-white rounded-md">
+                            <i class="fas fa-users mr-3"></i>
+                            Usuarios
+                        </a>
+                    </li>
+                    <li>
+                        <a href="catalogo.html" class="flex items-center px-4 py-2 text-gray-300 hover:bg-blue-700 hover:text-white rounded-md">
+                            <i class="fas fa-box mr-3"></i>
+                            Catálogo
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="flex items-center px-4 py-2 text-white bg-blue-700 rounded-md">
+                            <i class="fas fa-shopping-cart mr-3"></i>
+                            Órdenes
+                        </a>
+                    </li>
+                    <li>
+                        <a href="pagos.html" class="flex items-center px-4 py-2 text-gray-300 hover:bg-blue-700 hover:text-white rounded-md">
+                            <i class="fas fa-money-bill-wave mr-3"></i>
+                            Pagos
+                        </a>
+                    </li>
+                    <li>
+                        <a href="reportes.html" class="flex items-center px-4 py-2 text-gray-300 hover:bg-blue-700 hover:text-white rounded-md">
+                            <i class="fas fa-chart-bar mr-3"></i>
+                            Reportes
+                        </a>
+                    </li>
+                    <li>
+                        <a href="devoluciones.html" class="flex items-center px-4 py-2 text-gray-300 hover:bg-blue-700 hover:text-white rounded-md">
+                            <i class="fas fa-undo mr-3"></i>
+                            Devoluciones
+                        </a>
+                    </li>
+                    <li>
+                        <a href="pqrs.html" class="flex items-center px-4 py-2 text-gray-300 hover:bg-blue-700 hover:text-white rounded-md">
+                            <i class="fas fa-envelope mr-3"></i>
+                            PQRS
+                        </a>
+                    </li>
+                    <li>
+                        <a href="contenido-institucional.html" class="flex items-center px-4 py-2 text-gray-300 hover:bg-blue-700 hover:text-white rounded-md">
+                            <i class="fas fa-file-alt mr-3"></i>
+                            Contenido Institucional
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+
+        <!-- Overlay para móvil -->
+        <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+        <!-- Contenido principal -->
+        <div id="main-content" class="flex-1 flex flex-col overflow-hidden">
+            <!-- Barra superior -->
+            <header class="bg-white shadow-sm sticky top-0 z-10">
+                <div class="flex justify-between items-center p-4">
+                    <div class="flex items-center">
+                        <button id="mobile-menu-button" class="md:hidden text-gray-600 hover:text-gray-900 mr-4">
+                            <i class="fas fa-bars text-xl"></i>
+                        </button>
+                        <h1 class="text-xl font-semibold text-gray-800">Órdenes</h1>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <button id="notifications-btn" class="relative text-gray-600 hover:text-gray-900">
+                            <i class="fas fa-bell text-xl"></i>
+                            <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">3</span>
+                        </button>
+                        <div class="relative" id="user-menu-button">
+                            <button type="button" class="flex items-center text-sm rounded-full focus:outline-none" id="user-menu" aria-expanded="false" aria-haspopup="true">
+                                <span class="sr-only">Abrir menú de usuario</span>
+                                <span class="mr-2 text-gray-700 hidden md:inline">Administrador</span>
+                                <i class="fas fa-user-circle text-2xl text-gray-500"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Contenido -->
+            <main class="flex-1 overflow-y-auto p-4 md:p-6">
+                <!-- Encabezado y filtros -->
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+                    <div class="mb-4 md:mb-0">
+                        <h2 class="text-2xl font-bold text-gray-800">Órdenes</h2>
+                        <p class="text-sm text-gray-600 mt-1">Gestiona las órdenes de compra</p>
+                    </div>
+                    <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+                        <div class="relative">
+                            <input type="text" id="search-orders" 
+                                   class="w-64 px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500" 
+                                   placeholder="Buscar orden...">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filtros -->
+                <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
+                    <div class="flex space-x-2">
+                        <button id="filter-all" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                            <i class="fas fa-filter mr-2"></i>
+                            <span>Todas</span>
+                        </button>
+                        <button id="filter-pending" class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors">
+                            <i class="fas fa-clock mr-2"></i>
+                            <span>Pendientes</span>
+                        </button>
+                        <button id="filter-completed" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                            <i class="fas fa-check mr-2"></i>
+                            <span>Completadas</span>
+                        </button>
+                        <button id="filter-cancelled" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                            <i class="fas fa-times mr-2"></i>
+                            <span>Canceladas</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tabla de órdenes -->
+                <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-48">Nº Orden</th>
+                                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-64">Cliente</th>
+                                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-64">Items</th>
+                                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Total</th>
+                                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Fecha</th>
+                                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Estado</th>
+                                    <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Detalle</th>
+                                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-48">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="orders-table-body" class="bg-white divide-y divide-gray-200">
+                                <tr>
+                                    <td colspan="7" class="px-6 py-4 text-center text-gray-500">
+                                        <div class="flex justify-center">
+                                            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                                        </div>
+                                        <p class="mt-2">Cargando órdenes...</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                            <tfoot class="bg-gray-50">
+                                <tr>
+                                    <td colspan="7" class="px-6 py-3 text-xs text-gray-500">
+                                        <div class="flex items-center justify-between">
+                                            <div>
+                                                <span class="text-sm text-gray-700">Mostrando <span id="showing-from">1</span> a <span id="showing-to">10</span> de <span id="total-items">0</span> órdenes</span>
+                                            </div>
+                                            <div class="flex space-x-2">
+                                                <button id="prev-page" class="px-3 py-1 border rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                                                    Anterior
+                                                </button>
+                                                <div class="flex items-center space-x-1">
+                                                    <span class="px-3 py-1 text-sm text-gray-700">Página</span>
+                                                    <input type="number" id="current-page" min="1" value="1" class="w-16 px-2 py-1 border rounded-md text-sm text-center">
+                                                    <span class="px-1 text-sm text-gray-700">de <span id="total-pages">1</span></span>
+                                                </div>
+                                                <button id="next-page" class="px-3 py-1 border rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                                                    Siguiente
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Modal Detalles de Orden -->
+    <div class="modal fade" id="orderDetailsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Detalles de la Orden</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="order-details-content"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/orders.js"></script>
+</body>
+</html>

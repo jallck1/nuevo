@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mis Pagos - Tienda</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+    <div class="container py-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="mb-0">Gestión de Pagos</h2>
+            <div class="btn-group" role="group">
+                <a href="dashboard.html" class="btn btn-outline-primary">
+                    <i class="bi bi-house-door"></i> Inicio
+                </a>
+                <a href="catalogo_fix.html" class="btn btn-outline-success">
+                    <i class="bi bi-grid"></i> Catálogo
+                </a>
+            </div>
+        </div>
+        
+        <!-- Pestañas de navegación -->
+        <ul class="nav nav-tabs mb-4" id="pagosTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="deuda-tab" data-bs-toggle="tab" data-bs-target="#deuda" type="button" role="tab">
+                    <i class="bi bi-currency-dollar"></i> Mi Deuda
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="historial-tab" data-bs-toggle="tab" data-bs-target="#historial" type="button" role="tab">
+                    <i class="bi bi-clock-history"></i> Historial de Pagos
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="metodos-tab" data-bs-toggle="tab" data-bs-target="#metodos" type="button" role="tab">
+                    <i class="bi bi-credit-card"></i> Métodos de Pago
+                </button>
+            </li>
+        </ul>
+
+        <!-- Contenido de las pestañas -->
+        <div class="tab-content" id="pagosTabContent">
+            <!-- Pestaña de Deuda -->
+            <div class="tab-pane fade show active" id="deuda" role="tabpanel" aria-labelledby="deuda-tab">
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Resumen de Deuda</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="alert alert-info">
+                                    <h4 class="alert-heading">Deuda Total</h4>
+                                    <p class="display-4" id="total-deuda">$0.00</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="alert alert-success">
+                                    <h4 class="alert-heading">Crédito Disponible</h4>
+                                    <p class="display-4" id="credito-disponible">$0.00</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#pagarModal">
+                                <i class="bi bi-cash-coin"></i> Realizar Pago
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Órdenes pendientes de pago -->
+                <h5 class="mb-3">Pagos en mora</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover" id="tabla-ordenes-pendientes">
+                        <thead>
+                            <tr>
+                                <th># Orden</th>
+                                <th>Fecha</th>
+                                <th>Total</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Se llenará dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Pestaña de Historial de Pagos -->
+            <div class="tab-pane fade" id="historial" role="tabpanel" aria-labelledby="historial-tab">
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">Historial de Transacciones</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table" id="tabla-historial-pagos">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Referencia</th>
+                                        <th>Método</th>
+                                        <th>Monto</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Se llenará dinámicamente -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pestaña de Métodos de Pago -->
+            <div class="tab-pane fade" id="metodos" role="tabpanel" aria-labelledby="metodos-tab">
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="card mb-4">
+                            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Mis Métodos de Pago</h5>
+                                <button class="btn btn-sm btn-primary" id="btn-agregar-metodo">
+                                    <i class="bi bi-plus-lg"></i> Solicitar Metodo
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div class="row" id="metodos-pago-container">
+                                    <!-- Se llenará dinámicamente -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">Instrucciones de Pago</h5>
+                            </div>
+                            <div class="card-body" id="instrucciones-pago">
+                                <p class="text-muted">Seleccione un método de pago para ver las instrucciones.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para realizar pago -->
+    <div class="modal fade" id="pagarModal" tabindex="-1" aria-labelledby="pagarModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="pagarModalLabel">Realizar Pago</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="form-pago">
+                        <div class="mb-3">
+                            <label for="monto-pagar" class="form-label">Monto a Pagar</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" id="monto-pagar" min="0" step="0.01" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="metodo-pago" class="form-label">Método de Pago</label>
+                            <select class="form-select" id="metodo-pago" required>
+                                <option value="" selected disabled>Seleccione un método de pago</option>
+                                <!-- Se llenará dinámicamente -->
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="referencia-pago" class="form-label">Número de Referencia (opcional)</label>
+                            <input type="text" class="form-control" id="referencia-pago">
+                        </div>
+                        <div class="mb-3">
+                            <label for="notas-pago" class="form-label">Notas (opcional)</label>
+                            <textarea class="form-control" id="notas-pago" rows="2"></textarea>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="guardar-metodo">
+                            <label class="form-check-label" for="guardar-metodo">
+                                Guardar este método de pago para futuras compras
+                            </label>
+                        </div>
+                    </form>
+                    <div class="alert alert-info mt-3" id="instrucciones-pago-modal">
+                        <small>Seleccione un método de pago para ver las instrucciones.</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="btn-confirmar-pago">Confirmar Pago</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <script>
+        // Hacer jsPDF disponible globalmente
+        window.jsPDF = window.jspdf.jsPDF;
+        
+        // Función para generar factura en PDF
+        function generarFacturaPDF(datosPago) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Configuración del documento
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const margin = 15;
+            const lineHeight = 7;
+            let yPos = 20;
+            
+            // Logo (opcional)
+            // doc.addImage('ruta/al/logo.png', 'PNG', margin, 10, 30, 15);
+            
+            // Título
+            doc.setFontSize(20);
+            doc.setTextColor(40, 62, 80);
+            doc.text('FACTURA DE PAGO', pageWidth / 2, yPos, { align: 'center' });
+            yPos += 10;
+            
+            // Información de la empresa
+            doc.setFontSize(10);
+            doc.setTextColor(100);
+            doc.text('Tienda Horizont', margin, yPos);
+            doc.text('NIT: 123456789-0', pageWidth - margin, yPos, { align: 'right' });
+            yPos += 5;
+            doc.text('Carrera 123 #45-67', margin, yPos);
+            doc.text('Tel: (123) 456-7890', pageWidth - margin, yPos, { align: 'right' });
+            yPos += 5;
+            doc.text('Bogotá, Colombia', margin, yPos);
+            doc.text('Email: info@tiendahorizont.com', pageWidth - margin, yPos + 5, { align: 'right' });
+            yPos += 20;
+            
+            // Línea divisoria
+            doc.setDrawColor(200);
+            doc.line(margin, yPos, pageWidth - margin, yPos);
+            yPos += 10;
+            
+            // Información del cliente
+            doc.setFontSize(12);
+            doc.setTextColor(40, 62, 80);
+            doc.text('INFORMACIÓN DEL CLIENTE', margin, yPos);
+            yPos += 8;
+            
+            doc.setFontSize(10);
+            doc.setTextColor(100);
+            doc.text(`Nombre: ${datosPago.userName || 'Cliente'}`, margin, yPos);
+            yPos += lineHeight;
+            doc.text(`Documento: ${datosPago.userDocument || 'N/A'}`, margin, yPos);
+            yPos += lineHeight;
+            doc.text(`Email: ${datosPago.userEmail || 'N/A'}`, margin, yPos);
+            yPos += 15;
+            
+            // Información de la factura
+            doc.setFontSize(12);
+            doc.setTextColor(40, 62, 80);
+            doc.text('DETALLE DE PAGO', margin, yPos);
+            yPos += 8;
+            
+            doc.setFontSize(10);
+            doc.setTextColor(100);
+            doc.text(`Número de factura: ${datosPago.invoiceNumber || 'N/A'}`, margin, yPos);
+            yPos += lineHeight;
+            doc.text(`Fecha: ${new Date().toLocaleDateString()}`, margin, yPos);
+            yPos += lineHeight;
+            doc.text(`Método de pago: ${datosPago.paymentMethod || 'No especificado'}`, margin, yPos);
+            yPos += lineHeight;
+            doc.text(`Referencia: ${datosPago.reference || 'N/A'}`, margin, yPos);
+            yPos += 15;
+            
+            // Tabla de productos
+            const headers = [['Descripción', 'Cantidad', 'Precio Unit.', 'Total']];
+            const data = [
+                ['Pago de factura', '1', `$${datosPago.amount.toFixed(2)}`, `$${datosPago.amount.toFixed(2)}`]
+            ];
+            
+            doc.autoTable({
+                startY: yPos,
+                head: headers,
+                body: data,
+                margin: { left: margin },
+                styles: { 
+                    fontSize: 10,
+                    cellPadding: 3,
+                    valign: 'middle',
+                    halign: 'center',
+                    textColor: [100, 100, 100]
+                },
+                headStyles: {
+                    fillColor: [40, 62, 80],
+                    textColor: 255,
+                    fontStyle: 'bold',
+                    halign: 'center'
+                },
+                columnStyles: {
+                    0: { halign: 'left', cellWidth: 'auto' },
+                    1: { cellWidth: 25 },
+                    2: { cellWidth: 30 },
+                    3: { cellWidth: 30 }
+                }
+            });
+            
+            // Obtener la posición Y después de la tabla
+            yPos = doc.lastAutoTable.finalY + 10;
+            
+            // Totales
+            doc.setFontSize(11);
+            doc.text('Subtotal:', pageWidth - 70, yPos);
+            doc.text(`$${datosPago.amount.toFixed(2)}`, pageWidth - margin, yPos, { align: 'right' });
+            yPos += lineHeight;
+            
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'bold');
+            doc.text('TOTAL:', pageWidth - 70, yPos);
+            doc.text(`$${datosPago.amount.toFixed(2)}`, pageWidth - margin, yPos, { align: 'right' });
+            
+            // Pie de página
+            doc.setFontSize(8);
+            doc.setTextColor(150);
+            doc.text('Gracias por su compra', pageWidth / 2, 280, { align: 'center' });
+            doc.text('Este es un documento generado automáticamente', pageWidth / 2, 285, { align: 'center' });
+            
+            // Guardar el PDF
+            doc.save(`factura-${datosPago.invoiceNumber || 'pago'}.pdf`);
+        }
+    </script>
+    <script src="js/pagos.js" type="module"></script>
+</body>
+</html>

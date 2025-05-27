@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solicitud de Devolución - Tienda</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // Make sure Supabase is available globally
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.supabase) {
+                window.supabaseClient = window.supabase;
+            }
+        });
+    </script>
+    <script src="js/devoluciones.js" defer></script>
+</head>
+<body class="bg-gray-100">
+    <div class="min-h-screen">
+        <!-- Header -->
+        <header class="bg-white shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
+                <h1 class="text-2xl font-bold text-gray-900">Solicitud de Devolución</h1>
+            </div>
+        </header>
+
+        <!-- Contenido principal -->
+        <main class="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+            <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+                <div class="px-4 py-5 sm:px-6 bg-gray-50">
+                    <h2 class="text-lg leading-6 font-medium text-gray-900">Información de la Devolución</h2>
+                    <p class="mt-1 max-w-2xl text-sm text-gray-500">Complete todos los campos para solicitar una devolución.</p>
+                </div>
+                
+                <div class="border-t border-gray-200 px-4 py-5 sm:p-0">
+                    <form id="returnForm" class="divide-y divide-gray-200">
+                        <!-- Información del Pedido -->
+                        <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                            <div>
+                                <label for="order_id" class="block text-sm font-medium text-gray-700">Número de Pedido *</label>
+                                <p class="mt-1 text-sm text-gray-500">Ingrese el número del pedido que desea devolver</p>
+                            </div>
+                            <div class="mt-1 sm:mt-0 sm:col-span-2">
+                                <input type="text" name="order_id" id="order_id" required
+                                    class="max-w-lg block w-full shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:max-w-xs sm:text-sm border-gray-300 rounded-md">
+                            </div>
+                        </div>
+
+                        <!-- Razón de la Devolución -->
+                        <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                            <div>
+                                <label for="reason" class="block text-sm font-medium text-gray-700">Razón de la Devolución *</label>
+                                <p class="mt-1 text-sm text-gray-500">Seleccione el motivo principal de su devolución</p>
+                            </div>
+                            <div class="mt-1 sm:mt-0 sm:col-span-2">
+                                <select id="reason" name="reason" required
+                                    class="max-w-lg block w-full shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:max-w-xs sm:text-sm border-gray-300 rounded-md">
+                                    <option value="">Seleccione una razón...</option>
+                                    <option value="Producto defectuoso">Producto defectuoso</option>
+                                    <option value="Producto incorrecto">Producto incorrecto</option>
+                                    <option value="Producto no descrito">Producto no coincide con la descripción</option>
+                                    <option value="Arrepentimiento de compra">Arrepentimiento de compra</option>
+                                    <option value="Otro">Otro motivo</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Descripción Detallada -->
+                        <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                            <div>
+                                <label for="description" class="block text-sm font-medium text-gray-700">Descripción Detallada *</label>
+                                <p class="mt-1 text-sm text-gray-500">Describa en detalle el motivo de la devolución</p>
+                            </div>
+                            <div class="mt-1 sm:mt-0 sm:col-span-2">
+                                <textarea id="description" name="description" rows="4" required
+                                    class="max-w-lg shadow-sm block w-full focus:ring-blue-500 focus:border-blue-500 sm:text-sm border border-gray-300 rounded-md"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Método de Reembolso -->
+                        <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                            <div>
+                                <label for="refund_method" class="block text-sm font-medium text-gray-700">Método de Reembolso *</label>
+                                <p class="mt-1 text-sm text-gray-500">Seleccione cómo desea recibir el reembolso</p>
+                            </div>
+                            <div class="mt-1 sm:mt-0 sm:col-span-2 space-y-4">
+                                <div class="flex items-center">
+                                    <input id="refund_original" name="refund_method" type="radio" value="Método de pago original" 
+                                        class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300" checked>
+                                    <label for="refund_original" class="ml-3 block text-sm font-medium text-gray-700">
+                                        Reembolso al método de pago original
+                                    </label>
+                                </div>
+                                <div class="flex items-center">
+                                    <input id="refund_bank" name="refund_method" type="radio" value="Transferencia bancaria"
+                                        class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300">
+                                    <label for="refund_bank" class="ml-3 block text-sm font-medium text-gray-700">
+                                        Transferencia bancaria
+                                    </label>
+                                </div>
+                                
+                                <!-- Información Bancaria (se muestra solo si se selecciona transferencia bancaria) -->
+                                <div id="bankInfo" class="hidden ml-7 mt-2 space-y-4">
+                                    <div>
+                                        <label for="bank_name" class="block text-sm font-medium text-gray-700">Nombre del Banco *</label>
+                                        <input type="text" id="bank_name" name="bank_name"
+                                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                    </div>
+                                    <div>
+                                        <label for="account_type" class="block text-sm font-medium text-gray-700">Tipo de Cuenta *</label>
+                                        <select id="account_type" name="account_type"
+                                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                            <option value="Ahorros">Ahorros</option>
+                                            <option value="Corriente">Corriente</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label for="account_number" class="block text-sm font-medium text-gray-700">Número de Cuenta *</label>
+                                        <input type="text" id="account_number" name="account_number"
+                                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botones de acción -->
+                        <div class="py-5 px-4 bg-gray-50 flex justify-between items-center sm:px-6">
+                            <div>
+                                <a href="pedidos.html" class="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800">
+                                    <i class="fas fa-arrow-left mr-1"></i> Volver a Mis Pedidos
+                                </a>
+                            </div>
+                            <div class="space-x-3">
+                                <button type="button" onclick="window.history.back()" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                    Cancelar
+                                </button>
+                                <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                    Enviar Solicitud
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración - Plataforma de Créditos</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        .sidebar {
+            transition: transform 0.3s ease, opacity 0.3s ease, width 0.3s ease;
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            z-index: 40;
+            width: 16rem;
+            transform: translateX(-100%);
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        @media (min-width: 768px) {
+            .sidebar {
+                transform: translateX(0) !important;
+                position: relative;
+                opacity: 1 !important;
+                pointer-events: auto !important;
+                display: flex !important;
+            }
+            
+            .sidebar.hidden {
+                display: none;
+            }
+            
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+                transition: all 0.3s ease;
+                position: relative;
+                left: 0;
+            }
+            
+            .main-content:not(.expanded) {
+                margin-left: 16rem;
+                width: calc(100% - 16rem);
+            }
+            
+            .main-content.expanded {
+                margin-left: 0;
+                width: 100%;
+            }
+        }
+        
+        /* Estilos para móvil */
+        @media (max-width: 767px) {
+            .sidebar {
+                display: none;
+                z-index: 50;
+                width: 75%;
+                max-width: 300px;
+                box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1);
+                transform: translateX(-100%);
+                opacity: 0;
+                pointer-events: none;
+            }
+            
+            .sidebar:not(.hidden) {
+                display: flex;
+                transform: translateX(0);
+                opacity: 1;
+                pointer-events: auto;
+            }
+            
+            .main-content {
+                width: 100%;
+                margin-left: 0;
+            }
+            
+            /* Overlay para cerrar el menú al hacer clic fuera */
+            .sidebar-overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 49;
+            }
+            
+            .sidebar:not(.hidden) + .sidebar-overlay {
+                display: block;
+            }
+        }
+        
+        /* Estilos para el loading */
+        .loading-spinner {
+            border: 3px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top: 3px solid #3b82f6;
+            width: 2rem;
+            height: 2rem;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Loading Overlay -->
+    <div id="loading" class="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-50">
+        <div class="text-center">
+            <div class="loading-spinner mx-auto"></div>
+            <p class="mt-4 text-gray-600">Cargando panel de control...</p>
+        </div>
+    </div>
+
+    <!-- Error Message -->
+    <div id="error-message" class="hidden fixed top-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded z-50">
+        <div class="flex items-center">
+            <i class="fas fa-exclamation-circle mr-2"></i>
+            <span id="error-text">Ha ocurrido un error. Por favor, inténtalo de nuevo.</span>
+            <button onclick="this.parentElement.parentElement.classList.add('hidden')" class="ml-4 text-red-500 hover:text-red-700">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="flex h-screen overflow-hidden relative">
+        <!-- Sidebar -->
+        <div id="sidebar" class="sidebar bg-blue-800 text-white flex-shrink-0 flex flex-col h-full">
+            <div class="p-4 border-b border-blue-700 flex justify-between items-center">
+                <div>
+                    <h2 class="text-xl font-bold">Panel de Control</h2>
+                    <p id="user-role" class="text-sm text-blue-200"></p>
+                </div>
+                <button id="toggle-sidebar" class="text-blue-200 hover:text-white md:hidden">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+            </div>
+            <nav class="flex-1 overflow-y-auto">
+                <a href="dashboard.html" class="block py-3 px-6 hover:bg-blue-700 flex items-center bg-blue-900">
+                    <i class="fas fa-tachometer-alt w-6 text-center mr-3"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="ordenes.html" class="block py-3 px-6 hover:bg-blue-700 flex items-center">
+                    <i class="fas fa-shopping-cart w-6 text-center mr-3"></i>
+                    <span>Órdenes</span>
+                    <span id="pending-orders-count" class="ml-auto bg-yellow-500 text-white text-xs font-bold px-2 py-1 rounded-full">0</span>
+                </a>
+                <a href="catalogo.html" class="block py-3 px-6 hover:bg-blue-700 flex items-center">
+                    <i class="fas fa-box w-6 text-center mr-3"></i>
+                    <span>Catálogo</span>
+                </a>
+                <a href="usuarios.html" class="block py-3 px-6 hover:bg-blue-700 flex items-center">
+                    <i class="fas fa-users w-6 text-center mr-3"></i>
+                    <span>Usuarios</span>
+                </a>
+                <a href="pqrs.html" class="block py-3 px-6 hover:bg-blue-700 flex items-center">
+                    <i class="fas fa-comments w-6 text-center mr-3"></i>
+                    <span>PQRS</span>
+                    <span id="pending-pqrs" class="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">0</span>
+                </a>
+                <div class="mt-auto border-t border-blue-700">
+                    <a href="#" id="logout-btn" class="block py-3 px-6 hover:bg-blue-700 flex items-center">
+                        <i class="fas fa-sign-out-alt w-6 text-center mr-3"></i>
+                        <span>Cerrar Sesión</span>
+                    </a>
+                    <div class="p-4 text-xs text-blue-300">
+                        <p>Versión 1.0.0</p>
+                    </div>
+                </div>
+            </nav>
+        </div>
+        
+        <!-- Overlay para móvil -->
+        <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+        <!-- Main Content -->
+        <div id="main-content" class="main-content flex-1 overflow-auto h-full">
+            <!-- Top Bar -->
+            <header class="bg-white shadow-sm sticky top-0 z-10">
+                <div class="flex justify-between items-center p-4">
+                    <div class="flex items-center">
+                        <button id="mobile-menu-button" class="md:hidden text-gray-600 hover:text-gray-900 mr-4">
+                            <i class="fas fa-bars text-xl"></i>
+                        </button>
+                        <h1 class="text-xl font-semibold text-gray-800">Dashboard</h1>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <div class="relative">
+                            <button class="text-gray-600 hover:text-gray-900">
+                                <i class="fas fa-bell text-xl"></i>
+                                <span class="absolute top-0 right-0 h-2 w-2 rounded-full bg-red-500"></span>
+                            </button>
+                        </div>
+                        <div class="relative">
+                            <button id="user-menu-button" class="flex items-center space-x-2 focus:outline-none">
+                                <div class="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold">
+                                    <span id="user-initials">U</span>
+                                </div>
+                                <span id="user-name" class="text-sm font-medium text-gray-700">Usuario</span>
+                                <i class="fas fa-chevron-down text-xs text-gray-500"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Contenido principal -->
+            <main class="p-4 md:p-6">
+                <!-- Resumen -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <!-- Total de Usuarios -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-500 text-sm font-medium">Usuarios</p>
+                                <h3 class="text-2xl font-bold text-gray-900" id="total-users">0</h3>
+                            </div>
+                            <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+                                <i class="fas fa-users text-xl"></i>
+                            </div>
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-gray-100">
+                            <a href="usuarios.html" class="text-blue-600 hover:text-blue-800 text-sm font-medium">Ver todos</a>
+                        </div>
+                    </div>
+
+                    <!-- Total de Productos -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-500 text-sm font-medium">Productos</p>
+                                <h3 class="text-2xl font-bold text-gray-900" id="total-products">0</h3>
+                            </div>
+                            <div class="p-3 rounded-full bg-green-100 text-green-600">
+                                <i class="fas fa-box text-xl"></i>
+                            </div>
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-gray-100">
+                            <a href="productos.html" class="text-blue-600 hover:text-blue-800 text-sm font-medium">Gestionar</a>
+                        </div>
+                    </div>
+
+                    <!-- Total de Órdenes -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-500 text-sm font-medium">Órdenes</p>
+                                <h3 class="text-2xl font-bold text-gray-900" id="total-orders">0</h3>
+                            </div>
+                            <div class="p-3 rounded-full bg-yellow-100 text-yellow-600">
+                                <i class="fas fa-shopping-cart text-xl"></i>
+                            </div>
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-gray-100">
+                            <a href="ordenes.html" class="text-blue-600 hover:text-blue-800 text-sm font-medium">Ver todas</a>
+                        </div>
+                    </div>
+
+                    <!-- PQRS Pendientes -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-500 text-sm font-medium">PQRS Pendientes</p>
+                                <h3 class="text-2xl font-bold text-gray-900" id="pending-pqrs-count">0</h3>
+                            </div>
+                            <div class="p-3 rounded-full bg-red-100 text-red-600">
+                                <i class="fas fa-comments text-xl"></i>
+                            </div>
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-gray-100">
+                            <a href="pqrs.html" class="text-blue-600 hover:text-blue-800 text-sm font-medium">Revisar</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gráficos y estadísticas -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                    <!-- Gráfico de ventas -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-semibold text-gray-900">Ventas Mensuales</h3>
+                            <div class="flex space-x-2">
+                                <button class="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-md">Mensual</button>
+                                <button class="px-3 py-1 text-xs text-gray-500 hover:bg-gray-100 rounded-md">Anual</button>
+                            </div>
+                        </div>
+                        <div class="h-64">
+                            <canvas id="sales-chart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Actividad reciente -->
+                    <div class="bg-white rounded-lg shadow overflow-hidden">
+                        <div class="p-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Órdenes Recientes</h3>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"># Orden</th>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                                            <th scope="col" class="relative px-6 py-3">
+                                                <span class="sr-only">Acciones</span>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="recent-orders" class="bg-white divide-y divide-gray-200">
+                                        <!-- Las órdenes se cargarán aquí dinámicamente -->
+                                        <tr>
+                                            <td colspan="5" class="px-6 py-4 text-center text-gray-500">Cargando órdenes...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="mt-4 text-right">
+                                <a href="ordenes.html" class="text-sm font-medium text-blue-600 hover:text-blue-800">Ver todas las órdenes</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/dashboard.js"></script>
+</body>
+</html>

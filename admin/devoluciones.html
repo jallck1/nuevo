@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Devoluciones - Administración</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Script de configuración -->
+    <script>
+        // Esperar a que se cargue la biblioteca de Supabase
+        function initSupabase() {
+            if (typeof window.supabase === 'undefined') {
+                console.error('Error: No se pudo cargar la biblioteca de Supabase');
+                return false;
+            }
+            
+            // Configuración de Supabase
+            const SUPABASE_URL = 'https://ywmspibcnhfmqmnutpyg.supabase.co';
+            const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl3bXNwaWJjbmhmbXFtbnV0cHlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc2ODE0OTMsImV4cCI6MjA2MzI1NzQ5M30.HtHovCDBs11eNh_KjrqNn6BgWFYyFuFpKo5iQLFmFpU';
+            
+            try {
+                // Inicializar Supabase
+                const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                window.supabase = supabase;  // Hacerlo disponible globalmente
+                console.log('Supabase inicializado correctamente');
+                return true;
+            } catch (error) {
+                console.error('Error al inicializar Supabase:', error);
+                return false;
+            }
+        }
+    </script>
+    
+    <!-- Estilos personalizados -->
+    <style>
+        .sidebar {
+            transition: transform 0.3s ease, opacity 0.3s ease, width 0.3s ease;
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            z-index: 40;
+            width: 16rem;
+            transform: translateX(-100%);
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        @media (min-width: 768px) {
+            .sidebar {
+                transform: translateX(0) !important;
+                position: relative;
+                opacity: 1 !important;
+                pointer-events: auto !important;
+                display: flex !important;
+            }
+            
+            .main-content {
+                margin-left: 16rem;
+                width: calc(100% - 16rem);
+                transition: all 0.3s ease;
+            }
+        }
+        
+        @media (max-width: 767px) {
+            .sidebar:not(.hidden) {
+                display: flex;
+                transform: translateX(0);
+                opacity: 1;
+                pointer-events: auto;
+            }
+            
+            .sidebar-overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 39;
+            }
+        }
+        
+        .loading-spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #3b82f6;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Loading Overlay -->
+    <div id="loading" class="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-50 hidden">
+        <div class="text-center">
+            <div class="loading-spinner mx-auto"></div>
+            <p class="mt-2 text-gray-600">Cargando...</p>
+        </div>
+    </div>
+
+    <div class="flex h-screen overflow-hidden relative">
+        <!-- Sidebar -->
+        <div id="sidebar" class="sidebar bg-blue-800 text-white flex-shrink-0 flex flex-col h-full">
+            <div class="p-4 border-b border-blue-700 flex justify-between items-center">
+                <div>
+                    <h2 class="text-xl font-bold">Panel de Control</h2>
+                    <p id="user-role" class="text-sm text-blue-200">Administrador</p>
+                </div>
+                <button id="toggle-sidebar" class="text-white hover:text-blue-200">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+            </div>
+
+            <nav class="flex-1 overflow-y-auto">
+                <ul class="space-y-1">
+                    <li>
+                        <a href="perfil.html" class="flex items-center px-4 py-2 text-gray-300 hover:bg-blue-700 hover:text-white rounded-md">
+                            <i class="fas fa-user mr-3"></i>
+                            Perfil
+                        </a>
+                    </li>
+                    <li>
+                        <a href="usuarios.html" class="flex items-center px-4 py-2 text-gray-300 hover:bg-blue-700 hover:text-white rounded-md">
+                            <i class="fas fa-users mr-3"></i>
+                            Usuarios
+                        </a>
+                    </li>
+                    <li>
+                        <a href="catalogo.html" class="flex items-center px-4 py-2 text-gray-300 hover:bg-blue-700 hover:text-white rounded-md">
+                            <i class="fas fa-box mr-3"></i>
+                            Catálogo
+                        </a>
+                    </li>
+                    <li>
+                        <a href="orders.html" class="flex items-center px-4 py-2 text-gray-300 hover:bg-blue-700 hover:text-white rounded-md">
+                            <i class="fas fa-shopping-cart mr-3"></i>
+                            Órdenes
+                        </a>
+                    </li>
+                    <li>
+                        <a href="pagos.html" class="flex items-center px-4 py-2 text-gray-300 hover:bg-blue-700 hover:text-white rounded-md">
+                            <i class="fas fa-money-bill-wave mr-3"></i>
+                            Pagos
+                        </a>
+                    </li>
+                    <li>
+                        <a href="reportes.html" class="flex items-center px-4 py-2 text-gray-300 hover:bg-blue-700 hover:text-white rounded-md">
+                            <i class="fas fa-chart-bar mr-3"></i>
+                            Reportes
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="flex items-center px-4 py-2 text-white bg-blue-700 rounded-md">
+                            <i class="fas fa-undo mr-3"></i>
+                            Devoluciones
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+
+        <!-- Overlay para móvil -->
+        <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+        <!-- Contenido principal -->
+        <div id="main-content" class="flex-1 flex flex-col overflow-hidden">
+            <!-- Barra superior -->
+            <header class="bg-white shadow-sm sticky top-0 z-10">
+                <div class="flex justify-between items-center p-4">
+                    <div class="flex items-center">
+                        <button id="mobile-menu-button" class="md:hidden text-gray-600 hover:text-gray-900 mr-4">
+                            <i class="fas fa-bars text-xl"></i>
+                        </button>
+                        <h1 class="text-xl font-semibold text-gray-800">Devoluciones</h1>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <button id="notifications-btn" class="relative text-gray-600 hover:text-gray-900">
+                            <i class="fas fa-bell text-xl"></i>
+                            <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">3</span>
+                        </button>
+                        <div class="relative" id="user-menu-button">
+                            <button type="button" class="flex items-center text-sm rounded-full focus:outline-none" id="user-menu" aria-expanded="false" aria-haspopup="true">
+                                <span class="sr-only">Abrir menú de usuario</span>
+                                <span class="mr-2 text-gray-700 hidden md:inline">Administrador</span>
+                                <i class="fas fa-user-circle text-2xl text-gray-500"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Contenido -->
+            <main class="flex-1 overflow-y-auto p-4 md:p-6">
+                <!-- Encabezado y acciones -->
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+                    <div class="mb-4 md:mb-0">
+                        <h2 class="text-2xl font-bold text-gray-800">Devoluciones</h2>
+                        <p class="text-sm text-gray-600 mt-1">Gestiona las devoluciones de productos</p>
+                    </div>
+                    <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+                        <button id="new-return-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center" data-bs-toggle="modal" data-bs-target="#newReturnModal">
+                            <i class="fas fa-plus mr-2"></i>
+                            <span>Nueva Devolución</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Filtros -->
+                <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div>
+                            <label for="date-range" class="block text-sm font-medium text-gray-700 mb-1">Rango de fechas</label>
+                            <div class="flex space-x-2">
+                                <input type="date" id="start-date" class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                <span class="self-center text-gray-500">-</span>
+                                <input type="date" id="end-date" class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                            </div>
+                        </div>
+                        <div>
+                            <label for="return-status" class="block text-sm font-medium text-gray-700 mb-1">Estado de devolución</label>
+                            <select id="return-status" class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                <option value="">Todos</option>
+                                <option value="pendiente">Pendiente</option>
+                                <option value="aprobado">Aprobado</option>
+                                <option value="rechazado">Rechazado</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="return-type" class="block text-sm font-medium text-gray-700 mb-1">Tipo de devolución</label>
+                            <select id="return-type" class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                <option value="">Todos</option>
+                                <option value="devolucion">Devolución</option>
+                                <option value="cambio">Cambio</option>
+                            </select>
+                        </div>
+                        <div class="flex justify-end">
+                            <button id="apply-filters" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center">
+                                <i class="fas fa-filter mr-2"></i>
+                                <span>Aplicar filtros</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabla de devoluciones -->
+                <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID / Fecha</th>
+                                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Orden / Razón</th>
+                                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monto / Método</th>
+                                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Información Bancaria</th>
+                                    <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="returnsTableBody" class="bg-white divide-y divide-gray-200">
+                                <tr>
+                                    <td colspan="8" class="px-6 py-4 text-center text-gray-500">
+                                        <div class="flex justify-center">
+                                            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                                        </div>
+                                        <p class="mt-2">Cargando devoluciones...</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                            <tfoot class="bg-gray-50">
+                                <tr>
+                                    <td colspan="8" class="px-6 py-3 text-xs text-gray-500">
+                                        <div class="flex items-center justify-between">
+                                            <div>
+                                                <span class="text-sm text-gray-700">Mostrando <span id="showing-from">1</span> a <span id="showing-to">10</span> de <span id="total-items">0</span> devoluciones</span>
+                                            </div>
+                                            <div class="flex space-x-2">
+                                                <button id="prev-page" class="px-3 py-1 border rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                                                    Anterior
+                                                </button>
+                                                <div class="flex items-center space-x-1">
+                                                    <span class="px-3 py-1 text-sm text-gray-700">Página</span>
+                                                    <input type="number" id="current-page" min="1" value="1" class="w-16 px-2 py-1 border rounded-md text-sm text-center">
+                                                    <span class="px-1 text-sm text-gray-700">de <span id="total-pages">1</span></span>
+                                                </div>
+                                                <button id="next-page" class="px-3 py-1 border rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                                                    Siguiente
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Modal Nueva Devolución -->
+    <div class="modal fade" id="newReturnModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Nueva Devolución</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="new-return-form">
+                        <div class="mb-3">
+                            <label class="form-label">Orden</label>
+                            <select class="form-select" id="return-order" required>
+                                <option value="">Seleccionar orden</option>
+                                <!-- Las órdenes se cargarán dinámicamente -->
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Producto</label>
+                            <select class="form-select" id="return-product" required>
+                                <option value="">Seleccionar producto</option>
+                                <!-- Los productos se cargarán dinámicamente -->
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Tipo de devolución</label>
+                            <select class="form-select" id="return-type" required>
+                                <option value="devolucion">Devolución</option>
+                                <option value="cambio">Cambio</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Motivo</label>
+                            <textarea class="form-control" id="return-reason" rows="3" required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Evidencia</label>
+                            <input type="file" class="form-control" id="return-evidence" accept="image/*">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="createReturn()">Crear Devolución</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Ver Devolución -->
+    <div class="modal fade" id="viewReturnModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Detalles de la Devolución</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="return-details"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        // Esperar a que el DOM esté completamente cargado
+        document.addEventListener('DOMContentLoaded', () => {
+            // Inicializar Supabase primero
+            if (!initSupabase()) {
+                console.error('No se pudo inicializar Supabase');
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'No se pudo conectar con el servidor. Por favor, recarga la página.',
+                        confirmButtonText: 'Aceptar'
+                    });
+                }
+                return;
+            }
+
+            // Referencias a elementos del DOM
+            const returnsTableBody = document.getElementById('returnsTableBody');
+            const loading = document.getElementById('loading');
+            const currentPageInput = document.getElementById('currentPage');
+            const totalItemsSpan = document.getElementById('totalItems');
+            const showingFromSpan = document.getElementById('showingFrom');
+            const showingToSpan = document.getElementById('showingTo');
+            const totalPagesSpan = document.getElementById('totalPages');
+            const prevPageBtn = document.getElementById('prevPage');
+            const nextPageBtn = document.getElementById('nextPage');
+            const searchReturnsInput = document.getElementById('searchReturns');
+            
+            // Hacer las referencias globales
+            window.returnsTableBody = returnsTableBody;
+            window.loading = loading;
+            window.currentPageInput = currentPageInput;
+            window.totalItemsSpan = totalItemsSpan;
+            window.showingFromSpan = showingFromSpan;
+            window.showingToSpan = showingToSpan;
+            window.totalPagesSpan = totalPagesSpan;
+            window.prevPageBtn = prevPageBtn;
+            window.nextPageBtn = nextPageBtn;
+            window.searchReturnsInput = searchReturnsInput;
+            
+            // Cargar el script de devoluciones
+            const script = document.createElement('script');
+            script.src = 'js/devoluciones.js';
+            script.onload = function() {
+                if (typeof initApp === 'function') {
+                    initApp().catch(error => {
+                        console.error('Error al inicializar la aplicación:', error);
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: 'No se pudo cargar la aplicación. Por favor, recarga la página.',
+                                confirmButtonText: 'Aceptar'
+                            });
+                        }
+                    });
+                } else {
+                    console.error('La función initApp no está definida en devoluciones.js');
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Error en la aplicación. Por favor, contacta al soporte.',
+                            confirmButtonText: 'Aceptar'
+                        });
+                    }
+                }
+            };
+            script.onerror = function() {
+                console.error('Error al cargar el script de devoluciones');
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'No se pudo cargar la aplicación. Por favor, recarga la página.',
+                        confirmButtonText: 'Aceptar'
+                    });
+                }
+            };
+            document.head.appendChild(script);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mis Pedidos - CrediControl</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+  <!-- Header -->
+  <header class="bg-white shadow-sm sticky top-0 z-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <!-- Logo y menú principal -->
+        <div class="flex items-center space-x-6">
+          <!-- Logo -->
+          <div class="flex-shrink-0">
+            <a href="dashboard.html" class="flex items-center">
+              <span class="text-xl font-bold text-blue-600">CrediControl</span>
+            </a>
+          </div>
+
+          <!-- Menú de navegación -->
+          <nav class="hidden md:flex items-center space-x-4">
+            <a href="dashboard.html" class="text-gray-500 hover:text-gray-700 px-3 py-2 text-sm font-medium">Inicio</a>
+            <a href="catalogo_fix.html" class="text-gray-500 hover:text-gray-700 px-3 py-2 text-sm font-medium">Catálogo</a>
+            <a href="pedidos.html" class="text-blue-600 border-b-2 border-blue-500 px-3 py-2 text-sm font-medium">Mis Pedidos</a>
+            <a href="pqrs.html" class="text-gray-500 hover:text-gray-700 px-3 py-2 text-sm font-medium">PQRS</a>
+            <a href="pagos.html" class="text-gray-500 hover:text-gray-700 px-3 py-2 text-sm font-medium">Mis Pagos</a>
+            
+            <!-- Botón IACHAT -->
+            <button id="iachat-button" class="flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+              <i class="fas fa-robot mr-2"></i>
+              IACHAT
+            </button>
+            
+            <!-- Botón Mapa -->
+            <a href="https://www.google.com/maps/place/Cra.+45+%2348-43,+La+Candelaria,+Medell%C3%ADn,+La+Candelaria,+Medell%C3%ADn,+Antioquia/@6.2442039,-75.5732233,17z/data=!3m1!4b1!4m6!3m5!1s0x8e4428f3d2f9b7c5:0x4b5d8e8a9e8e8e8e!8m2!3d6.2442039!4d-75.5706426!16s%2Fg%2F11c5k5k5k5?entry=ttu" 
+               target="_blank" 
+               class="flex items-center px-3 py-2 text-sm font-medium text-gray-700 hover:text-blue-600">
+              <i class="fas fa-map-marker-alt text-red-500 mr-1"></i>
+              Nuestra Tienda
+            </a>
+            
+            <!-- Botón Carrito -->
+            <a href="carrito.html" class="relative p-2 text-gray-600 hover:text-gray-900 focus:outline-none">
+              <i class="fas fa-shopping-cart text-xl"></i>
+              <span id="cart-count" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">0</span>
+            </a>
+          </nav>
+        </div>
+
+        <!-- Menú de usuario -->
+        <div class="flex items-center">
+          <div class="relative">
+            <button id="user-menu-button" class="flex items-center justify-center h-8 w-8 rounded-full bg-blue-100 text-blue-700 font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" data-initials="U">
+              <span id="user-initials" class="text-sm font-medium">U</span>
+              <img id="user-avatar" class="h-8 w-8 rounded-full hidden" src="" alt="Usuario">
+            </button>
+            <div id="user-menu" class="hidden origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none" role="menu" aria-orientation="vertical" tabindex="-1" style="position: absolute; right: 0px; margin-top: 0.5rem; z-index: 50;">
+              <div class="py-1" role="none">
+                <a href="perfil.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem" tabindex="-1">
+                  <i class="fas fa-user-circle mr-2"></i>Mi perfil
+                </a>
+                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem" tabindex="-1">
+                  <i class="fas fa-cog mr-2"></i>Configuración
+                </a>
+                <button id="sign-out-button" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50" role="menuitem" tabindex="-1">
+                  <i class="fas fa-sign-out-alt mr-2"></i>Cerrar sesión
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Botón menú móvil -->
+          <div class="md:hidden ml-4">
+            <button type="button" id="mobile-menu-button" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500">
+              <span class="sr-only">Abrir menú principal</span>
+              <i class="fas fa-bars h-6 w-6"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Menú móvil (oculto por defecto) -->
+    <div id="mobile-menu" class="hidden md:hidden bg-white shadow-md">
+      <div class="px-2 pt-2 pb-3 space-y-1">
+        <a href="dashboard.html" class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md">Inicio</a>
+        <a href="catalogo_fix.html" class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md">Catálogo</a>
+        <a href="pedidos.html" class="block px-3 py-2 text-base font-medium text-blue-600 bg-blue-50 rounded-md">Mis Pedidos</a>
+        <a href="pqrs.html" class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md">PQRS</a>
+        <a href="pagos.html" class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md flex items-center">
+          <i class="fas fa-credit-card mr-2"></i>Mis Pagos
+        </a>
+        <button class="w-full text-left px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md flex items-center">
+          <i class="fas fa-robot mr-2"></i>IACHAT
+        </button>
+        <a href="carrito.html" class="block w-full text-left px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md">
+          <div class="flex items-center">
+            <i class="fas fa-shopping-cart mr-2"></i>
+            Carrito
+            <span id="mobile-cart-count" class="ml-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">0</span>
+          </div>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Contenido principal -->
+  <main class="flex-grow">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div class="mb-8">
+        <h1 class="text-2xl font-bold text-gray-900">Mis Pedidos</h1>
+        <p class="mt-2 text-sm text-gray-600">Revisa el estado de tus pedidos recientes</p>
+      </div>
+
+      <!-- Filtros -->
+      <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        <div class="relative w-full sm:w-64 mb-4 sm:mb-0">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <i class="fas fa-search text-gray-400"></i>
+          </div>
+          <input type="text" id="search-orders" class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Buscar pedidos...">
+        </div>
+        <div class="flex space-x-2">
+          <select id="filter-status" class="block w-full sm:w-40 pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+            <option value="">Todos los estados</option>
+            <option value="Pendiente">Pendiente</option>
+            <option value="En proceso">En proceso</option>
+            <option value="Enviado">Enviado</option>
+            <option value="Entregado">Entregado</option>
+            <option value="Cancelado">Cancelado</option>
+          </select>
+          <select id="sort-orders" class="block w-full sm:w-48 pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+            <option value="newest">Más recientes primero</option>
+            <option value="oldest">Más antiguos primero</option>
+            <option value="amount-asc">Menor a mayor monto</option>
+            <option value="amount-desc">Mayor a menor monto</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Mensaje de carga -->
+      <div id="loading" class="flex justify-center items-center py-12">
+        <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+
+      <!-- Mensaje de error -->
+      <div id="error-message" class="hidden bg-red-50 border-l-4 border-red-400 p-4 mb-6">
+        <div class="flex">
+          <div class="flex-shrink-0">
+            <i class="fas fa-exclamation-circle text-red-400"></i>
+          </div>
+          <div class="ml-3">
+            <p id="error-text" class="text-sm text-red-700"></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lista de pedidos -->
+      <div id="orders-container" class="space-y-4">
+        <!-- Los pedidos se cargarán aquí dinámicamente -->
+      </div>
+
+      <!-- Plantilla para un pedido -->
+      <template id="order-template">
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-4">
+          <div class="px-4 py-5 sm:px-6 flex justify-between items-center">
+            <div>
+              <h3 class="text-lg leading-6 font-medium text-gray-900">
+                Orden #<span class="order-id"></span>
+              </h3>
+              <p class="mt-1 max-w-2xl text-sm text-gray-500">
+                Realizado el <span class="order-date"></span>
+              </p>
+            </div>
+            <span class="order-status px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full">
+              <!-- Estado del pedido -->
+            </span>
+          </div>
+          <div class="border-t border-gray-200">
+            <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+              <div>
+                <dt class="text-sm font-medium text-gray-500">
+                  Total
+                </dt>
+                <dd class="mt-1 text-sm text-gray-900 order-total">
+                  <!-- Total del pedido -->
+                </dd>
+              </div>
+              <div>
+                <dt class="text-sm font-medium text-gray-500">
+                  Tienda
+                </dt>
+                <dd class="mt-1 text-sm text-gray-900 store-name">
+                  <!-- Nombre de la tienda -->
+                </dd>
+              </div>
+              <div class="mt-4 sm:mt-0">
+                <dt class="text-sm font-medium text-gray-500">
+                  Acciones
+                </dt>
+                <dd class="mt-1 text-sm text-blue-600">
+                  <a href="#" class="view-order-details hover:text-blue-500">
+                    Ver detalles <i class="fas fa-chevron-right text-xs ml-1"></i>
+                    <a href="devoluciones.html" class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md flex items-center">Devoluciones</a>
+                  </a>
+                </dd>
+              </div>
+            </div>
+          </div>
+          </div>
+        </div>
+      </template>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-white border-t border-gray-200 mt-12">
+    <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <!-- Columna 1: Información -->
+        <div>
+          <h3 class="text-lg font-semibold text-gray-900">Horizont</h3>
+          <p class="mt-4 text-sm text-gray-500">Tu plataforma de compras B2B favorita con créditos flexibles y excelentes ofertas.</p>
+        </div>
+        
+        <!-- Columna 2: Enlaces rápidos -->
+        <div>
+          <h3 class="text-lg font-semibold text-gray-900">Enlaces rápidos</h3>
+          <ul class="mt-4 space-y-2">
+            <li><a href="dashboard.html" class="text-sm text-gray-500 hover:text-gray-900">Inicio</a></li>
+            <li><a href="catalogo_fix.html" class="text-sm text-gray-500 hover:text-gray-900">Catálogo</a></li>
+            <li><a href="pedidos.html" class="text-sm text-gray-500 hover:text-gray-900">Mis Pedidos</a></li>
+          </ul>
+        </div>
+        
+        <!-- Columna 3: Soporte -->
+        <div>
+          <h3 class="text-lg font-semibold text-gray-900">Soporte</h3>
+          <ul class="mt-4 space-y-2">
+            <li><a href="#" class="text-sm text-gray-500 hover:text-gray-900">Centro de ayuda</a></li>
+            <li><a href="#" class="text-sm text-gray-500 hover:text-gray-900">Contáctanos</a></li>
+            <li><a href="#" class="text-sm text-gray-500 hover:text-gray-900">Términos y condiciones</a></li>
+            <li><a href="#" class="text-sm text-gray-500 hover:text-gray-900">Política de privacidad</a></li>
+          </ul>
+        </div>
+        
+        <!-- Columna 4: Contacto -->
+        <div>
+          <h3 class="text-lg font-semibold text-gray-900">Contacto</h3>
+          <ul class="mt-4 space-y-2">
+            <li class="flex items-center text-sm text-gray-500">
+              <i class="fas fa-envelope mr-2"></i> info@horizont.com
+            </li>
+            <li class="flex items-center text-sm text-gray-500">
+              <i class="fas fa-phone-alt mr-2"></i> +57 123 456 7890
+            </li>
+            <li class="flex items-start text-sm text-gray-500">
+              <i class="fas fa-map-marker-alt mt-1 mr-2"></i>
+              <span>Carrera 25 #34-65, Medellín, Colombia</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+      
+      <div class="mt-8 pt-8 border-t border-gray-200">
+        <p class="text-sm text-gray-500 text-center">&copy; 2025 Horizont. Todos los derechos reservados.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/user-avatar.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+  <script src="js/pedidos.js"></script>
+</body>
+</html>

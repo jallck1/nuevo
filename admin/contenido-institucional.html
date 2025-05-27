@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contenido Institucional - Administración</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="css/admin.css">
+    <!-- TinyMCE -->
+    <script src="https://cdn.tiny.cloud/1/2gywm6imoyr9tgrsrf0lvkybc7zrzdhobai05zp8obrxwc4y/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+    <script>
+    // Configuración global de TinyMCE
+    document.addEventListener('DOMContentLoaded', function() {
+        // Inicializar TinyMCE solo cuando el DOM esté completamente cargado
+        tinymce.init({
+            selector: '.tinymce-editor',
+            height: 400,
+            menubar: false,
+            plugins: 'link lists table code help',
+            toolbar: 'undo redo | formatselect | bold italic backcolor | \
+                    alignleft aligncenter alignright alignjustify | \
+                    bullist numlist outdent indent | removeformat | help',
+            content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 14px; }',
+            setup: function(editor) {
+                editor.on('init', function() {
+                    console.log('Editor inicializado:', editor.id);
+                });
+            },
+            // Configuración específica para la API key
+            apiKey: '2gywm6imoyr9tgrsrf0lvkybc7zrzdhobai05zp8obrxwc4y',
+            // Deshabilitar mensajes de consola
+            branding: false,
+            // Configuración de la barra de herramientas
+            toolbar_mode: 'wrap',
+            // Configuración de estilos
+            style_formats: [
+                { title: 'Encabezados', items: [
+                    { title: 'Título 1', format: 'h1' },
+                    { title: 'Título 2', format: 'h2' },
+                    { title: 'Título 3', format: 'h3' }
+                ]},
+                { title: 'Inline', items: [
+                    { title: 'Negrita', icon: 'bold', format: 'bold' },
+                    { title: 'Cursiva', icon: 'italic', format: 'italic' },
+                    { title: 'Subrayado', format: 'underline' },
+                    { title: 'Tachado', format: 'strikethrough' }
+                ]}
+            ]
+        });
+    });
+    </script>
+    <style>
+        .content-card {
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+        }
+        .content-body {
+            flex: 1;
+            overflow: auto;
+        }
+        .tox-tinymce {
+            border-radius: 0.375rem !important;
+            min-height: 300px;
+        }
+    </style>
+    <style>
+        .tox-tinymce {
+            border-radius: 0.375rem !important;
+        }
+        .tox .tox-toolbar__primary {
+            background: #f8f9fa !important;
+        }
+        
+        /* Estilos para las imágenes */
+        .image-preview {
+            position: relative;
+            height: 150px;
+            overflow: hidden;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .image-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .image-actions {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            display: none;
+        }
+        
+        .image-preview:hover .image-actions {
+            display: flex;
+            gap: 0.25rem;
+        }
+        
+        .image-upload-card {
+            border: 2px dashed #dee2e6;
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .image-upload-card:hover {
+            border-color: #0d6efd;
+            background-color: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav class="col-md-3 col-lg-2 d-md-block bg-light sidebar">
+                <div class="position-sticky pt-3">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="dashboard.html">
+                                <i class="fas fa-home me-2"></i> Inicio
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" href="#">
+                                <i class="fas fa-file-alt me-2"></i> Contenido Institucional
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Contenido principal -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">Contenido Institucional</h1>
+                </div>
+
+                <div class="row">
+                    <!-- Quiénes Somos -->
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">Quiénes Somos</h5>
+                            </div>
+                            <div class="card-body d-flex flex-column">
+                                <div id="quienes-somos-content" class="content-body mb-3">
+                                    <!-- Contenido se cargará aquí -->
+                                </div>
+                                <div class="mt-auto">
+                                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editQuienesSomosModal">
+                                        <i class="fas fa-edit me-1"></i> Editar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Política de Datos -->
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">Política de Protección de Datos</h5>
+                            </div>
+                            <div class="card-body d-flex flex-column">
+                                <div id="politica-datos-content" class="content-body mb-3">
+                                    <!-- Contenido se cargará aquí -->
+                                </div>
+                                <div class="mt-auto">
+                                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editPoliticaDatosModal">
+                                        <i class="fas fa-edit me-1"></i> Editar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Términos y Condiciones -->
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">Términos y Condiciones</h5>
+                            </div>
+                            <div class="card-body d-flex flex-column">
+                                <div id="terminos-condiciones-content" class="content-body mb-3">
+                                    <!-- Contenido se cargará aquí -->
+                                </div>
+                                <div class="mt-auto">
+                                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editTerminosModal">
+                                        <i class="fas fa-edit me-1"></i> Editar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Contacto -->
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">Información de Contacto</h5>
+                            </div>
+                            <div class="card-body d-flex flex-column">
+                                <div id="contacto-content" class="content-body mb-3">
+                                    <!-- Contenido se cargará aquí -->
+                                </div>
+                                <div class="mt-auto">
+                                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editContactoModal">
+                                        <i class="fas fa-edit me-1"></i> Editar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Modal Editar Quiénes Somos -->
+    <div class="modal fade" id="editQuienesSomosModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">Editar Quiénes Somos</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editQuienesSomosForm">
+                        <!-- Sección de imágenes -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold mb-3">Imágenes</label>
+                            <div class="row g-3" id="image-upload-container">
+                                <!-- Las miniaturas de imágenes se agregarán aquí dinámicamente -->
+                                <div class="col-6 col-md-4">
+                                    <div class="image-upload-card" style="cursor: pointer;" onclick="document.getElementById('image-upload').click()">
+                                        <div class="card h-100">
+                                            <div class="card-body text-center d-flex flex-column justify-content-center align-items-center" style="min-height: 150px;">
+                                                <i class="fas fa-plus-circle fa-3x text-muted mb-2"></i>
+                                                <span class="text-muted">Agregar imagen</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <input type="file" id="image-upload" class="d-none" accept="image/*" multiple>
+                            <div class="form-text">Puedes subir hasta 5 imágenes. Tamaño máximo: 5MB por imagen.</div>
+                        </div>
+
+                        <!-- Editor de texto -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Contenido</label>
+                            <textarea class="form-control tinymce-editor" id="quienes-somos-editor"></textarea>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">
+                                <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                                Guardar Cambios
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Editar Política de Datos -->
+    <div class="modal fade" id="editPoliticaDatosModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">Editar Política de Protección de Datos</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editPoliticaDatosForm">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Contenido</label>
+                            <textarea class="form-control tinymce-editor" id="politica-datos-editor"></textarea>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">
+                                <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                                Guardar Cambios
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Editar Términos y Condiciones -->
+    <div class="modal fade" id="editTerminosModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">Editar Términos y Condiciones</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editTerminosForm">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Contenido</label>
+                            <textarea class="form-control tinymce-editor" id="terminos-condiciones-editor"></textarea>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">
+                                <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                                Guardar Cambios
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Editar Contacto -->
+    <div class="modal fade" id="editContactoModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">Editar Información de Contacto</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editContactoForm">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Contenido</label>
+                            <textarea class="form-control tinymce-editor" id="contacto-editor"></textarea>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">
+                                <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                                Guardar Cambios
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="js/contenido-institucional.js"></script>
+    <script>
+        // Inicialización de TinyMCE para cada editor
+        document.addEventListener('DOMContentLoaded', function() {
+            // Configuración común para todos los editores
+            const editorConfig = {
+                selector: 'textarea',
+                plugins: 'advlist autolink lists link image charmap print preview anchor',
+                toolbar: 'undo redo | formatselect | bold italic backcolor | \
+                         alignleft aligncenter alignright alignjustify | \
+                         bullist numlist outdent indent | removeformat | help',
+                menubar: false,
+                height: 400,
+                content_style: 'body { font-family: Arial, sans-serif; font-size: 14px; }',
+                setup: function(editor) {
+                    editor.on('change', function() {
+                        editor.save();
+                    });
+                }
+            };
+
+            // Inicializar cada editor
+            tinymce.init({
+                ...editorConfig,
+                selector: '#quienes-somos-editor'
+            });
+
+            tinymce.init({
+                ...editorConfig,
+                selector: '#politica-datos-editor'
+            });
+
+            tinymce.init({
+                ...editorConfig,
+                selector: '#terminos-condiciones-editor'
+            });
+
+            tinymce.init({
+                ...editorConfig,
+                selector: '#contacto-editor'
+            });
+        });
+    </script>
+</body>
+</html>

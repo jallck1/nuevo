@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Carrito de Compras - CrediControl</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+  </style>
+</head>
+
+
+<body class="bg-gray-100 min-h-screen flex flex-col">
+  <!-- Header -->
+  <header class="bg-white shadow-sm sticky top-0 z-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <!-- Logo y menú principal -->
+        <div class="flex items-center space-x-6">
+          <!-- Logo -->
+          <div class="flex-shrink-0">
+            <a href="dashboard.html" class="flex items-center">
+              <span class="text-xl font-bold text-blue-600">CrediControl</span>
+            </a>
+          </div>
+
+          <!-- Menú de navegación -->
+          <nav class="hidden md:flex items-center space-x-4">
+            <a href="dashboard.html" class="text-gray-500 hover:text-gray-700 px-3 py-2 text-sm font-medium">Inicio</a>
+            <a href="catalogo_fix.html" class="text-gray-500 hover:text-gray-700 px-3 py-2 text-sm font-medium">Catálogo</a>
+            <a href="pedidos.html" class="text-gray-500 hover:text-gray-700 px-3 py-2 text-sm font-medium">Mis Pedidos</a>
+            <a href="pqrs.html" class="text-gray-500 hover:text-gray-700 px-3 py-2 text-sm font-medium">PQRS</a>
+            <a href="pagos.html" class="text-gray-500 hover:text-gray-700 px-3 py-2 text-sm font-medium">Mis Pagos</a>
+            
+            <!-- Botón IACHAT -->
+            <button id="iachat-button" class="flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+              <i class="fas fa-robot mr-2"></i>
+              IACHAT
+            </button>
+            
+            <!-- Botón Mapa -->
+            <a href="https://www.google.com/maps/place/Cra.+45+%2348-43,+La+Candelaria,+Medell%C3%ADn,+La+Candelaria,+Medell%C3%ADn,+Antioquia/@6.2442039,-75.5732233,17z/data=!3m1!4b1!4m6!3m5!1s0x8e4428f3d2f9b7c5:0x4b5d8e8a9e8e8e8e!8m2!3d6.2442039!4d-75.5706426!16s%2Fg%2F11c5k5k5k5?entry=ttu" 
+               target="_blank" 
+               class="flex items-center px-3 py-2 text-sm font-medium text-gray-700 hover:text-blue-600">
+              <i class="fas fa-map-marker-alt text-red-500 mr-1"></i>
+              Nuestra Tienda
+            </a>
+          </nav>
+        </div>
+
+        <!-- Menú de usuario -->
+        <div class="flex items-center space-x-4">
+          <!-- Botón Carrito (activo) -->
+          <a href="carrito.html" class="relative p-2 text-blue-600 focus:outline-none">
+            <i class="fas fa-shopping-cart text-xl"></i>
+            <span id="cart-count" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center hidden">0</span>
+          </a>
+          
+          <div class="relative">
+            <button id="user-menu-button" class="flex items-center justify-center h-8 w-8 rounded-full bg-blue-100 text-blue-700 font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" data-initials="U">
+              <span id="user-initials" class="text-sm font-medium">U</span>
+              <img id="user-avatar" class="h-8 w-8 rounded-full hidden" src="" alt="Usuario">
+            </button>
+            <div id="user-menu" class="hidden origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none" role="menu" aria-orientation="vertical" tabindex="-1" style="position: absolute; right: 0px; margin-top: 0.5rem; z-index: 50;">
+              <div class="py-1" role="none">
+                <a href="perfil.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem" tabindex="-1">
+                  <i class="fas fa-user-circle mr-2"></i>Mi perfil
+                </a>
+                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem" tabindex="-1">
+                  <i class="fas fa-cog mr-2"></i>Configuración
+                </a>
+                <button id="sign-out-button" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50" role="menuitem" tabindex="-1">
+                  <i class="fas fa-sign-out-alt mr-2"></i>Cerrar sesión
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Botón menú móvil -->
+          <div class="md:hidden ml-4">
+            <button type="button" id="mobile-menu-button" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500">
+              <span class="sr-only">Abrir menú principal</span>
+              <i class="fas fa-bars h-6 w-6"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Menú móvil (oculto por defecto) -->
+    <div id="mobile-menu" class="hidden md:hidden bg-white shadow-md">
+      <div class="px-2 pt-2 pb-3 space-y-1">
+        <a href="dashboard.html" class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md">Inicio</a>
+        <a href="catalogo_fix.html" class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md">Catálogo</a>
+        <a href="pedidos.html" class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md">Mis Pedidos</a>
+        <a href="pqrs.html" class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md">PQRS</a>
+        <a href="pagos.html" class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md flex items-center">
+          <i class="fas fa-credit-card mr-2"></i>Mis Pagos
+        </a>
+        <button class="w-full text-left px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md flex items-center">
+          <i class="fas fa-robot mr-2"></i>IACHAT
+        </button>
+        <a href="carrito.html" class="block px-3 py-2 text-base font-medium text-blue-600 bg-blue-50 rounded-md flex items-center">
+          <i class="fas fa-shopping-cart mr-2"></i>Carrito
+          <span class="ml-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">2</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Contenido principal -->
+  <main class="flex-grow py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="md:flex md:items-center md:justify-between mb-8">
+        
+
+        <div class="mt-4 flex-shrink-0 md:mt-0 md:ml-4">
+          <a href="catalogo_fix.html" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+            <i class="fas fa-arrow-left mr-2"></i>
+            Seguir comprando
+          </a>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Lista de productos -->
+        <div class="lg:col-span-2">
+          <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+            <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+              <h3 class="text-lg leading-6 font-medium text-gray-900">
+                Productos en el carrito <span id="cart-items-count">(0)</span>
+              </h3>
+            </div>
+            <!-- Contenedor para los productos del carrito -->
+            <div id="cart-content" class="hidden">
+              <ul id="cart-items" class="divide-y divide-gray-200">
+                <!-- Los productos del carrito se cargarán aquí dinámicamente -->
+              </ul>
+            </div>
+            
+            <!-- Mensaje de carrito vacío -->
+            <div id="empty-cart-message" class="p-12 text-center">
+              <i class="fas fa-shopping-cart text-5xl text-gray-300 mb-4"></i>
+              <h3 class="text-lg font-medium text-gray-900">Tu carrito está vacío</h3>
+              <p class="mt-2 text-gray-500">Agrega productos desde el catálogo para comenzar a comprar</p>
+              <a href="catalogo_fix.html" class="mt-6 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                <i class="fas fa-arrow-left mr-2"></i>
+                Ir al catálogo
+              </a>
+            </div>
+          </div>
+            
+            <!-- Código de descuento -->
+            <div class="border-t border-gray-200 px-4 py-6 sm:px-6">
+              <div class="flex">
+                <input type="text" id="discount-code" name="discount-code" placeholder="Código de descuento" class="flex-1 border-gray-300 rounded-l-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                <button type="submit" class="bg-gray-200 text-gray-700 px-4 py-2 text-sm font-medium rounded-r-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                  Aplicar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Resumen del pedido -->
+        <div class="lg:col-span-1">
+          <div class="bg-white shadow rounded-lg p-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-6">Resumen del pedido</h3>
+            
+            <div class="space-y-3">
+              <div class="flex justify-between">
+                <span class="text-gray-600">Subtotal (<span id="cart-items-count-summary">0</span> productos)</span>
+                <span id="cart-subtotal" class="font-medium">$0</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">IVA (19%)</span>
+                <span id="cart-taxes" class="font-medium">$0</span>
+              </div>
+              <div class="flex justify-between text-green-600" id="discount-row">
+                <span class="text-gray-600">Descuentos</span>
+                <span id="cart-discounts" class="font-medium">-$0</span>
+              </div>
+              <div class="flex justify-between border-t border-gray-200 pt-3">
+                <span class="text-base font-medium">Total a pagar</span>
+                <div class="text-right">
+                  <div id="cart-total" class="text-xl font-bold text-blue-600">$0</div>
+                  <div class="text-xs text-gray-500">IVA incluido</div>
+                </div>
+              </div>
+              
+              <div class="mt-6 space-y-4">
+              <!-- Sección de crédito disponible -->
+              <div class="bg-blue-50 p-4 rounded-md">
+                <div class="flex justify-between items-center">
+                  <span class="text-sm font-medium text-blue-800">Crédito disponible:</span>
+                  <span id="available-credit" class="text-lg font-bold text-blue-900">$0.00</span>
+                </div>
+                <div class="mt-2 w-full bg-gray-200 rounded-full h-2.5">
+                  <div id="credit-progress" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
+                </div>
+                <p id="credit-message" class="mt-1 text-xs text-blue-700"></p>
+              </div>
+              
+              <!-- Botones de pago -->
+              <div class="space-y-3">
+                <button id="pay-with-credit" class="w-full flex justify-center items-center px-6 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
+                  <i class="fas fa-credit-card mr-2"></i>
+                  Pagar con crédito
+                </button>
+                <button id="pay-with-nequi" class="w-full flex justify-center items-center px-6 py-3 border border-gray-300 rounded-md shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                  <img src="https://www.vectorlogo.zone/logos/nequi/nequi-tile.svg" alt="Nequi" class="h-5 w-5 mr-2">
+                  Pagar con Nequi
+                </button>
+              </div>
+            </div>
+              
+              <div class="mt-4 text-center text-sm text-gray-500">
+                <p>o <a href="catalogo_fix.html" class="text-blue-600 font-medium hover:text-blue-500">continuar comprando</a></p>
+              </div>
+              
+              <div class="mt-6">
+                <h4 class="text-sm font-medium text-gray-900 mb-2">Métodos de pago</h4>
+                <div class="grid grid-cols-4 gap-2">
+                  <div class="border rounded-md p-2 flex items-center justify-center">
+                    <i class="fab fa-cc-visa text-2xl text-blue-600"></i>
+                  </div>
+                  <div class="border rounded-md p-2 flex items-center justify-center">
+                    <i class="fab fa-cc-mastercard text-2xl text-red-600"></i>
+                  </div>
+                  <div class="border rounded-md p-2 flex items-center justify-center">
+                    <i class="fab fa-cc-amex text-2xl text-blue-700"></i>
+                  </div>
+                  <div class="border rounded-md p-2 flex items-center justify-center">
+                    <i class="fas fa-money-bill-wave text-2xl text-green-600"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Información de seguridad -->
+          <div class="mt-6 bg-blue-50 rounded-lg p-4">
+            <div class="flex">
+              <div class="flex-shrink-0">
+                <i class="fas fa-lock text-blue-500"></i>
+              </div>
+              <div class="ml-3">
+                <h3 class="text-sm font-medium text-blue-800">Compra segura</h3>
+                <div class="mt-2 text-sm text-blue-700">
+                  <p>Tu información está protegida con encriptación SSL de 256 bits.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-white border-t border-gray-200 mt-12">
+    <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <!-- Columna 1: Información -->
+        <div>
+          <h3 class="text-lg font-semibold text-gray-900">CrediControl</h3>
+          <p class="mt-4 text-sm text-gray-500">Tu tienda en línea confiable para todas tus necesidades de compra.</p>
+        </div>
+        
+        <!-- Columna 2: Enlaces rápidos -->
+        <div>
+          <h3 class="text-lg font-semibold text-gray-900">Enlaces rápidos</h3>
+          <ul class="mt-4 space-y-2">
+            <li><a href="dashboard.html" class="text-sm text-gray-500 hover:text-gray-900">Inicio</a></li>
+            <li><a href="catalogo_fix.html" class="text-sm text-gray-500 hover:text-gray-900">Catálogo</a></li>
+            <li><a href="pedidos.html" class="text-sm text-gray-500 hover:text-gray-900">Mis Pedidos</a></li>
+          </ul>
+        </div>
+        
+        <!-- Columna 3: Información institucional -->
+        <div>
+          <h3 class="text-lg font-semibold text-gray-900">Institucional</h3>
+          <ul class="mt-4 space-y-2">
+            <li><a href="#" class="text-sm text-gray-500 hover:text-gray-900">Quiénes Somos</a></li>
+            <li><a href="#" class="text-sm text-gray-500 hover:text-gray-900">Contáctenos</a></li>
+            <li><a href="#" class="text-sm text-gray-500 hover:text-gray-900">PQRS</a></li>
+          </ul>
+        </div>
+        
+        <!-- Columna 4: Términos y privacidad -->
+        <div>
+          <h3 class="text-lg font-semibold text-gray-900">Términos y Privacidad</h3>
+          <ul class="mt-4 space-y-2">
+            <li><a href="politica-datos.html" class="text-sm text-gray-500 hover:text-gray-900">Políticas de Privacidad</a></li>
+            <li><a href="terminos-condiciones.html" class="text-sm text-gray-500 hover:text-gray-900">Términos y Condiciones</a></li>
+            <li><a href="quienes-somos.html" class="text-sm text-gray-500 hover:text-gray-900">Quiénes Somos</a></li>
+            <li><a href="contacto.html" class="text-sm text-gray-500 hover:text-gray-900">Contacto</a></li>
+          </ul>
+        </div>
+      </div>
+      
+      <div class="mt-12 pt-8 border-t border-gray-200">
+        <div class="flex flex-col md:flex-row justify-between items-center">
+          <p class="text-sm text-gray-500">&copy; 2023 CrediControl. Todos los derechos reservados.</p>
+          <div class="mt-4 md:mt-0 flex space-x-6">
+            <a href="#" class="text-gray-400 hover:text-gray-500">
+              <span class="sr-only">Facebook</span>
+              <i class="fab fa-facebook"></i>
+            </a>
+            <a href="#" class="text-gray-400 hover:text-gray-500">
+              <span class="sr-only">Instagram</span>
+              <i class="fab fa-instagram"></i>
+            </a>
+            <a href="#" class="text-gray-400 hover:text-gray-500">
+              <span class="sr-only">Twitter</span>
+              <i class="fab fa-twitter"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    // Inicializar Supabase
+    const supabaseUrl = 'https://ywmspibcnhfmqmnutpyg.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl3bXNwaWJjbmhmbXFtbnV0cHlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc2ODE0OTMsImV4cCI6MjA2MzI1NzQ5M30.HtHovCDBs11eNh_KjrqNn6BgWFYyFuFpKo5iQLFmFpU';
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+    
+    // Inicializar cuando el DOM esté listo
+    document.addEventListener('DOMContentLoaded', function() {
+      // Inicializar menú móvil
+      const mobileMenuButton = document.getElementById('mobile-menu-button');
+      const mobileMenu = document.getElementById('mobile-menu');
+      
+      if (mobileMenuButton && mobileMenu) {
+        mobileMenuButton.addEventListener('click', function() {
+          mobileMenu.classList.toggle('hidden');
+        });
+      }
+
+      // Inicializar menú de usuario
+      const userMenuButton = document.getElementById('user-menu-button');
+      const userMenu = document.getElementById('user-menu');
+      
+      if (userMenuButton && userMenu) {
+        userMenuButton.addEventListener('click', function() {
+          userMenu.classList.toggle('hidden');
+        });
+      }
+
+      // Cerrar menús al hacer clic fuera
+      document.addEventListener('click', function(event) {
+        if (userMenuButton && !userMenuButton.contains(event.target) && 
+            userMenu && !userMenu.contains(event.target)) {
+          userMenu.classList.add('hidden');
+        }
+        
+        if (mobileMenuButton && !mobileMenuButton.contains(event.target) && 
+            mobileMenu && !mobileMenu.contains(event.target)) {
+          mobileMenu.classList.add('hidden');
+        }
+      });
+
+      // Cerrar sesión
+      const signOutButton = document.getElementById('sign-out-button');
+      if (signOutButton) {
+        signOutButton.addEventListener('click', async function() {
+          try {
+            const { error } = await supabase.auth.signOut();
+            if (error) throw error;
+            window.location.href = 'login.html';
+          } catch (error) {
+            console.error('Error al cerrar sesión:', error);
+            alert('Error al cerrar sesión. Por favor, inténtalo de nuevo.');
+          }
+        });
+      }
+    });
+  </script>
+  
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+<script src="js/carrito.js"></script>
+<script src="js/catalogo_fix.js"></script>
+</body>
+</html>

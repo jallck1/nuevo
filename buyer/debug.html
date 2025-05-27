@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Depuración de Supabase</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; padding: 20px; max-width: 800px; margin: 0 auto; }
+    pre { background: #f4f4f4; padding: 15px; border-radius: 5px; overflow-x: auto; }
+    .success { color: green; }
+    .error { color: red; }
+    .info { color: blue; }
+  </style>
+</head>
+<body>
+  <h1>Depuración de Supabase</h1>
+  <div id="output">Iniciando depuración...</div>
+
+  <script>
+    const supabaseUrl = 'https://ywmspibcnhfmqmnutpyg.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl3bXNwaWJjbmhmbXFtbnV0cHlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc2ODE0OTMsImV4cCI6MjA2MzI1NzQ5M30.HtHovCDBs11eNh_KjrqNn6BgWFYyFuFpKo5iQLFmFpU';
+    
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+    const output = document.getElementById('output');
+
+    function log(message, type = 'info') {
+      const p = document.createElement('p');
+      p.className = type;
+      p.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+      output.prepend(p);
+      console.log(`[${type.toUpperCase()}] ${message}`);
+    }
+
+    async function checkSession() {
+      try {
+        log('🔍 Verificando sesión...');
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) throw error;
+        
+        if (!session) {
+          log('⚠️ No hay sesión activa', 'error');
+          return null;
+        }
+        
+        log(`✅ Sesión activa. Usuario ID: ${session.user.id}`, 'success');
+        log(`📧 Email: ${session.user.email}`, 'info');
+        
+        return session.user;
+      } catch (error) {
+        log(`❌ Error al verificar sesión: ${error.message}`, 'error');
+        return null;
+      }
+    }
+
+    async function getUserProfile(userId) {
+      try {
+        log(`🔍 Obteniendo perfil para usuario: ${userId}...`);
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .single();
+        
+        if (error) throw error;
+        
+        log(`📋 Perfil obtenido:`, 'success');
+        log(JSON.stringify(profile, null, 2), 'info');
+        
+        return profile;
+      } catch (error) {
+        log(`❌ Error al obtener perfil: ${error.message}`, 'error');
+        return null;
+      }
+    }
+
+    async function getStoreProducts(storeId) {
+      try {
+        log(`🛒 Obteniendo productos para tienda ID: ${storeId}...`);
+        const { data: products, error } = await supabase
+          .from('products')
+          .select('*')
+          .eq('store_id', storeId);
+        
+        if (error) throw error;
+        
+        log(`✅ ${products.length} productos encontrados`, 'success');
+        log(JSON.stringify(products, null, 2), 'info');
+        
+        return products;
+      } catch (error) {
+        log(`❌ Error al obtener productos: ${error.message}`, 'error');
+        return [];
+      }
+    }
+
+    // Función principal
+    async function debug() {
+      // 1. Verificar sesión
+      const user = await checkSession();
+      if (!user) return;
+      
+      // 2. Obtener perfil
+      const profile = await getUserProfile(user.id);
+      if (!profile || !profile.store_id) {
+        log('❌ No se pudo obtener el store_id del perfil', 'error');
+        return;
+      }
+      
+      // 3. Obtener productos de la tienda
+      const products = await getStoreProducts(profile.store_id);
+      log(`🎉 Depuración completada. Productos: ${products.length}`, 'success');
+    }
+
+    // Iniciar depuración
+    debug();
+  </script>
+</body>
+</html>

@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reportes - Panel de Administración</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- SheetJS para exportar a Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Script de configuración -->
+    <script>
+        // Configuración de Supabase
+        const SUPABASE_URL = 'https://ywmspibcnhfmqmnutpyg.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl3bXNwaWJjbmhmbXFtbnV0cHlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc2ODE0OTMsImV4cCI6MjA2MzI1NzQ5M30.HtHovCDBs11eNh_KjrqNn6BgWFYyFuFpKo5iQLFmFpU';
+        
+        // Inicializar Supabase
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        window.supabase = supabase;  // Hacerlo disponible globalmente
+        
+        // Esperar a que todo esté listo
+        document.addEventListener('DOMContentLoaded', () => {
+            // Inicializar elementos del DOM
+            const reportTableBody = document.getElementById('report-table-body');
+            const loading = document.getElementById('loading');
+            const currentPageInput = document.getElementById('current-page');
+            const totalItemsSpan = document.getElementById('total-items');
+            const showingFromSpan = document.getElementById('showing-from');
+            const showingToSpan = document.getElementById('showing-to');
+            const totalPagesSpan = document.getElementById('total-pages');
+            const prevPageBtn = document.getElementById('prev-page');
+            const nextPageBtn = document.getElementById('next-page');
+            const searchReportInput = document.getElementById('search-report');
+            const filterAllBtn = document.getElementById('filter-all');
+            const filterByDateBtn = document.getElementById('filter-by-date');
+            const exportBtn = document.getElementById('export-report');
+            
+            // Limpiar campos de fecha
+            const startDateInput = document.getElementById('start-date');
+            const endDateInput = document.getElementById('end-date');
+            if (startDateInput) startDateInput.value = '';
+            if (endDateInput) endDateInput.value = '';
+            
+            // Hacer las variables globales disponibles para reportes.js
+            window.reportTableBody = reportTableBody;
+            window.loading = loading;
+            window.currentPageInput = currentPageInput;
+            window.totalItemsSpan = totalItemsSpan;
+            window.showingFromSpan = showingFromSpan;
+            window.showingToSpan = showingToSpan;
+            window.totalPagesSpan = totalPagesSpan;
+            window.prevPageBtn = prevPageBtn;
+            window.nextPageBtn = nextPageBtn;
+            window.searchReportInput = searchReportInput;
+            window.filterAllBtn = filterAllBtn;
+            window.filterByDateBtn = filterByDateBtn;
+            window.exportBtn = exportBtn;
+            window.startDateInput = startDateInput;
+            window.endDateInput = endDateInput;
+            
+            // Cargar el script de reportes
+            const script = document.createElement('script');
+            script.src = 'js/reportes.js';
+            script.onload = function() {
+                console.log('Script reportes.js cargado correctamente');
+                if (typeof window.initApp === 'function') {
+                    console.log('Ejecutando initApp...');
+                    window.initApp();
+                } else {
+                    console.error('La función initApp no está definida en el objeto window');
+                }
+            };
+            script.onerror = function() {
+                console.error('Error al cargar el script reportes.js');
+            };
+            document.head.appendChild(script);
+            console.log('Añadiendo script al documento...');
+        });
+    </script>
+    <style>
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .tab-button.active {
+            border-bottom: 2px solid #3b82f6;
+            color: #2563eb;
+        }
+        .sidebar { transition: all 0.3s ease; }
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.active { transform: translateX(0); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 h-full">
+    <!-- Sidebar -->
+    <div class="sidebar fixed inset-y-0 left-0 w-64 bg-blue-800 text-white overflow-y-auto transition-transform duration-300 ease-in-out">
+        <div class="p-4 flex items-center justify-between border-b border-blue-700">
+            <h2 class="text-xl font-bold">Panel de Control</h2>
+            <button id="close-sidebar" class="md:hidden text-white">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <nav class="p-4">
+            <ul class="space-y-2">
+                <li>
+                    <a href="perfil.html" class="flex items-center p-2 rounded hover:bg-blue-700">
+                        <i class="fas fa-user mr-3 w-5 text-center"></i> Perfil
+                    </a>
+                </li>
+                <li>
+                    <a href="usuarios.html" class="flex items-center p-2 rounded hover:bg-blue-700">
+                        <i class="fas fa-users mr-3 w-5 text-center"></i> Usuarios
+                    </a>
+                </li>
+                <li>
+                    <a href="catalogo.html" class="flex items-center p-2 rounded hover:bg-blue-700">
+                        <i class="fas fa-box mr-3 w-5 text-center"></i> Catálogo
+                    </a>
+                </li>
+                <li>
+                    <a href="orders.html" class="flex items-center p-2 rounded hover:bg-blue-700">
+                        <i class="fas fa-shopping-cart mr-3 w-5 text-center"></i> Órdenes
+                    </a>
+                </li>
+                <li>
+                    <a href="pagos.html" class="flex items-center p-2 rounded hover:bg-blue-700">
+                        <i class="fas fa-money-bill-wave mr-3 w-5 text-center"></i> Pagos
+                    </a>
+                </li>
+                <li>
+                    <a href="reportes.html" class="flex items-center p-2 rounded bg-blue-700">
+                        <i class="fas fa-chart-bar mr-3 w-5 text-center"></i> Reportes
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="md:ml-64 min-h-screen">
+        <!-- Top Bar -->
+        <header class="bg-white shadow-sm">
+            <div class="flex items-center justify-between p-4">
+                <div class="flex items-center">
+                    <button id="menu-toggle" class="md:hidden text-gray-600 hover:text-gray-900 mr-4">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                    <h1 class="text-xl font-semibold">Reportes</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span id="user-name" class="hidden md:inline">Administrador</span>
+                    <i class="fas fa-user-circle text-2xl text-gray-500"></i>
+                </div>
+            </div>
+        </header>
+
+        <!-- Content -->
+        <main class="p-6">
+            <!-- Tabs Navigation -->
+            <div class="border-b border-gray-200 mb-6">
+                <nav class="flex space-x-8">
+                    <button id="tab-ventas" class="tab-button active px-4 py-2 text-sm font-medium" data-tab="ventas">
+                        <i class="fas fa-shopping-cart mr-2"></i>
+                        Órdenes/Ventas
+                    </button>
+                    <button id="tab-deudores" class="tab-button px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700" data-tab="deudores">
+                        <i class="fas fa-user-clock mr-2"></i>
+                        Deudores
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Sales Tab Content -->
+            <div id="ventas-content" class="tab-content active">
+                <!-- Filters -->
+                <div class="bg-white p-4 rounded-lg shadow mb-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-lg font-semibold">Filtros de Reporte</h2>
+                        <button id="export-ventas" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center">
+                            <i class="fas fa-file-export mr-2"></i> Exportar a CSV
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de Reporte</label>
+                            <select id="report-type" class="w-full rounded-md border-gray-300 shadow-sm">
+                                <option value="ordenes">Todas las Órdenes</option>
+                                <option value="ventas">Ventas Totales</option>
+                                <option value="hoy-ordenes">Órdenes de Hoy</option>
+                                <option value="hoy-ventas">Ventas de Hoy</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Fecha Inicio</label>
+                            <input type="date" id="start-date" class="w-full rounded-md border-gray-300 shadow-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Fecha Fin</label>
+                            <input type="date" id="end-date" class="w-full rounded-md border-gray-300 shadow-sm">
+                        </div>
+                        <div class="flex items-end">
+                            <button id="filter-btn" class="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                                <i class="fas fa-filter mr-2"></i>Filtrar
+                            </button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div class="bg-blue-50 p-4 rounded-lg">
+                            <h3 class="text-sm font-medium text-gray-500">Total Ventas</h3>
+                            <p id="total-sales" class="text-2xl font-bold">S/ 0.00</p>
+                        </div>
+                        <div class="bg-green-50 p-4 rounded-lg">
+                            <h3 class="text-sm font-medium text-gray-500">Total Órdenes</h3>
+                            <p id="total-orders" class="text-2xl font-bold">0</p>
+                        </div>
+                        <div class="bg-yellow-50 p-4 rounded-lg">
+                            <h3 class="text-sm font-medium text-gray-500">Productos Vendidos</h3>
+                            <p id="total-products" class="text-2xl font-bold">0</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Gráficos -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                        <!-- Gráfico de ventas por día -->
+                        <div class="bg-white p-4 rounded-lg shadow">
+                            <h3 class="text-lg font-semibold mb-4">Ventas por Día</h3>
+                            <div class="chart-container" style="position: relative; height: 300px;">
+                                <canvas id="sales-chart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <!-- Gráfico de productos más vendidos -->
+                        <div class="bg-white p-4 rounded-lg shadow">
+                            <h3 class="text-lg font-semibold mb-4">Productos Más Vendidos</h3>
+                            <div class="chart-container" style="position: relative; height: 300px;">
+                                <canvas id="top-products-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Segundo nivel de gráficos -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                        <div class="bg-white p-4 rounded-lg shadow">
+                            <h3 class="text-lg font-semibold mb-4">Estado de Órdenes</h3>
+                            <div class="chart-container" style="position: relative; height: 300px;">
+                                <canvas id="orders-status-chart"></canvas>
+                            </div>
+                        </div>
+                        <div class="bg-white p-4 rounded-lg shadow">
+                            <h3 class="text-lg font-semibold mb-4">Ventas por Categoría</h3>
+                            <div class="chart-container" style="position: relative; height: 300px;">
+                                <canvas id="sales-by-category-chart"></canvas>
+                            </div>
+                        </div>
+                        <div class="bg-white p-4 rounded-lg shadow">
+                            <h3 class="text-lg font-semibold mb-4">Métricas Adicionales</h3>
+                            <div class="space-y-4">
+                                <div class="border-b pb-2">
+                                    <p class="text-sm text-gray-500">Ticket Promedio</p>
+                                    <p id="avg-ticket" class="text-xl font-semibold">S/ 0.00</p>
+                                </div>
+                                <div class="border-b pb-2">
+                                    <p class="text-sm text-gray-500">Productos por Orden</p>
+                                    <p id="avg-products-per-order" class="text-xl font-semibold">0.0</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-500">Tasa de Conversión</p>
+                                    <p id="conversion-rate" class="text-xl font-semibold">0%</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Orders Table -->
+                <div class="bg-white rounded-lg shadow overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Productos</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody id="orders-table-body" class="bg-white divide-y divide-gray-200">
+                                <!-- Datos se cargarán aquí -->
+                            </tbody>
+                        </table>
+                        
+                        <!-- Paginación -->
+                        <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+                            <div class="flex-1 flex justify-between sm:hidden">
+                                <button id="prev-page-mobile" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                                    Anterior
+                                </button>
+                                <button id="next-page-mobile" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                                    Siguiente
+                                </button>
+                            </div>
+                            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-700">
+                                        Mostrando <span id="showing-from" class="font-medium">1</span> a 
+                                        <span id="showing-to" class="font-medium">10</span> de 
+                                        <span id="total-items" class="font-medium">0</span> resultados
+                                    </p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-700">
+                                        Página <span id="current-page" class="font-medium">1</span> de 
+                                        <span id="total-pages" class="font-medium">1</span>
+                                    </p>
+                                </div>
+                                <div>
+                                    <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                                        <button id="prev-page" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                            <span class="sr-only">Anterior</span>
+                                            <i class="fas fa-chevron-left"></i>
+                                        </button>
+                                        <div class="flex items-center px-4">
+                                            <span class="text-gray-700 text-sm">
+                                                <input type="number" id="current-page-input" min="1" value="1" class="w-12 text-center border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                            </span>
+                                            <span class="mx-2 text-gray-500">/</span>
+                                            <span id="total-pages-display" class="text-gray-700">1</span>
+                                        </div>
+                                        <button id="next-page" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                            <span class="sr-only">Siguiente</span>
+                                            <i class="fas fa-chevron-right"></i>
+                                        </button>
+                                    </nav>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Debtors Tab Content -->
+            <div id="deudores-content" class="tab-content">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-semibold">Reporte de Deudores</h2>
+                    <button id="export-deudores" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center">
+                        <i class="fas fa-file-export mr-2"></i> Exportar a Excel
+                    </button>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow mb-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-lg font-semibold">Reporte de Deudores</h2>
+                        <button id="export-deudores" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center">
+                            <i class="fas fa-file-export mr-2"></i> Exportar a Excel
+                        </button>
+                    </div>
+                    
+                    <!-- Métricas -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                        <div class="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                            <h3 class="text-sm font-medium text-gray-600">Total Deudores</h3>
+                            <p id="total-deudores" class="text-2xl font-bold text-blue-600">0</p>
+                        </div>
+                        <div class="bg-green-50 p-4 rounded-lg border border-green-100">
+                            <h3 class="text-sm font-medium text-gray-600">Deuda Total</h3>
+                            <p id="total-deuda" class="text-2xl font-bold text-green-600">S/ 0.00</p>
+                        </div>
+                        <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-100">
+                            <h3 class="text-sm font-medium text-gray-600">En Mora</h3>
+                            <p id="deudores-mora" class="text-2xl font-bold text-yellow-600">0</p>
+                        </div>
+                        <div class="bg-purple-50 p-4 rounded-lg border border-purple-100">
+                            <h3 class="text-sm font-medium text-gray-600">Al Día</h3>
+                            <p id="deudores-aldia" class="text-2xl font-bold text-purple-600">0</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Gráficos -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                        <div class="bg-white p-4 rounded-lg shadow">
+                            <div class="chart-container" style="position: relative; height: 300px;">
+                                <canvas id="deudores-estado-chart"></canvas>
+                            </div>
+                        </div>
+                        <div class="bg-white p-4 rounded-lg shadow">
+                            <div class="chart-container" style="position: relative; height: 300px;">
+                                <canvas id="top-deudores-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Tabla de Deudores -->
+                    <div class="overflow-x-auto bg-white rounded-lg shadow overflow-y-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Correo</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Teléfono</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Crédito Asignado</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Crédito Utilizado</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="deudores-table-body" class="bg-white divide-y divide-gray-200">
+                                <!-- Los datos se cargarán aquí dinámicamente -->
+                            </tbody>
+                        </table>
+                        
+                        <!-- Paginación -->
+                        <div id="deudores-pagination" class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+                            <!-- La paginación se generará dinámicamente -->
+                        </div>
+
+                        <!-- Tabla de Pagos -->
+                        <div class="mt-8">
+                            <h3 class="text-lg font-medium text-gray-900 mb-4">Historial de Pagos</h3>
+                            <div class="overflow-x-auto">
+                                <table id="pagos-table" class="min-w-full divide-y divide-gray-200">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID Pago</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monto</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Método</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notas</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="pagos-body" class="bg-white divide-y divide-gray-200">
+                                        <!-- Los datos se cargarán dinámicamente -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <!-- Paginación de pagos -->
+                            <div id="pagos-pagination" class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 mt-4">
+                                <!-- La paginación se generará dinámicamente -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal de Exportación -->
+    <div id="export-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg w-full max-w-md mx-4">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold">Exportar Reporte</h3>
+                    <button id="close-export-modal" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Tipo de Reporte</label>
+                        <select id="export-type" class="w-full border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="ventas">Ventas</option>
+                            <option value="productos">Productos Más Vendidos</option>
+                            <option value="ordenes">Órdenes por Fecha</option>
+                            <option value="ventas-completadas">Ventas Completadas</option>
+                            <option value="ventas-pendientes">Ventas Pendientes</option>
+                            <option value="deudores">Deudores</option>
+                            <option value="deudores-vencidos">Deudores Vencidos</option>
+                        </select>
+                    </div>
+                    <div id="export-date-range" class="space-y-2">
+                        <label class="block text-sm font-medium text-gray-700">Rango de Fechas</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <input type="date" id="export-start-date" class="border border-gray-300 rounded-md p-2 w-full">
+                            <input type="date" id="export-end-date" class="border border-gray-300 rounded-md p-2 w-full">
+                        </div>
+                    </div>
+                    <div class="flex justify-end space-x-3 pt-4">
+                        <button id="cancel-export" type="button" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+                            Cancelar
+                        </button>
+                        <button id="confirm-export" type="button" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                            <i class="fas fa-file-export mr-2"></i> Exportar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Detalle de Deudor -->
+    <div id="modal-detalle-deudor" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold">Detalles del Deudor</h3>
+                    <button onclick="cerrarModalDetalle()" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <!-- El contenido se cargará dinámicamente -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Exportación de Reporte -->
+    <div id="modal-exportar-reporte" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg w-full max-w-md mx-4">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold">Exportar Reporte</h3>
+                    <button onclick="cerrarModalExportar()" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="space-y-4">
+                    <p class="text-gray-600">Seleccione el tipo de reporte que desea exportar:</p>
+                    <div class="space-y-2">
+                        <button onclick="exportarReporteSeleccionado('todos')" class="w-full flex items-center justify-between p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
+                            <div class="flex items-center">
+                                <i class="fas fa-users text-blue-600 mr-3"></i>
+                                <span>Todos los Deudores</span>
+                            </div>
+                            <i class="fas fa-chevron-right text-gray-400"></i>
+                        </button>
+                        <button onclick="exportarReporteSeleccionado('morosos')" class="w-full flex items-center justify-between p-4 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">
+                            <div class="flex items-center">
+                                <i class="fas fa-exclamation-triangle text-red-600 mr-3"></i>
+                                <span>Clientes en Mora</span>
+                            </div>
+                            <i class="fas fa-chevron-right text-gray-400"></i>
+                        </button>
+                        <button onclick="exportarReporteSeleccionado('pagos')" class="w-full flex items-center justify-between p-4 bg-green-50 hover:bg-green-100 rounded-lg transition-colors">
+                            <div class="flex items-center">
+                                <i class="fas fa-credit-card text-green-600 mr-3"></i>
+                                <span>Historial de Pagos</span>
+                            </div>
+                            <i class="fas fa-chevron-right text-gray-400"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-end space-x-3">
+                    <button onclick="cerrarModalExportar()" class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                        Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script de reportes -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="js/reportes.js"></script>
+</body>
+</html>
