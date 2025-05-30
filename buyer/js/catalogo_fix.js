@@ -46,28 +46,49 @@ function displayProducts(productsToShow) {
   }
 
   const productsHTML = productsToShow.map(product => {
-    // Calcular precios con impuestos y descuentos
+    // Obtener precios directamente del producto
     const price = parseFloat(product.price || 0);
-    const taxRate = 0.19; // 19% de IVA
-    const tax = price * taxRate;
-    const discount = product.discount ? parseFloat(product.discount) : 0;
-    const discountAmount = price * (discount / 100);
-    const finalPrice = price + tax - discountAmount;
+    const taxRate = parseFloat(product.tax_rate || 0) / 100; // Convertir a decimal
+    const discount = product.discount_percentage ? parseFloat(product.discount_percentage) : 0;
     const hasDiscount = discount > 0;
     
+    // Precio con descuento (si aplica)
+    const finalPrice = hasDiscount ? parseFloat(product.discounted_price || price) : price;
+    
+    // Calcular IVA sobre el precio final (asumiendo que el precio final ya incluye IVA)
+    const priceWithoutVAT = finalPrice / (1 + taxRate);
+    const vatAmount = finalPrice - priceWithoutVAT;
+    
+    // Asegurarse de que el IVA sea exactamente el 19% del precio sin IVA
+    const expectedVAT = priceWithoutVAT * taxRate;
+    const vatDifference = Math.abs(vatAmount - expectedVAT);
+    
+    // Si hay una diferencia significativa, ajustar el IVA
+    const adjustedVAT = vatDifference > 0.01 ? expectedVAT : vatAmount;
+    
+    // Calcular ahorro basado en el precio base (sin IVA)
+    const basePrice = price / (1 + taxRate);
+    const discountAmount = hasDiscount ? (basePrice * (discount / 100)) : 0;
+    
+    // Mostrar el ahorro con IVA incluido para que coincida con el formato
+    const discountWithVAT = discountAmount * (1 + taxRate);
+    
     return `
-    <div class="bg-white rounded-lg shadow-md overflow-hidden product-card hover:shadow-lg transition-shadow duration-200">
+    <div class="bg-white rounded-lg shadow-md overflow-hidden product-card hover:shadow-lg transition-shadow duration-200 relative">
       ${hasDiscount ? `
-        <div class="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-          -${discount}% OFF
-        </div>` : ''}
+        <div class="absolute top-3 right-3 bg-gradient-to-r from-red-500 to-red-600 text-white text-xs font-bold px-3 py-1 rounded-full z-10 transform rotate-6 shadow-lg">
+          <span class="inline-block transform -rotate-6">${discount}% OFF</span>
+        </div>
+        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 to-red-600"></div>` : ''}
       
       <div class="h-48 bg-gray-100 overflow-hidden relative">
+        <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent z-0"></div>
         <img 
           src="${product.image_url || 'https://via.placeholder.com/300x200?text=Sin+imagen'}" 
           alt="${product.name}" 
-          class="w-full h-full object-cover"
+          class="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
           onerror="this.src='https://via.placeholder.com/300x200?text=Imagen+no+disponible'"
+          loading="lazy"
         >
       </div>
       
@@ -83,28 +104,61 @@ function displayProducts(productsToShow) {
           ${product.description || 'Sin descripción'}
         </p>
         
-        <div class="mb-2">
-          <div class="flex items-center">
-            <span class="text-lg font-bold text-blue-600">
+        <div class="mb-3">
+          ${hasDiscount ? `
+            <div class="text-xs text-gray-500 mb-1">
+              <span class="line-through">$${price.toFixed(2)}</span>
+              <span class="ml-2 bg-red-100 text-red-600 px-2 py-0.5 rounded-full text-xs font-medium">
+                ${discount}% OFF
+              </span>
+            </div>
+          ` : ''}
+          
+          <div class="flex items-baseline">
+            <span class="text-2xl font-extrabold text-gray-900">
               $${finalPrice.toFixed(2)}
             </span>
-            
-            ${hasDiscount ? `
-              <span class="ml-2 text-xs text-gray-500 line-through">
-                $${price.toFixed(2)}
-              </span>
-            ` : ''}
-            
-            <span class="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
-              IVA 19% incluido
+            <span class="ml-2 text-xs text-gray-500">
+              IVA ${(taxRate * 100).toFixed(0)}% incluido
             </span>
           </div>
           
+          <!-- Desglose de precios -->
+          <div class="mt-2 text-xs text-gray-500 space-y-1 border-t border-gray-100 pt-2">
+            <div class="flex justify-between">
+              <span>Subtotal:</span>
+              <span>$${priceWithoutVAT.toFixed(2)}</span>
+            </div>
+            <div class="flex justify-between">
+              <span>IVA (${(taxRate * 100).toFixed(0)}%):</span>
+              <span>+$${vatAmount.toFixed(2)}</span>
+            </div>
+            ${hasDiscount ? `
+            <div class="flex justify-between text-green-600 font-medium">
+              <span>Descuento (${discount}%):</span>
+              <span>-$${discountWithVAT.toFixed(2)}</span>
+            </div>
+            <div class="flex justify-between font-medium">
+              <span>Total:</span>
+              <span class="font-bold">$${finalPrice.toFixed(2)}</span>
+            </div>` : 
+            `<div class="flex justify-between font-medium">
+              <span>Total:</span>
+              <span class="font-bold">$${finalPrice.toFixed(2)}</span>
+            </div>`}
+          </div>
+          
           ${hasDiscount ? `
-            <div class="text-xs text-green-600 mt-1">
-              ¡Ahorras $${discountAmount.toFixed(2)} (${discount}%)!
+            <div class="text-xs text-green-600 font-medium mt-2 flex items-center bg-green-50 p-2 rounded-md">
+              <i class="fas fa-tag mr-1"></i>
+              ¡Ahorras $${discountAmount.toFixed(2)} (${discount}% de descuento)!
             </div>
           ` : ''}
+          
+          <div class="mt-2 text-xs text-gray-400">
+            ${product.stock > 10 ? 'Disponible' : product.stock > 0 ? 
+              `Últimas ${product.stock} unidades` : 'Agotado'}
+          </div>
         </div>
         
         <button 
@@ -117,7 +171,7 @@ function displayProducts(productsToShow) {
           data-product-stock="${product.stock}"
           data-product-store-id="${product.store_id || ''}"
           data-product-store-name="${product.store_name || 'Tienda'}"
-          data-product-tax="${tax}"
+          data-product-tax="${product.tax_rate || 0}"
           data-product-discount="${discount}"
           ${product.stock <= 0 ? 'disabled' : ''}
         >
@@ -412,15 +466,29 @@ function handleAddToCartClick(e) {
   button.disabled = true;
   
   try {
+    // Usar el precio final como precio base para el carrito
+    const finalPrice = parseFloat(button.dataset.productFinalPrice || button.dataset.productPrice);
+    const taxRate = parseFloat(button.dataset.productTax || 0) / 100;
+    const discount = parseFloat(button.dataset.productDiscount || 0);
+    
+    // Calcular el precio sin IVA
+    const priceWithoutVAT = finalPrice / (1 + taxRate);
+    const vatAmount = finalPrice - priceWithoutVAT;
+    
+    // Asegurarse de que el IVA sea exactamente el 19% del precio sin IVA
+    const expectedVAT = priceWithoutVAT * taxRate;
+    const vatDifference = Math.abs(vatAmount - expectedVAT);
+    const adjustedVAT = vatDifference > 0.01 ? expectedVAT : vatAmount;
+    
     const product = {
       id: button.dataset.productId,
       name: button.dataset.productName,
-      price: parseFloat(button.dataset.productPrice),
-      final_price: parseFloat(button.dataset.productFinalPrice || button.dataset.productPrice),
-      tax: parseFloat(button.dataset.productTax || 0),
-      discount: parseFloat(button.dataset.productDiscount || 0),
-      discount_amount: parseFloat(button.dataset.productDiscount ? 
-        (parseFloat(button.dataset.productPrice) * parseFloat(button.dataset.productDiscount) / 100) : 0),
+      price: finalPrice, // Usar el precio final como precio base
+      final_price: finalPrice,
+      tax: taxRate * 100, // Guardar como porcentaje
+      tax_amount: adjustedVAT, // Usar el IVA ajustado
+      discount: discount,
+      discount_amount: discount > 0 ? (priceWithoutVAT * (discount / 100)) * (1 + taxRate) : 0,
       image_url: button.dataset.productImage || '',
       stock: parseInt(button.dataset.productStock, 10),
       store_id: button.dataset.productStoreId,

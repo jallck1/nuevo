@@ -1,8 +1,138 @@
 import { supabase } from '../config/supabase.js';
 import { ROLES } from '../config/constants.js';
 import { showNotification } from '../utils/notifications.js';
+import { ROUTES, isPublicRoute, isAdminRoute, isBuyerRoute, getDefaultRoute } from '../config/routes.js';
 
 export class AuthService {
+  // Manejar navegación
+  static async handleNavigation(router) {
+    const path = window.location.pathname;
+    const hash = window.location.hash || ''; // Obtener el hash si existe
+    const fullPath = path + hash; // Incluir hash para manejar rutas con #
+    
+    console.log('Navegando a:', fullPath);
+
+    try {
+      // 1. Obtener usuario actual
+      const user = await AuthService.getCurrentUser();
+      const userRole = user?.role?.toLowerCase();
+      
+      // 2. Si la ruta es pública, permitir el acceso
+      if (isPublicRoute(path)) {
+        console.log('Ruta pública, acceso permitido');
+        
+        // Si el usuario ya está autenticado y está en login/register, redirigir
+        if (user && (path === ROUTES.LOGIN || path === ROUTES.REGISTER)) {
+          console.log('Usuario autenticado, redirigiendo a dashboard');
+          window.location.href = getDefaultRoute(userRole);
+          return;
+        }
+        
+        if (router && typeof router.renderCurrentRoute === 'function') {
+          router.renderCurrentRoute();
+        }
+        return;
+      }
+      
+      // 3. Si no hay usuario autenticado, redirigir a login
+      if (!user) {
+        console.error('Usuario no autenticado, redirigiendo a login');
+        // Guardar la ruta a la que intentó acceder para redirigir después del login
+        sessionStorage.setItem('redirectAfterLogin', fullPath);
+        window.location.href = ROUTES.LOGIN;
+        return;
+      }
+      
+      // 4. Verificar acceso según el rol
+      if (isAdminRoute(path)) {
+        if (userRole !== 'admin') {
+          console.error('ACCESO DENEGADO: Se requiere rol de administrador');
+          window.location.href = ROUTES.BUYER_DASHBOARD;
+          return;
+        }
+      } else if (isBuyerRoute(path)) {
+        if (userRole !== 'buyer') {
+          console.error('ACCESO DENEGADO: Se requiere rol de comprador');
+          window.location.href = ROUTES.ADMIN_DASHBOARD;
+          return;
+        }
+      }
+
+      // 5. Si está autenticado y va a login/register, redirigir a su dashboard
+      if (path === ROUTES.LOGIN || path === ROUTES.REGISTER) {
+        console.log('Usuario autenticado, redirigiendo a dashboard');
+        window.location.href = getDefaultRoute(userRole);
+        return;
+      }
+      
+      // 6. Verificar si hay una redirección pendiente
+      const redirectTo = sessionStorage.getItem('redirectAfterLogin');
+      if (redirectTo && redirectTo !== fullPath) {
+        console.log('Redirigiendo a ruta guardada:', redirectTo);
+        sessionStorage.removeItem('redirectAfterLogin');
+        window.location.href = redirectTo;
+        return;
+      }
+
+      // 7. Si todo está bien, renderizar la ruta
+      if (router && typeof router.renderCurrentRoute === 'function') {
+        console.log('Renderizando ruta:', fullPath);
+        router.renderCurrentRoute();
+      }
+
+    } catch (error) {
+      console.error('Error en handleNavigation:', error);
+      // En caso de error, redirigir al login
+      window.location.href = ROUTES.LOGIN;
+    }
+  }
+
+  // Obtener usuario actual
+  static async getCurrentUser() {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return null;
+
+      // Verificar token expirado
+      const now = Math.floor(Date.now() / 1000);
+      if (session.expires_at < now) {
+        const { data: refreshed } = await supabase.auth.refreshSession();
+        if (!refreshed?.session) {
+          await this.logout();
+          return null;
+        }
+      }
+
+      // Obtener perfil
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', session.user.id)
+        .single();
+
+      if (!profile) {
+        await this.logout();
+        return null;
+      }
+
+      // Validar rol
+      if (!['admin', 'buyer'].includes(profile.role?.toLowerCase())) {
+        await this.logout();
+        return null;
+      }
+
+      return {
+        ...session.user,
+        role: profile.role.toLowerCase(),
+        profile
+      };
+    } catch (error) {
+      console.error('Error en getCurrentUser:', error);
+      await this.logout();
+      return null;
+    }
+  }
+
   // Iniciar sesión
   static async login(email, password) {
     try {
@@ -168,7 +298,7 @@ export class AuthService {
   }
 
   // Obtener el perfil del usuario
-  static async getUserProfile(userId) {
+  static async getUserProfile(userId, maxRetries = 3) {
     try {
       console.log('Obteniendo perfil para el usuario ID:', userId);
       
@@ -181,60 +311,69 @@ export class AuthService {
 
       if (profileError) {
         console.error('Error al obtener perfil básico:', profileError);
+        
+        // Si es un error 404 (perfil no encontrado), crear un perfil básico
+        if (profileError.code === 'PGRST116' || profileError.code === 'PGRST202') {
+          console.log('Perfil no encontrado, creando perfil básico...');
+          return this.createBasicProfile(userId);
+        }
+        
         throw profileError;
       }
 
       console.log('Perfil básico obtenido:', profileData);
-
-      // Si ya tiene un store_id, devolver el perfil
-      if (profileData.store_id) {
-        console.log('Perfil ya tiene store_id:', profileData.store_id);
-        return profileData;
-      }
-
-      // Si es administrador, intentar obtener la tienda asociada
-      if (profileData.role === 'admin') {
-        console.log('Buscando tienda para administrador...');
-        
-        // Buscar tienda por owner_id (ID del usuario)
-        const { data: storeData, error: storeError } = await supabase
-          .from('stores')
-          .select('*')
-          .eq('owner_id', userId)
-          .single();
-
-        if (storeError) {
-          console.error('Error al buscar tienda del administrador:', storeError);
-          // Si no hay tienda, devolver el perfil sin store_id
-          return profileData;
-        }
-
-        console.log('Tienda encontrada para administrador:', storeData);
-
-        // Actualizar el perfil con el store_id
-        const { error: updateError } = await supabase
-          .from('profiles')
-          .update({ 
-            store_id: storeData.id,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', userId);
-
-        if (updateError) {
-          console.error('Error al actualizar perfil con store_id:', updateError);
-          return profileData;
-        }
-
-        console.log('Perfil actualizado con store_id:', storeData.id);
-        return { ...profileData, store_id: storeData.id };
-      }
-
-      // Para otros roles, devolver el perfil tal cual
       return profileData;
       
     } catch (error) {
       console.error('Error en getUserProfile:', error);
-      throw error; // Relanzar el error para manejarlo en el método que llama
+      
+      // Reintentar si es posible
+      if (maxRetries > 0) {
+        console.log(`Reintentando obtener perfil... (${maxRetries} intentos restantes)`);
+        return this.getUserProfile(userId, maxRetries - 1);
+      }
+      
+      throw error; // Relanzar el error después de agotar los reintentos
+    }
+  }
+  
+  // Crear un perfil básico para usuarios nuevos
+  static async createBasicProfile(userId) {
+    try {
+      console.log('Creando perfil básico para usuario:', userId);
+      
+      // Obtener el usuario actual para el correo electrónico
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+      
+      // Crear el perfil con datos básicos
+      const { data: profileData, error: createError } = await supabase
+        .from('profiles')
+        .insert([
+          {
+            id: userId,
+            email: user.email,
+            name: user.user_metadata?.name || user.email?.split('@')[0] || 'Usuario',
+            role: 'buyer', // Rol por defecto
+            status: 'active',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }
+        ])
+        .select()
+        .single();
+      
+      if (createError) {
+        console.error('Error al crear perfil básico:', createError);
+        throw createError;
+      }
+      
+      console.log('Perfil básico creado:', profileData);
+      return profileData;
+      
+    } catch (error) {
+      console.error('Error en createBasicProfile:', error);
+      throw error;
     }
   }
 
@@ -247,28 +386,57 @@ export class AuthService {
   // Obtener el usuario actual
   static async getCurrentUser() {
     try {
-      // Primero verificar si hay una sesión activa
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return null;
+      // Obtener la sesión actual
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        console.error('Error de sesión o no autenticado:', sessionError);
+        return null;
+      }
 
-      // Obtener el usuario de la sesión
-      const { user } = session;
-      if (!user) return null;
+      // Verificar si el token ha expirado
+      const now = Math.floor(Date.now() / 1000);
+      if (session.expires_at < now) {
+        console.log('Token expirado, intentando renovar...');
+        const { data: refreshedSession, error: refreshError } = await supabase.auth.refreshSession();
+        
+        if (refreshError || !refreshedSession) {
+          console.error('Error al renovar sesión:', refreshError);
+          await this.logout();
+          return null;
+        }
+      }
 
       // Obtener el perfil del usuario
-      const profile = await this.getUserProfile(user.id);
-      
+      const profile = await this.getUserProfile(session.user.id);
+      if (!profile) {
+        console.error('Perfil de usuario no encontrado');
+        await this.logout();
+        return null;
+      }
+
+      // Validar que el rol sea válido
+      const validRoles = ['admin', 'buyer'];
+      if (!validRoles.includes(profile.role?.toLowerCase())) {
+        console.error('Rol de usuario no válido:', profile.role);
+        await this.logout();
+        return null;
+      }
+
       // Devolver un objeto de usuario consistente
       return {
-        id: user.id,
-        email: user.email,
-        name: user.user_metadata?.name || profile?.name || user.email?.split('@')[0] || 'Usuario',
-        role: profile?.role || ROLES.BUYER,
-        ...user,
+        id: session.user.id,
+        email: session.user.email,
+        name: session.user.user_metadata?.name || profile?.name || session.user.email?.split('@')[0] || 'Usuario',
+        role: profile.role.toLowerCase(), // Asegurar que el rol esté en minúsculas
+        store_id: profile.store_id || null,
+        ...session.user,
         profile: profile || {}
       };
+      
     } catch (error) {
       console.error('Error al obtener el usuario actual:', error);
+      await this.logout();
       return null;
     }
   }
@@ -303,5 +471,211 @@ export class AuthService {
     return () => {
       subscription?.unsubscribe();
     };
+  }
+
+  // Verificar token y rol del usuario
+  static async verifyTokenAndRole(requiredRole = null) {
+    try {
+      // Obtener la sesión actual
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        console.error('Error de sesión o no autenticado:', sessionError);
+        await this.logout();
+        return { valid: false, error: 'No autenticado' };
+      }
+
+      // Verificar si el token ha expirado
+      const now = Math.floor(Date.now() / 1000);
+      if (session.expires_at < now) {
+        console.log('Token expirado, intentando renovar...');
+        const { data: refreshedSession, error: refreshError } = await supabase.auth.refreshSession();
+        
+        if (refreshError || !refreshedSession) {
+          console.error('Error al renovar sesión:', refreshError);
+          await this.logout();
+          return { valid: false, error: 'Sesión expirada' };
+        }
+      }
+
+      // Obtener el perfil del usuario
+      const userProfile = await this.getUserProfile(session.user.id);
+      if (!userProfile) {
+        console.error('Perfil de usuario no encontrado');
+        await this.logout();
+        return { valid: false, error: 'Perfil no encontrado' };
+      }
+
+      // Si se especificó un rol requerido, verificarlo
+      if (requiredRole && userProfile.role !== requiredRole) {
+        console.error(`Acceso denegado: Se requiere rol ${requiredRole}, pero el usuario tiene ${userProfile.role}`);
+        return { 
+          valid: false, 
+          error: 'Acceso no autorizado',
+          user: {
+            ...session.user,
+            role: userProfile.role,
+            profile: userProfile
+          }
+        };
+      }
+
+      return { 
+        valid: true, 
+        user: {
+          ...session.user,
+          role: userProfile.role,
+          profile: userProfile
+        } 
+      };
+
+    } catch (error) {
+      console.error('Error en verifyTokenAndRole:', error);
+      await this.logout();
+      return { valid: false, error: error.message || 'Error de autenticación' };
+    }
+  }
+
+  // Verificar si el usuario puede acceder a una ruta
+  static async canAccessRoute(path) {
+    // Si es ruta pública, permitir acceso
+    if (isPublicRoute(path)) {
+      return { allowed: true };
+    }
+
+    // Verificar autenticación y token
+    const { valid, user, error } = await this.verifyTokenAndRole();
+    if (!valid) {
+      return { allowed: false, redirectTo: ROUTES.LOGIN };
+    }
+
+    // Verificar roles
+    if (isAdminRoute(path) && user.role !== 'admin') {
+      return { 
+        allowed: false, 
+        redirectTo: getDefaultRoute(user.role),
+        error: 'Acceso restringido a administradores'
+      };
+    }
+
+    if (isBuyerRoute(path) && user.role !== 'buyer') {
+      return { 
+        allowed: false, 
+        redirectTo: getDefaultRoute(user.role),
+        error: 'Acceso restringido a compradores'
+      };
+    }
+
+    return { allowed: true, user };
+  }
+
+  // Verificar acceso a ruta
+  static async checkRouteAccess(path) {
+    try {
+      // Si es ruta pública, permitir acceso
+      if (isPublicRoute(path)) {
+        return { allowed: true };
+      }
+
+      // Obtener usuario actual
+      const user = await this.getCurrentUser();
+      
+      // Si no hay usuario, denegar acceso
+      if (!user) {
+        return { 
+          allowed: false, 
+          redirectTo: ROUTES.LOGIN,
+          error: 'Debes iniciar sesión para acceder a esta página'
+        };
+      }
+
+      const userRole = user.role?.toLowerCase();
+      
+      // Verificar acceso a rutas de administrador
+      if (isAdminRoute(path)) {
+        if (userRole !== 'admin') {
+          return { 
+            allowed: false, 
+            redirectTo: getDefaultRoute(userRole) || ROUTES.HOME,
+            error: 'Acceso restringido a administradores'
+          };
+        }
+        return { allowed: true, user };
+      }
+      
+      // Verificar acceso a rutas de comprador
+      if (isBuyerRoute(path)) {
+        if (userRole !== 'buyer') {
+          return { 
+            allowed: false, 
+            redirectTo: getDefaultRoute(userRole) || ROUTES.HOME,
+            error: 'Acceso restringido a compradores'
+          };
+        }
+        return { allowed: true, user };
+      }
+
+      // Si la ruta no está definida, denegar acceso
+      return { 
+        allowed: false, 
+        redirectTo: getDefaultRoute(userRole) || ROUTES.HOME,
+        error: 'Ruta no encontrada'
+      };
+      
+    } catch (error) {
+      console.error('Error en checkRouteAccess:', error);
+      return { 
+        allowed: false, 
+        redirectTo: ROUTES.LOGIN,
+        error: 'Error al verificar permisos'
+      };
+    }
+  }
+
+  // Iniciar sesión con Google
+  static async loginWithGoogle() {
+    try {
+      console.log('Iniciando autenticación con Google...');
+      
+      // Obtener la URL base actual
+      const baseUrl = window.location.origin;
+      
+      // Usar la URL de redirección de Supabase para compradores
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: baseUrl, // Redirigir a la raíz, el router manejará la redirección
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
+        },
+      });
+
+      if (error) {
+        console.error('Error en login con Google:', error);
+        return { success: false, error };
+      }
+
+      return { success: true, data };
+    } catch (error) {
+      console.error('Error inesperado en login con Google:', error);
+      return { success: false, error };
+    }
+  }
+
+  // Redirigir a Facebook
+  static loginWithFacebook() {
+    try {
+      console.log('Redirigiendo a Facebook...');
+      
+      // Redirigir directamente a Facebook
+      window.location.href = 'https://www.facebook.com';
+      
+      return { success: true };
+    } catch (error) {
+      console.error('Error al redirigir a Facebook:', error);
+      return { success: false, error };
+    }
   }
 }

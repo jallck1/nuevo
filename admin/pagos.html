@@ -15,18 +15,111 @@
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   
   <style>
+    /* ===== ESTILOS PARA MÓVIL ===== */
+    /* Contenedor principal del menú móvil */
+    .mobile-menu-container {
+      position: fixed;
+      top: 0;
+      left: -250px;
+      width: 250px;
+      height: 100vh;
+      z-index: 1000;
+      transition: left 0.3s ease-in-out;
+    }
+    
+    /* Menú móvil abierto */
+    .mobile-menu-container.open {
+      left: 0;
+    }
+    
+    /* Menú lateral */
+    .mobile-sidebar {
+      width: 100%;
+      height: 100%;
+      background-color: #1e40af; /* bg-blue-800 */
+      color: white;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    /* Overlay del menú móvil */
+    .mobile-menu-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+      opacity: 0;
+      transition: opacity 0.3s ease-in-out;
+      pointer-events: none;
+    }
+    
+    .mobile-menu-overlay.open {
+      display: block;
+      opacity: 1;
+      pointer-events: auto;
+    }
+    
+    /* ===== ESTILOS PARA ESCRITORIO ===== */
+    /* Sidebar de escritorio */
+    .desktop-sidebar {
+      display: none;
+      width: 16rem;
+      background-color: #1e40af; /* bg-blue-800 */
+      color: white;
+      height: 100vh;
+      position: fixed;
+      left: 0;
+      top: 0;
+      overflow-y: auto;
+      z-index: 40;
+      transition: width 0.3s ease-in-out;
+    }
+    
+    /* Sidebar colapsado */
+    .desktop-sidebar.collapsed {
+      width: 4rem;
+      overflow: hidden;
+    }
+    
+    /* Contenido principal */
+    .main-content {
+      margin-left: 0;
+      transition: margin-left 0.3s ease-in-out;
+      width: 100%;
+      min-height: 100vh;
+    }
+    
+    /* Media queries para escritorio */
+    @media (min-width: 768px) {
+      .main-content {
+        margin-left: 16rem;
+        width: calc(100% - 16rem);
+      }
+      
+      .desktop-sidebar.collapsed + .main-content {
+        margin-left: 4rem;
+        width: calc(100% - 4rem);
+      }
+      
+      .desktop-sidebar {
+        display: block;
+      }
+    }
+    
+    /* Clase para contenido principal cuando el sidebar está colapsado */
+    .sidebar-collapsed {
+      margin-left: 4rem !important;
+      width: calc(100% - 4rem) !important;
+    }
+    
     /* Estilos personalizados */
     .sidebar {
       transition: all 0.3s;
-    }
-    
-    @media (max-width: 768px) {
-      .sidebar {
-        transform: translateX(-100%);
-      }
-      .sidebar.active {
-        transform: translateX(0);
-      }
     }
     
     .tab-button {
@@ -81,57 +174,225 @@
     }
   </style>
 </head>
+
+
 <body class="bg-gray-100 font-sans">
-  <!-- Sidebar -->
-  <div id="sidebar" class="sidebar fixed inset-y-0 left-0 w-64 bg-gray-800 text-white overflow-y-auto transform -translate-x-full md:translate-x-0 transition-transform duration-300 z-20">
-    <div class="p-4">
-      <h1 class="text-2xl font-bold">Horizont</h1>
+  <!-- Menú Móvil -->
+  <div class="mobile-menu-container" id="mobile-menu">
+    <div class="mobile-sidebar">
+      <div class="p-4 border-b border-blue-700 flex justify-between items-center">
+        <h1 class="text-xl font-bold">Horizont</h1>
+        <button id="close-mobile-menu" class="text-white focus:outline-none">
+          <i class="fas fa-times text-xl"></i>
+        </button>
+      </div>
+      <nav class="flex-1 overflow-y-auto">
+        <a href="dashboard.html" class="block py-3 px-6 hover:bg-blue-700 flex items-center">
+          <i class="fas fa-tachometer-alt w-6 text-center mr-3"></i>
+          <span>Dashboard</span>
+        </a>
+        <a href="catalogo.html" class="block py-3 px-6 hover:bg-blue-700 flex items-center">
+          <i class="fas fa-box w-6 text-center mr-3"></i>
+          <span>Catálogo</span>
+        </a>
+        <a href="orders.html" class="block py-3 px-6 hover:bg-blue-700 flex items-center">
+          <i class="fas fa-shopping-cart w-6 text-center mr-3"></i>
+          <span>Órdenes</span>
+          <span id="pending-orders-count-mobile" class="ml-auto bg-yellow-500 text-white text-xs font-bold px-2 py-1 rounded-full">0</span>
+        </a>
+        <a href="pagos.html" class="block py-3 px-6 bg-blue-900 flex items-center">
+          <i class="fas fa-credit-card w-6 text-center mr-3"></i>
+          <span>Pagos</span>
+        </a>
+        <a href="clientes.html" class="block py-3 px-6 hover:bg-blue-700 flex items-center">
+          <i class="fas fa-users w-6 text-center mr-3"></i>
+          <span>Clientes</span>
+        </a>
+        <a href="devoluciones.html" class="block py-3 px-6 hover:bg-blue-700 flex items-center">
+          <i class="fas fa-undo-alt w-6 text-center mr-3"></i>
+          <span>Devoluciones</span>
+        </a>
+        <a href="usuarios.html" class="block py-3 px-6 hover:bg-blue-700 flex items-center">
+          <i class="fas fa-user-shield w-6 text-center mr-3"></i>
+          <span>Usuarios</span>
+        </a>
+        <a href="proveedores.html" class="block py-3 px-6 hover:bg-blue-700 flex items-center">
+          <i class="fas fa-truck w-6 text-center mr-3"></i>
+          <span>Proveedores</span>
+        </a>
+        <a href="reportes.html" class="block py-3 px-6 hover:bg-blue-700 flex items-center">
+          <i class="fas fa-chart-bar w-6 text-center mr-3"></i>
+          <span>Reportes</span>
+        </a>
+        <a href="auditoria.html" class="block py-3 px-6 hover:bg-blue-700 flex items-center">
+          <i class="fas fa-clipboard-list w-6 text-center mr-3"></i>
+          <span>Auditoría</span>
+        </a>
+        <a href="configuracion.html" class="block py-3 px-6 hover:bg-blue-700 flex items-center">
+          <i class="fas fa-cog w-6 text-center mr-3"></i>
+          <span>Configuración</span>
+        </a>
+        <a href="contenido-institucional.html" class="block py-3 px-6 hover:bg-blue-700 flex items-center">
+          <i class="fas fa-file-alt w-6 text-center mr-3"></i>
+          <span>Contenido Institucional</span>
+        </a>
+      </nav>
+      <div class="mt-auto border-t border-blue-700">
+        <a href="#" id="logout-btn-mobile" class="block py-3 px-6 hover:bg-blue-700 flex items-center">
+          <i class="fas fa-sign-out-alt w-6 text-center mr-3"></i>
+          <span>Cerrar Sesión</span>
+        </a>
+        <div class="p-4 text-xs text-blue-300">
+          <p>Versión 1.0.0</p>
+        </div>
+      </div>
     </div>
-    <nav class="mt-6">
-      <a href="dashboard.html" class="block py-2.5 px-4 flex items-center text-gray-300 hover:bg-gray-700">
-        <i class="fas fa-tachometer-alt w-5 mr-2"></i>
-        Dashboard
-      </a>
-      <a href="pagos.html" class="block py-2.5 px-4 flex items-center bg-gray-700 text-white">
-        <i class="fas fa-credit-card w-5 mr-2"></i>
-        Pagos
-      </a>
-      <a href="clientes.html" class="block py-2.5 px-4 flex items-center text-gray-300 hover:bg-gray-700">
-        <i class="fas fa-users w-5 mr-2"></i>
-        Clientes
-      </a>
-      <a href="configuracion.html" class="block py-2.5 px-4 flex items-center text-gray-300 hover:bg-gray-700">
-        <i class="fas fa-cog w-5 mr-2"></i>
-        Configuración
-      </a>
-    </nav>
   </div>
+
+  <!-- Overlay del menú móvil (se muestra cuando el menú está abierto) -->
+  <div id="mobile-menu-overlay" class="mobile-menu-overlay"></div>
+
+  <!-- Sidebar de escritorio -->
+  <div class="desktop-sidebar bg-blue-800 text-white w-64 flex flex-col h-full" id="desktop-sidebar">
+    <div class="p-4 border-b border-blue-700">
+        <div class="flex justify-between items-center">
+            <div>
+                <h2 class="text-xl font-bold">Panel de Control</h2>
+                <p id="user-role" class="text-sm text-blue-200">Administrador</p>
+            </div>
+            <button id="toggle-sidebar" class="text-blue-200 hover:text-white">
+                <i class="fas fa-bars text-xl"></i>
+            </button>
+        </div>
+    </div>
+
+    <nav class="flex-1 overflow-y-auto py-1">
+        <a href="dashboard.html" class="block py-2 px-5 hover:bg-blue-700 flex items-center bg-blue-900">
+            <i class="fas fa-tachometer-alt w-5 text-center mr-2"></i>
+            <span>Dashboard</span>
+        </a>
+        <a href="catalogo.html" class="block py-2 px-5 hover:bg-blue-700 flex items-center">
+            <i class="fas fa-box w-5 text-center mr-2"></i>
+            <span>Catálogo</span>
+        </a>
+        <a href="orders.html" class="block py-2 px-5 hover:bg-blue-700 flex items-center">
+            <i class="fas fa-shopping-cart w-5 text-center mr-2"></i>
+            <span>Órdenes</span>
+            <span id="pending-orders-count" class="ml-auto bg-yellow-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">0</span>
+        </a>
+        <a href="pagos.html" class="block py-2 px-5 hover:bg-blue-700 flex items-center">
+            <i class="fas fa-credit-card w-5 text-center mr-2"></i>
+            <span>Pagos</span>
+        </a>
+        <a href="devoluciones.html" class="block py-2 px-5 hover:bg-blue-700 flex items-center">
+            <i class="fas fa-undo-alt w-5 text-center mr-2"></i>
+            <span>Devoluciones</span>
+        </a>
+        <a href="usuarios.html" class="block py-2 px-5 hover:bg-blue-700 flex items-center">
+            <i class="fas fa-users w-5 text-center mr-2"></i>
+            <span>Usuarios</span>
+        </a>
+        <a href="proveedores.html" class="block py-2 px-5 hover:bg-blue-700 flex items-center">
+            <i class="fas fa-truck w-5 text-center mr-2"></i>
+            <span>Proveedores</span>
+        </a>
+        <a href="reportes.html" class="block py-2 px-5 hover:bg-blue-700 flex items-center">
+            <i class="fas fa-chart-bar w-5 text-center mr-2"></i>
+            <span>Reportes</span>
+        </a>
+        <a href="auditoria.html" class="block py-2 px-5 hover:bg-blue-700 flex items-center">
+            <i class="fas fa-clipboard-list w-5 text-center mr-2"></i>
+            <span>Auditoría</span>
+        </a>
+        <a href="contenido-institucional.html" class="block py-2 px-5 hover:bg-blue-700 flex items-center">
+            <i class="fas fa-file-alt w-5 text-center mr-2"></i>
+            <span>Contenido Institucional</span>
+        </a>
+        <a href="pqrs.html" class="block py-2 px-5 hover:bg-blue-700 flex items-center">
+            <i class="fas fa-comments w-5 text-center mr-2"></i>
+            <span>PQRS</span>
+            <span id="pending-pqrs" class="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">0</span>
+        </a>
+        <a href="perfil.html" class="block py-2 px-5 hover:bg-blue-700 flex items-center">
+            <i class="fas fa-user-cog w-5 text-center mr-2"></i>
+            <span>Configuración de Perfil</span>
+        </a>
+        <div class="mt-2 border-t border-blue-700">
+            <a href="#" id="logout-btn" class="block py-2 px-5 hover:bg-blue-700 flex items-center text-red-200">
+                <i class="fas fa-sign-out-alt w-5 text-center mr-2"></i>
+                <span>Cerrar Sesión</span>
+            </a>
+            <div class="px-5 pt-2 pb-4 text-xs text-blue-300">
+                <p>Versión 1.0.0</p>
+            </div>
+        </div>
+    </nav>
+</div>
+  
 
   <!-- Contenido principal -->
   <div class="content min-h-screen bg-gray-100 ml-0 md:ml-64 transition-all duration-300">
     <!-- Barra superior -->
-    <header class="bg-white shadow-sm">
-      <div class="flex justify-between items-center px-6 py-4">
+    <header class="bg-white shadow-sm sticky top-0 z-10">
+      <div class="flex justify-between items-center p-4">
         <div class="flex items-center">
-          <button id="menu-toggle" class="text-gray-500 focus:outline-none md:hidden">
+          <!-- Botón de menú móvil (solo visible en móvil) -->
+          <button id="mobile-menu-button" class="text-gray-600 hover:text-gray-900 mr-4 focus:outline-none md:hidden">
             <i class="fas fa-bars text-xl"></i>
           </button>
-          <h1 class="text-xl font-semibold text-gray-800 ml-4">Gestión de Pagos</h1>
-        </div>
-        <div class="flex items-center">
-          <div class="relative">
-            <input type="text" placeholder="Buscar..." class="w-64 px-4 py-2 pl-10 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-            <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
-          </div>
-          <button class="ml-4 p-2 text-gray-500 hover:text-gray-700 focus:outline-none">
-            <i class="fas fa-bell text-xl"></i>
+          
+          <!-- Botón para alternar sidebar en escritorio -->
+          <button id="toggle-sidebar" class="text-gray-600 hover:text-gray-900 mr-4 focus:outline-none hidden md:block">
+            <i class="fas fa-bars text-xl"></i>
           </button>
-          <div class="ml-4 relative">
-            <button class="flex items-center focus:outline-none">
-              <img src="https://ui-avatars.com/api/?name=Admin&background=3b82f6&color=fff" alt="Usuario" class="w-8 h-8 rounded-full">
-              <span class="ml-2 text-sm font-medium text-gray-700">Admin</span>
-              <i class="fas fa-chevron-down ml-1 text-xs text-gray-500"></i>
+          
+          <h1 class="text-xl font-semibold text-gray-800">Pagos</h1>
+        </div>
+        <div class="flex items-center space-x-4">
+          <!-- Notificaciones -->
+          <div class="relative">
+            <button id="notifications-button" class="text-gray-600 hover:text-gray-900 relative focus:outline-none">
+              <i class="fas fa-bell text-xl"></i>
+              <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">3</span>
             </button>
+            <!-- Menú desplegable de notificaciones -->
+            <div id="notifications-dropdown" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg py-1 z-50">
+              <div class="px-4 py-2 border-b">
+                <p class="text-sm font-medium text-gray-900">Notificaciones</p>
+              </div>
+              <div class="max-h-60 overflow-y-auto">
+                <!-- Las notificaciones se cargarán aquí dinámicamente -->
+                <div class="px-4 py-3 border-b border-gray-100">
+                  <p class="text-sm">No hay notificaciones nuevas</p>
+                </div>
+              </div>
+              <a href="#" class="block px-4 py-2 text-sm text-center text-blue-600 hover:bg-gray-50 border-t">
+                Ver todas las notificaciones
+              </a>
+            </div>
+          </div>
+          
+          <!-- Menú de usuario -->
+          <div class="relative">
+            <button id="user-menu-button" class="flex items-center space-x-2 focus:outline-none">
+              <div class="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold" id="user-avatar">
+                <span id="user-initials">U</span>
+              </div>
+              <span class="text-sm font-medium text-gray-700 hidden md:inline" id="user-name">Usuario</span>
+              <i class="fas fa-chevron-down text-xs text-gray-500 hidden md:inline"></i>
+            </button>
+            <div id="user-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+              <div class="px-4 py-2 border-b">
+                <p class="text-sm font-medium text-gray-900" id="dropdown-user-name">Usuario</p>
+                <p class="text-xs text-gray-500 truncate" id="dropdown-user-email">usuario@ejemplo.com</p>
+              </div>
+              <a href="perfil.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                <i class="fas fa-user-edit mr-2"></i> Mi Perfil
+              </a>
+              <a href="#" id="logout-btn" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
+                <i class="fas fa-sign-out-alt mr-2"></i> Cerrar Sesión
+              </a>
+            </div>
           </div>
         </div>
       </div>
@@ -370,22 +631,8 @@
   <script type="module" src="js/pagos.js"></script>
   
   <script>
-    // Inicializar menú móvil
+    // Manejar el cierre del modal
     document.addEventListener('DOMContentLoaded', function() {
-      const menuToggle = document.getElementById('menu-toggle');
-      const sidebar = document.getElementById('sidebar');
-      const content = document.querySelector('.content');
-      
-      if (menuToggle && sidebar && content) {
-        menuToggle.addEventListener('click', function() {
-          sidebar.classList.toggle('translate-x-0');
-          sidebar.classList.toggle('-translate-x-full');
-          content.classList.toggle('ml-0');
-          content.classList.toggle('md:ml-64');
-        });
-      }
-      
-      // Manejar el cierre del modal
       const closeModal = document.getElementById('close-modal');
       const modal = document.getElementById('payment-detail-modal');
       

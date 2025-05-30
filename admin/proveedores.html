@@ -120,65 +120,80 @@
     
     <div class="flex h-screen overflow-hidden relative">
         <!-- Sidebar -->
-        <div id="sidebar" class="sidebar bg-blue-800 text-white flex-shrink-0 flex flex-col h-full">
-            <div class="p-4 border-b border-blue-700 flex justify-between items-center">
-                <div>
-                    <h1 class="text-xl font-bold">Horizont</h1>
-                    <p class="text-xs text-blue-200">Panel de Administración</p>
-                </div>
-                <button id="closeSidebar" class="md:hidden text-blue-300 hover:text-white">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            
-            <div class="flex-1 overflow-y-auto py-4">
-                <nav class="px-2 space-y-1">
-                    <a href="index.html" class="flex items-center px-4 py-2 text-sm font-medium text-blue-100 hover:bg-blue-700 rounded-md group">
-                        <i class="fas fa-home mr-3 text-blue-300 group-hover:text-blue-100"></i>
-                        Inicio
-                    </a>
-                    <a href="productos.html" class="flex items-center px-4 py-2 text-sm font-medium text-blue-100 hover:bg-blue-700 rounded-md group">
-                        <i class="fas fa-boxes mr-3 text-blue-300 group-hover:text-blue-100"></i>
-                        Productos
-                    </a>
-                    <a href="categorias.html" class="flex items-center px-4 py-2 text-sm font-medium text-blue-100 hover:bg-blue-700 rounded-md group">
-                        <i class="fas fa-tags mr-3 text-blue-300 group-hover:text-blue-100"></i>
-                        Categorías
-                    </a>
-                    <a href="proveedores.html" class="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-900 rounded-md group">
-                        <i class="fas fa-truck mr-3 text-blue-200"></i>
-                        Proveedores
-                    </a>
-                    <a href="clientes.html" class="flex items-center px-4 py-2 text-sm font-medium text-blue-100 hover:bg-blue-700 rounded-md group">
-                        <i class="fas fa-users mr-3 text-blue-300 group-hover:text-blue-100"></i>
-                        Clientes
-                    </a>
-                    <a href="ventas.html" class="flex items-center px-4 py-2 text-sm font-medium text-blue-100 hover:bg-blue-700 rounded-md group">
-                        <i class="fas fa-shopping-cart mr-3 text-blue-300 group-hover:text-blue-100"></i>
-                        Ventas
-                    </a>
-                    <a href="devoluciones.html" class="flex items-center px-4 py-2 text-sm font-medium text-blue-100 hover:bg-blue-700 rounded-md group">
-                        <i class="fas fa-undo-alt mr-3 text-blue-300 group-hover:text-blue-100"></i>
-                        Devoluciones
-                    </a>
-                    <a href="reportes.html" class="flex items-center px-4 py-2 text-sm font-medium text-blue-100 hover:bg-blue-700 rounded-md group">
-                        <i class="fas fa-chart-bar mr-3 text-blue-300 group-hover:text-blue-100"></i>
-                        Reportes
-                    </a>
-                </nav>
-            </div>
-            
-            <div class="p-4 border-t border-blue-700">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <img id="userAvatar" class="h-8 w-8 rounded-full" src="https://ui-avatars.com/api/?name=U" alt="Usuario">
+        <div class="desktop-sidebar bg-blue-800 text-white w-64 flex flex-col h-full" id="desktop-sidebar">
+            <div class="p-4 border-b border-blue-700">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 class="text-xl font-bold">Panel de Control</h2>
+                        <p id="user-role" class="text-sm text-blue-200">Administrador</p>
                     </div>
-                    <div class="ml-3">
-                        <p id="userName" class="text-sm font-medium text-white">Usuario</p>
-                        <button id="btnLogout" class="text-xs font-medium text-blue-200 hover:text-white">Cerrar sesión</button>
-                    </div>
+                    <button id="toggle-sidebar" class="text-blue-200 hover:text-white">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
                 </div>
             </div>
+        
+            <nav class="flex-1 overflow-y-auto py-1">
+                <a href="dashboard.html" class="block py-2 px-5 hover:bg-blue-700 flex items-center bg-blue-900">
+                    <i class="fas fa-tachometer-alt w-5 text-center mr-2"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="catalogo.html" class="block py-2 px-5 hover:bg-blue-700 flex items-center">
+                    <i class="fas fa-box w-5 text-center mr-2"></i>
+                    <span>Catálogo</span>
+                </a>
+                <a href="orders.html" class="block py-2 px-5 hover:bg-blue-700 flex items-center">
+                    <i class="fas fa-shopping-cart w-5 text-center mr-2"></i>
+                    <span>Órdenes</span>
+                    <span id="pending-orders-count" class="ml-auto bg-yellow-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">0</span>
+                </a>
+                <a href="pagos.html" class="block py-2 px-5 hover:bg-blue-700 flex items-center">
+                    <i class="fas fa-credit-card w-5 text-center mr-2"></i>
+                    <span>Pagos</span>
+                </a>
+                <a href="devoluciones.html" class="block py-2 px-5 hover:bg-blue-700 flex items-center">
+                    <i class="fas fa-undo-alt w-5 text-center mr-2"></i>
+                    <span>Devoluciones</span>
+                </a>
+                <a href="usuarios.html" class="block py-2 px-5 hover:bg-blue-700 flex items-center">
+                    <i class="fas fa-users w-5 text-center mr-2"></i>
+                    <span>Usuarios</span>
+                </a>
+                <a href="proveedores.html" class="block py-2 px-5 hover:bg-blue-700 flex items-center">
+                    <i class="fas fa-truck w-5 text-center mr-2"></i>
+                    <span>Proveedores</span>
+                </a>
+                <a href="reportes.html" class="block py-2 px-5 hover:bg-blue-700 flex items-center">
+                    <i class="fas fa-chart-bar w-5 text-center mr-2"></i>
+                    <span>Reportes</span>
+                </a>
+                <a href="auditoria.html" class="block py-2 px-5 hover:bg-blue-700 flex items-center">
+                    <i class="fas fa-clipboard-list w-5 text-center mr-2"></i>
+                    <span>Auditoría</span>
+                </a>
+                <a href="contenido-institucional.html" class="block py-2 px-5 hover:bg-blue-700 flex items-center">
+                    <i class="fas fa-file-alt w-5 text-center mr-2"></i>
+                    <span>Contenido Institucional</span>
+                </a>
+                <a href="pqrs.html" class="block py-2 px-5 hover:bg-blue-700 flex items-center">
+                    <i class="fas fa-comments w-5 text-center mr-2"></i>
+                    <span>PQRS</span>
+                    <span id="pending-pqrs" class="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">0</span>
+                </a>
+                <a href="perfil.html" class="block py-2 px-5 hover:bg-blue-700 flex items-center">
+                    <i class="fas fa-user-cog w-5 text-center mr-2"></i>
+                    <span>Configuración de Perfil</span>
+                </a>
+                <div class="mt-2 border-t border-blue-700">
+                    <a href="#" id="logout-btn" class="block py-2 px-5 hover:bg-blue-700 flex items-center text-red-200">
+                        <i class="fas fa-sign-out-alt w-5 text-center mr-2"></i>
+                        <span>Cerrar Sesión</span>
+                    </a>
+                    <div class="px-5 pt-2 pb-4 text-xs text-blue-300">
+                        <p>Versión 1.0.0</p>
+                    </div>
+                </div>
+            </nav>
         </div>
         
         <!-- Contenido principal -->
@@ -186,29 +201,89 @@
             <!-- Barra superior -->
             <header class="bg-white shadow-sm sticky top-0 z-10">
                 <div class="flex justify-between items-center p-4">
+                    <!-- Lado izquierdo: Título y botón de menú -->
                     <div class="flex items-center">
                         <button id="toggleSidebar" class="text-gray-500 hover:text-gray-600 focus:outline-none mr-2">
                             <i class="fas fa-bars text-xl"></i>
                         </button>
                         <h1 class="text-xl font-semibold text-gray-800">Proveedores</h1>
                     </div>
-                    <div class="flex items-center space-x-4">
-                        <div class="relative">
-                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center">
-                                <i class="fas fa-search text-gray-400"></i>
-                            </span>
-                            <input type="text" id="searchSuppliers" class="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Buscar proveedores...">
+                    
+                    <!-- Centro: Buscador y botón Nuevo Proveedor -->
+                    <div class="flex-1 max-w-2xl mx-4">
+                        <div class="flex items-center space-x-4">
+                            <div class="relative flex-1">
+                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center">
+                                    <i class="fas fa-search text-gray-400"></i>
+                                </span>
+                                <input type="text" id="searchSuppliers" class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Buscar proveedores...">
+                            </div>
+                            <button id="btnNewSupplier" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center whitespace-nowrap">
+                                <i class="fas fa-plus mr-2"></i>
+                                Nuevo Proveedor
+                            </button>
                         </div>
-                        <button id="btnNewSupplier" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center">
-                            <i class="fas fa-plus mr-2"></i>
-                            Nuevo Proveedor
-                        </button>
+                    </div>
+                    
+                    <!-- Lado derecho: Notificaciones y menú de usuario -->
+                    <div class="flex items-center space-x-4">
+                        <!-- Botón de notificaciones -->
+                        <div class="relative">
+                            <button id="notifications-button" class="p-2 text-gray-500 hover:text-gray-700 focus:outline-none relative">
+                                <i class="fas fa-bell text-xl"></i>
+                                <span id="notification-badge" class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full hidden"></span>
+                            </button>
+                            <!-- Dropdown de notificaciones -->
+                            <div id="notifications-dropdown" class="hidden absolute right-0 mt-2 w-72 bg-white rounded-md shadow-lg py-1 z-20 border border-gray-200">
+                                <div class="px-4 py-2 border-b border-gray-100 bg-gray-50">
+                                    <h3 class="text-sm font-medium text-gray-900">Notificaciones</h3>
+                                </div>
+                                <div id="notifications-list" class="max-h-60 overflow-y-auto">
+                                    <!-- Las notificaciones se cargarán aquí dinámicamente -->
+                                    <div class="px-4 py-3 text-center text-sm text-gray-500">
+                                        No hay notificaciones recientes
+                                    </div>
+                                </div>
+                                <div class="px-4 py-2 border-t border-gray-100 bg-gray-50 text-right">
+                                    <a href="#" class="text-xs text-blue-600 hover:underline">Ver todas</a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Menú de usuario -->
+                        <div class="relative">
+                            <button id="user-menu-button" class="flex items-center space-x-2 focus:outline-none group">
+                                <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold overflow-hidden">
+                                    <img id="user-avatar" src="" alt="Avatar" class="w-full h-full object-cover hidden">
+                                    <span id="user-initials" class="text-sm">U</span>
+                                </div>
+                                <i class="fas fa-chevron-down text-xs text-gray-500 group-hover:text-blue-600"></i>
+                            </button>
+                            <!-- Dropdown de usuario -->
+                            <div id="user-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-20 border border-gray-200">
+                                <div class="px-4 py-2 border-b border-gray-100">
+                                    <p class="text-sm font-medium text-gray-900 truncate" id="dropdown-user-name">Usuario</p>
+                                    <p class="text-xs text-gray-500 truncate" id="dropdown-user-email">usuario@ejemplo.com</p>
+                                </div>
+                                <a href="perfil.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-user-circle mr-2 text-gray-500 w-4 text-center"></i> Mi Perfil
+                                </a>
+                                <a href="#" id="logout-btn" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-sign-out-alt mr-2 text-gray-500 w-4 text-center"></i> Cerrar Sesión
+                                </a>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </header>
             
             <!-- Contenido -->
             <main class="flex-1 overflow-y-auto p-4 md:p-6">
+                <!-- Sección de alertas de stock -->
+                <div id="alertas-container" class="w-full mb-6">
+                    <!-- Las alertas de stock se insertarán aquí dinámicamente -->
+                </div>
+                
                 <!-- Filtros -->
                 <div class="flex flex-wrap items-center justify-between mb-6">
                     <div class="flex space-x-2 mb-4 md:mb-0">

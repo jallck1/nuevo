@@ -675,6 +675,56 @@ function setAsMainImage(index) {
     console.log('Imagen principal actualizada:', currentImages[0]);
 }
 
+// Función para inicializar la flecha indicadora de scroll
+function initScrollIndicator() {
+    const scrollIndicator = document.getElementById('scrollIndicator');
+    const sidebar = document.querySelector('.sidebar');
+    
+    if (!scrollIndicator || !sidebar) {
+        console.log('No se encontró el indicador de scroll o la barra lateral');
+        return;
+    }
+    
+    console.log('Elementos encontrados:', { scrollIndicator, sidebar });
+    
+    // Mostrar/ocultar la flecha según sea necesario
+    function updateScrollIndicator() {
+        console.log('Actualizando indicador...');
+        console.log('scrollHeight:', sidebar.scrollHeight, 'scrollTop:', sidebar.scrollTop, 'clientHeight:', sidebar.clientHeight);
+        
+        const isAtBottom = Math.abs(sidebar.scrollHeight - sidebar.scrollTop - sidebar.clientHeight) < 5;
+        
+        if (window.innerWidth < 768) { // Solo en móviles
+            console.log('En móvil, isAtBottom:', isAtBottom);
+            if (isAtBottom) {
+                scrollIndicator.style.opacity = '0';
+                scrollIndicator.style.visibility = 'hidden';
+            } else {
+                scrollIndicator.style.opacity = '1';
+                scrollIndicator.style.visibility = 'visible';
+            }
+        } else {
+            console.log('En escritorio, ocultando indicador');
+            scrollIndicator.style.opacity = '0';
+            scrollIndicator.style.visibility = 'hidden';
+        }
+    }
+    
+    // Forzar un pequeño retraso para asegurar que el DOM esté listo
+    setTimeout(() => {
+        console.log('Inicializando indicador de scroll...');
+        updateScrollIndicator();
+        
+        // Actualizar al hacer scroll
+        sidebar.addEventListener('scroll', updateScrollIndicator);
+        
+        // Actualizar al cambiar el tamaño de la ventana
+        window.addEventListener('resize', updateScrollIndicator);
+        
+        console.log('Indicador inicializado');
+    }, 500);
+}
+
 // Inicializar la página
 document.addEventListener('DOMContentLoaded', async () => {
     try {
@@ -780,6 +830,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         let tinymceInitialized = false;
 
         // Configurar el editor TinyMCE (solo una vez)
+        // Inicializar la flecha indicadora de scroll
+        initScrollIndicator();
+
         if (typeof tinymce !== 'undefined' && !tinymceInitialized) {
             tinymce.init({
                 selector: '.html-editor',

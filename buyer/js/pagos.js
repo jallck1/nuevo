@@ -260,9 +260,38 @@ function configurarEventos() {
         }
     });
     
-    // Evento para confirmar pago
+    // Evento para el botón de confirmar pago
     elementos.btnConfirmarPago.addEventListener('click', async () => {
-        await procesarPago();
+        // Validar el formulario manualmente
+        if (!elementos.formPago.checkValidity()) {
+            elementos.formPago.reportValidity();
+            return;
+        }
+        
+        const btn = elementos.btnConfirmarPago;
+        if (btn.disabled) return; // Evitar múltiples clics
+        
+        try {
+            // Mostrar estado de carga
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Procesando...';
+            
+            // Procesar el pago
+            const exito = await procesarPago();
+            
+            if (exito) {
+                // Cerrar el modal si el pago fue exitoso
+                const modal = bootstrap.Modal.getInstance(document.getElementById('pagarModal'));
+                if (modal) modal.hide();
+            }
+        } catch (error) {
+            console.error('Error al procesar el pago:', error);
+            mostrarError('Ocurrió un error al procesar el pago. Por favor, inténtalo de nuevo.');
+        } finally {
+            // Restaurar el botón
+            btn.disabled = false;
+            btn.textContent = 'Confirmar Pago';
+        }
     });
     
     // Evento para agregar método de pago
@@ -274,9 +303,10 @@ function configurarEventos() {
 
 // Procesar pago
 async function procesarPago() {
+    // Validar el formulario
     if (!elementos.formPago.checkValidity()) {
         elementos.formPago.reportValidity();
-        return;
+        return false;
     }
     
     const monto = parseFloat(elementos.montoPagar.value);
@@ -286,14 +316,10 @@ async function procesarPago() {
     
     if (monto <= 0) {
         mostrarError('El monto debe ser mayor a cero');
-        return;
+        return false;
     }
     
     try {
-        // Mostrar carga
-        elementos.btnConfirmarPago.disabled = true;
-        elementos.btnConfirmarPago.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Procesando...';
-        
         // Llamar a la función de base de datos para procesar el pago
         console.log('Enviando pago a la base de datos:', {
             user_id: state.user.id,
@@ -309,10 +335,10 @@ async function procesarPago() {
             p_user_id: state.user.id,
             p_store_id: state.store,
             p_amount: monto,
-            p_payment_method: state.metodoSeleccionado?.name || 'Efectivo', // Valor por defecto
+            p_payment_method: state.metodoSeleccionado?.name || 'Efectivo',
             p_reference_id: referencia || null,
             p_notes: notas || null,
-            p_status: 'Completado'  // Valor en español con mayúscula inicial para coincidir con la restricción de la base de datos
+            p_status: 'Completado'
         });
             
         console.log('Respuesta de process_payment:', { resultado, error });
@@ -328,12 +354,8 @@ async function procesarPago() {
         
         // Cerrar modal y limpiar formulario
         const modal = bootstrap.Modal.getInstance(document.getElementById('pagarModal'));
-        modal.hide();
+        if (modal) modal.hide();
         elementos.formPago.reset();
-        
-        // Actualizar el crédito disponible
-        state.creditoDisponible = resultado.available_credit;
-        state.deudaTotal = resultado.new_credit_used;
         
         // Actualizar la UI
         actualizarUI();
@@ -371,13 +393,13 @@ async function procesarPago() {
             `Tu crédito disponible ahora es de $${resultado.available_credit.toFixed(2)}. ` +
             'Se ha generado tu factura, se descargará automáticamente.');
         
+        return true;
+        
     } catch (error) {
         console.error('Error al procesar el pago:', error);
         mostrarError('Ocurrió un error al procesar el pago. Por favor, inténtalo de nuevo. ' + 
                     (error.message || ''));
-    } finally {
-        elementos.btnConfirmarPago.disabled = false;
-        elementos.btnConfirmarPago.textContent = 'Confirmar Pago';
+        return false;
     }
 }
 

@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auditoría - Panel de Administración</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <script>
+        // Configuración de Supabase
+        const SUPABASE_URL = 'https://ywmspibcnhfmqmnutpyg.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl3bXNwaWJjbmhmbXFtbnV0cHlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc2ODE0OTMsImV4cCI6MjA2MzI1NzQ5M30.HtHovCDBs11eNh_KjrqNn6BgWFYyFuFpKo5iQLFmFpU';
+        
+        console.log('Configuración de Supabase:');
+        console.log('- URL:', SUPABASE_URL);
+        console.log('- Clave anónima:', SUPABASE_ANON_KEY ? '***' : 'No definida');
+        
+        // Inicializar Supabase
+        document.addEventListener('DOMContentLoaded', function() {
+            try {
+                // Crear cliente de Supabase
+                const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                
+                // Hacerlo accesible globalmente
+                window.supabase = supabaseClient;
+                
+                console.log('Supabase inicializado correctamente');
+                
+                // Verificar autenticación
+                checkAuth();
+                
+            } catch (error) {
+                console.error('Error al inicializar Supabase:', error);
+                showError('Error al conectar con el servidor. Por favor, recarga la página.');
+            }
+        });
+        
+        // Verificar autenticación
+        async function checkAuth() {
+            showLoading(true);
+            try {
+                console.log('=== INICIO DE VERIFICACIÓN ===');
+                console.log('Verificando autenticación...');
+                
+                // Mostrar información de Supabase
+                console.log('Supabase:', {
+                    auth: supabase.auth ? 'Disponible' : 'No disponible',
+                    from: supabase.from ? 'Disponible' : 'No disponible'
+                });
+                
+                // Verificar sesión
+                console.log('Obteniendo sesión...');
+                const { data: { session }, error } = await supabase.auth.getSession();
+                
+                console.log('Respuesta de getSession():', { session, error });
+                
+                if (error) {
+                    console.error('Error al obtener la sesión:', error);
+                    throw error;
+                }
+                
+                if (!session) {
+                    console.log('No hay sesión activa');
+                    console.error('Error: No hay sesión activa');
+                    return;
+                }
+                
+                console.log('Usuario autenticado:', session.user.email);
+                
+                console.log('Sesión válida. Obteniendo perfil del usuario...');
+                
+                // Verificar rol de administrador
+                const { data: profile, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('id, role, store_id')
+                    .eq('id', session.user.id)
+                    .single();
+                
+                console.log('Perfil del usuario:', { profile, profileError });
+                
+                if (profileError) {
+                    console.error('Error al obtener el perfil:', profileError);
+                    throw profileError;
+                }
+                
+                // Si el usuario no es admin, mostrar error
+                if (profile.role !== 'admin') {
+                    console.error('Error: El usuario no es administrador');
+                    // Comentado temporalmente para depuración
+                    // window.location.href = 'login.html';
+                    return;
+                }
+                
+                console.log('Usuario verificado como administrador');
+                
+                // Inicializar la aplicación de auditoría
+                if (window.initializeAuditApp) {
+                    window.initializeAuditApp();
+                }
+                
+            } catch (error) {
+                console.error('Error en checkAuth:', error);
+                showError('Error al verificar la autenticación: ' + (error.message || 'Error desconocido'));
+                // Comentado temporalmente para depuración
+                // setTimeout(() => window.location.href = 'login.html', 3000);
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        // Mostrar loading
+        function showLoading(show) {
+            const loadingElement = document.getElementById('loading');
+            if (loadingElement) {
+                loadingElement.style.display = show ? 'flex' : 'none';
+            }
+        }
+        
+        // Mostrar mensaje de error
+        function showError(message) {
+            console.error('Error:', message);
+            // Aquí puedes implementar la lógica para mostrar el error en la interfaz
+            alert('Error: ' + message);
+        }
+    </script>
+    
+    <style>
+        /* ===== ESTILOS GENERALES ===== */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-color: #f3f4f6;
+        }
+
+        .desktop-sidebar {
+            display: none;
+            width: 250px;
+            min-height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            background-color: #1f2937;
+            color: white;
+            overflow-y: auto;
+            z-index: 40;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .main-content {
+            flex: 1;
+            margin-left: 0;
+            min-height: 100vh;
+            transition: margin-left 0.3s ease;
+            background-color: #f3f4f6;
+        }
+
+        /* ===== ESTILOS PARA MÓVIL ===== */
+        .mobile-menu-container {
+            position: fixed;
+            top: 0;
+            left: -280px;
+            width: 280px;
+            height: 100vh;
+            z-index: 1000;
+            transition: transform 0.3s ease-in-out;
+            background-color: #1f2937;
+            overflow-y: auto;
+        }
+        
+        .mobile-menu-container.open {
+            transform: translateX(280px);
+        }
+        
+        .mobile-sidebar {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            background-color: #1f2937;
+            color: white;
+            overflow-y: auto;
+        }
+        
+        .mobile-menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+        }
+        
+        .mobile-menu-overlay.open {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        /* ===== ESTILOS PARA ESCRITORIO ===== */
+        @media (min-width: 768px) {
+            .mobile-menu-container,
+            .mobile-menu-overlay,
+            .mobile-header,
+            #mobile-menu-button {
+                display: none !important;
+            }
+            
+            .desktop-sidebar {
+                display: flex !important;
+                flex-direction: column;
+                height: 100%;
+            }
+            
+            .main-content {
+                margin-left: 250px;
+                width: calc(100% - 250px);
+                min-height: 100vh;
+                background-color: #f3f4f6;
+            }
+            
+            /* Asegurar que el contenido no se esconda detrás del menú */
+            body {
+                padding-left: 250px;
+            }
+        }
+        
+        /* Estilos base */
+        .mobile-menu-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 40;
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        .mobile-menu-container {
+            position: fixed;
+            top: 0;
+            left: -280px;
+            width: 280px;
+            height: 100%;
+            background-color: #1f2937;
+            z-index: 50;
+            transition: transform 0.3s ease-in-out;
+            overflow-y: auto;
+        }
+
+        .mobile-menu-container.open {
+            transform: translateX(280px);
+        }
+
+        .mobile-sidebar {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .loading-spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #3b82f6;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Loading Overlay -->
+    <div id="loading" class="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-50">
+        <div class="text-center">
+            <div class="loading-spinner"></div>
+            <p class="mt-2 text-gray-600">Cargando...</p>
+        </div>
+    </div>
+
+    <!-- Menú móvil y overlay -->
+    <div class="mobile-menu-overlay" id="mobile-menu-overlay"></div>
+    
+    <!-- Mobile Menu Container -->
+    <div class="mobile-menu-container" id="mobile-menu">
+        <div class="mobile-sidebar">
+            <!-- Mobile Menu Header -->
+            <div class="p-4 border-b border-blue-700">
+                <div class="flex justify-between items-center">
+                    <h1 class="text-xl font-bold">Horizont</h1>
+                    <button id="close-mobile-menu" class="text-white hover:text-blue-200">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                <p class="text-blue-200 text-sm">Panel de Administración</p>
+            </div>
+            
+            <!-- Mobile Navigation -->
+            <nav class="flex-1 overflow-y-auto">
+                <a href="dashboard.html" class="block py-3 px-4 hover:bg-blue-700 flex items-center">
+                    <i class="fas fa-tachometer-alt w-6"></i>
+                    <span class="ml-3">Dashboard</span>
+                </a>
+                <a href="catalogo.html" class="block py-3 px-4 hover:bg-blue-700 flex items-center">
+                    <i class="fas fa-box w-6"></i>
+                    <span class="ml-3">Catálogo</span>
+                </a>
+                <a href="auditoria.html" class="block py-3 px-4 bg-blue-900 hover:bg-blue-700 flex items-center">
+                    <i class="fas fa-history w-6"></i>
+                    <span class="ml-3">Auditoría</span>
+                </a>
+                <a href="configuracion.html" class="block py-3 px-4 hover:bg-blue-700 flex items-center">
+                    <i class="fas fa-cog w-6"></i>
+                    <span class="ml-3">Configuración</span>
+                </a>
+                <button id="logout-btn" class="w-full text-left py-3 px-4 hover:bg-blue-700 flex items-center mt-auto">
+                    <i class="fas fa-sign-out-alt w-6"></i>
+                    <span class="ml-3">Cerrar Sesión</span>
+                </button>
+            </nav>
+        </div>
+    </div>
+    
+    <!-- Desktop Sidebar -->
+    <div class="desktop-sidebar">
+        <div class="p-4 border-b border-blue-700">
+            <h1 class="text-xl font-bold">Horizont</h1>
+            <p class="text-blue-200 text-sm">Panel de Administración</p>
+        </div>
+        <nav class="flex-1 overflow-y-auto">
+            <a href="dashboard.html" class="block py-3 px-4 hover:bg-blue-700 flex items-center">
+                <i class="fas fa-tachometer-alt w-6"></i>
+                <span class="ml-3">Dashboard</span>
+            </a>
+            <a href="catalogo.html" class="block py-3 px-4 hover:bg-blue-700 flex items-center">
+                <i class="fas fa-box w-6"></i>
+                <span class="ml-3">Catálogo</span>
+            </a>
+            <a href="auditoria.html" class="block py-3 px-4 bg-blue-900 hover:bg-blue-700 flex items-center">
+                <i class="fas fa-history w-6"></i>
+                <span class="ml-3">Auditoría</span>
+            </a>
+            <a href="configuracion.html" class="block py-3 px-4 hover:bg-blue-700 flex items-center">
+                <i class="fas fa-cog w-6"></i>
+                <span class="ml-3">Configuración</span>
+            </a>
+            <button id="logout-btn" class="w-full text-left py-3 px-4 hover:bg-blue-700 flex items-center mt-auto">
+                <i class="fas fa-sign-out-alt w-6"></i>
+                <span class="ml-3">Cerrar Sesión</span>
+            </button>
+        </nav>
+    </div>
+          
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Mobile Header -->
+        <header class="bg-blue-800 text-white p-4 flex justify-between items-center md:hidden">
+            <button id="mobile-menu-button" class="text-white">
+                <i class="fas fa-bars text-xl"></i>
+            </button>
+            <h1 class="text-xl font-bold">Auditoría</h1>
+            <div class="w-6"></div> <!-- Para balancear el diseño -->
+        </header>
+        
+        <!-- Desktop Header -->
+        <div class="p-6">
+            <!-- Barra de título y búsqueda -->
+            <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-6">
+                <h1 class="text-2xl font-bold text-gray-800 mb-4 md:mb-0">Registros de Auditoría</h1>
+                <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4 w-full md:w-auto">
+                    <div class="relative w-full md:w-64">
+                        <input type="text" id="search" placeholder="Buscar..." 
+                               class="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                    </div>
+                    <select id="action-filter" class="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-full md:w-auto">
+                        <option value="">Todas las acciones</option>
+                        <option value="INSERT">Inserción</option>
+                        <option value="UPDATE">Actualización</option>
+                        <option value="DELETE">Eliminación</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Tabla de registros -->
+            <div class="bg-white rounded-lg shadow overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acción</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Entidad</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID Entidad</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuario</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha/Hora</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="audit-logs-table-body" class="bg-white divide-y divide-gray-200">
+                            <!-- Los registros se cargarán aquí dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Paginación -->
+                <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200">
+                    <div class="flex-1 flex justify-between sm:hidden">
+                        <button id="prev-page-mobile" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">Anterior</button>
+                        <button id="next-page-mobile" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">Siguiente</button>
+                    </div>
+                    <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                        <div>
+                            <p class="text-sm text-gray-700">
+                                Mostrando <span id="showing-from" class="font-medium">1</span> a 
+                                <span id="showing-to" class="font-medium">10</span> de 
+                                <span id="total-items" class="font-medium">0</span> registros
+                            </p>
+                        </div>
+                        <div>
+                            <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                                <button id="prev-page" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                    <span class="sr-only">Anterior</span>
+                                    <i class="fas fa-chevron-left"></i>
+                                </button>
+                                <div class="flex items-center px-4">
+                                    <span class="text-sm text-gray-700">
+                                        Página <input type="number" id="current-page" min="1" value="1" class="w-12 text-center border rounded"> 
+                                        de <span id="total-pages">1</span>
+                                    </span>
+                                </div>
+                                <button id="next-page" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                    <span class="sr-only">Siguiente</span>
+                                    <i class="fas fa-chevron-right"></i>
+                                </button>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de detalles -->
+    <div id="audit-details-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold">Detalles del Registro</h3>
+                <button id="close-details-modal" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="audit-details-content" class="space-y-4">
+                <!-- Los detalles se cargarán aquí -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        // Esperar a que el DOM esté completamente cargado
+        document.addEventListener('DOMContentLoaded', function() {
+            // Elementos del DOM
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const closeMobileMenu = document.getElementById('close-mobile-menu');
+            const mobileMenu = document.getElementById('mobile-menu');
+            const mobileMenuOverlay = document.getElementById('mobile-menu-overlay');
+            const loadingOverlay = document.getElementById('loading');
+            const closeDetailsModal = document.getElementById('close-details-modal');
+            const detailsModal = document.getElementById('audit-details-modal');
+
+            // Mostrar menú móvil
+            function showMobileMenu(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                mobileMenu.classList.add('open');
+                mobileMenuOverlay.classList.add('open');
+                document.body.style.overflow = 'hidden';
+                // Prevenir el scroll del body cuando el menú está abierto
+                document.body.style.position = 'fixed';
+                document.body.style.width = '100%';
+            }
+
+            // Ocultar menú móvil
+            function hideMobileMenu(e) {
+                if (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+                mobileMenu.classList.remove('open');
+                mobileMenuOverlay.classList.remove('open');
+                document.body.style.overflow = '';
+                // Restaurar el scroll del body
+                document.body.style.position = '';
+                document.body.style.width = '';
+                window.scrollTo(0, 0);
+            }
+
+            // Mostrar modal de detalles
+            function showDetailsModal() {
+                detailsModal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            }
+
+            // Ocultar modal de detalles
+            function hideDetailsModal() {
+                detailsModal.classList.add('hidden');
+                document.body.style.overflow = '';
+            }
+
+            // Event listeners
+            if (mobileMenuButton) {
+                mobileMenuButton.addEventListener('click', showMobileMenu);
+            }
+
+            if (closeMobileMenu) {
+                closeMobileMenu.addEventListener('click', hideMobileMenu);
+            }
+
+            if (mobileMenuOverlay) {
+                mobileMenuOverlay.addEventListener('click', hideMobileMenu);
+            }
+
+            if (closeDetailsModal) {
+                closeDetailsModal.addEventListener('click', hideDetailsModal);
+            }
+
+            // Cerrar menú al hacer clic en un enlace o botón dentro del menú
+            const navLinks = document.querySelectorAll('.mobile-sidebar a, .mobile-sidebar button');
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    // No cerrar si es un dropdown
+                    if (!this.closest('.dropdown') || this.getAttribute('data-dropdown-toggle')) {
+                        hideMobileMenu(e);
+                    }
+                });
+            });
+
+            // Cerrar menú al hacer clic fuera
+            document.addEventListener('click', function(e) {
+                if (mobileMenu.classList.contains('open') && 
+                    !mobileMenu.contains(e.target) && 
+                    !mobileMenuButton.contains(e.target)) {
+                    hideMobileMenu(e);
+                }
+            });
+
+            // Prevenir el cierre al hacer clic dentro del menú
+            mobileMenu.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+
+            // Ocultar loading overlay cuando todo esté listo
+            if (loadingOverlay) {
+                setTimeout(() => {
+                    loadingOverlay.style.display = 'none';
+                }, 500);
+            }
+
+            // Manejar el cierre de sesión
+            const logoutButtons = document.querySelectorAll('#logout-btn');
+            logoutButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // Aquí iría la lógica para cerrar sesión
+                    console.log('Cerrar sesión');
+                    // Por ejemplo, redirigir a la página de inicio de sesión
+                    // window.location.href = 'login.html';
+                });
+            });
+
+            // Cerrar modal al hacer clic fuera del contenido
+            detailsModal.addEventListener('click', function(e) {
+                if (e.target === detailsModal) {
+                    hideDetailsModal();
+                }
+            });
+        });
+    </script>
+    <script src="js/auditoria.js"></script>
+</body>
+</html>

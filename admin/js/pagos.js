@@ -10,6 +10,378 @@ let storeId = '';
 let searchQuery = '';
 let payments = [];
 
+// Estado del menú
+let isMobileMenuOpen = false;
+let isDesktopSidebarCollapsed = false;
+
+// Elementos del menú
+const mobileMenuButton = document.getElementById('mobile-menu-button');
+const desktopSidebar = document.getElementById('desktop-sidebar');
+const mobileMenu = document.getElementById('mobile-menu');
+const closeMobileMenu = document.getElementById('close-mobile-menu');
+const mobileMenuOverlay = document.getElementById('mobile-menu-overlay');
+const toggleSidebar = document.getElementById('toggle-sidebar');
+const notificationsButton = document.getElementById('notifications-button');
+const notificationsDropdown = document.getElementById('notifications-dropdown');
+const userMenuButton = document.getElementById('user-menu-button');
+const userDropdown = document.getElementById('user-dropdown');
+const logoutBtn = document.getElementById('logout-btn');
+const mobileLogoutBtn = document.getElementById('logout-btn-mobile');
+const userNameElement = document.getElementById('user-name');
+const userInitialsElement = document.getElementById('user-initials');
+const userAvatarElement = document.getElementById('user-avatar');
+const dropdownUserName = document.getElementById('dropdown-user-name');
+const dropdownUserEmail = document.getElementById('dropdown-user-email');
+
+// Función para configurar el menú móvil
+function setupMobileMenu() {
+    if (!mobileMenuButton || !mobileMenu || !closeMobileMenu || !mobileMenuOverlay) {
+        console.error('Elementos del menú móvil no encontrados');
+        return;
+    }
+    
+    // Configurar eventos del menú móvil
+    mobileMenuButton.addEventListener('click', () => {
+        isMobileMenuOpen = !isMobileMenuOpen;
+        if (mobileMenu) mobileMenu.classList.toggle('open', isMobileMenuOpen);
+        if (mobileMenuOverlay) mobileMenuOverlay.classList.toggle('open', isMobileMenuOpen);
+        document.body.style.overflow = isMobileMenuOpen ? 'hidden' : '';
+    });
+
+    // Cerrar menú móvil
+    closeMobileMenu.addEventListener('click', () => {
+        isMobileMenuOpen = false;
+        if (mobileMenu) mobileMenu.classList.remove('open');
+        if (mobileMenuOverlay) mobileMenuOverlay.classList.remove('open');
+        document.body.style.overflow = '';
+    });
+
+    // Cerrar menú al hacer clic en el overlay
+    mobileMenuOverlay.addEventListener('click', () => {
+        isMobileMenuOpen = false;
+        if (mobileMenu) mobileMenu.classList.remove('open');
+        mobileMenuOverlay.classList.remove('open');
+        document.body.style.overflow = '';
+    });
+    
+    console.log('Menú móvil configurado correctamente');
+}
+
+// Función para configurar el menú de escritorio
+function setupDesktopMenu() {
+    if (!toggleSidebar || !desktopSidebar) {
+        console.error('Elementos del menú de escritorio no encontrados');
+        return;
+    }
+    
+    // Verificar el estado inicial del sidebar (colapsado o expandido)
+    const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+    if (isCollapsed) {
+        isDesktopSidebarCollapsed = true;
+        desktopSidebar.classList.add('collapsed');
+    }
+    
+    // Alternar barra lateral en escritorio
+    toggleSidebar.addEventListener('click', () => {
+        isDesktopSidebarCollapsed = !isDesktopSidebarCollapsed;
+        localStorage.setItem('sidebarCollapsed', isDesktopSidebarCollapsed);
+        updateMainContent();
+        console.log('Barra lateral ' + (isDesktopSidebarCollapsed ? 'colapsada' : 'expandida'));
+    });
+    
+    // Actualizar el contenido principal al cargar
+    updateMainContent();
+    console.log('Menú de escritorio configurado correctamente');
+}
+
+// Función para actualizar el contenido principal cuando se alterna el sidebar
+function updateMainContent() {
+    const mainContent = document.getElementById('main-content');
+    if (!mainContent) {
+        console.error('Contenido principal no encontrado');
+        return;
+    }
+    
+    if (window.innerWidth >= 768) { // Solo aplicar en pantallas de escritorio
+        if (isDesktopSidebarCollapsed) {
+            mainContent.style.marginLeft = '4rem';
+            mainContent.style.width = 'calc(100% - 4rem)';
+        } else {
+            mainContent.style.marginLeft = '16rem';
+            mainContent.style.width = 'calc(100% - 16rem)';
+        }
+    } else {
+        mainContent.style.marginLeft = '0';
+        mainContent.style.width = '100%';
+    }
+}
+
+// Función para configurar el menú de notificaciones
+function setupNotificationsMenu() {
+    if (!notificationsButton || !notificationsDropdown) return;
+    
+    notificationsButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        notificationsDropdown.classList.toggle('hidden');
+    });
+    
+    // Cerrar el menú de notificaciones al hacer clic fuera de él
+    document.addEventListener('click', (e) => {
+        if (!notificationsButton.contains(e.target) && !notificationsDropdown.contains(e.target)) {
+            notificationsDropdown.classList.add('hidden');
+        }
+    });
+}
+
+// Función para cargar el perfil del usuario
+async function loadUserProfile() {
+    try {
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        
+        if (userError) throw userError;
+        if (!user) throw new Error('No hay usuario autenticado');
+        
+        // Obtener información del perfil
+        const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+            
+        if (profileError) throw profileError;
+        
+        // Actualizar la UI con la información del perfil
+        const displayName = profile.full_name || user.email.split('@')[0];
+        const initials = displayName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+        
+        if (userNameElement) userNameElement.textContent = displayName;
+        if (userInitialsElement) userInitialsElement.textContent = initials;
+        if (dropdownUserName) dropdownUserName.textContent = displayName;
+        if (dropdownUserEmail) dropdownUserEmail.textContent = user.email;
+        
+        // Si hay una imagen de perfil, mostrarla
+        if (profile.avatar_url && userAvatarElement) {
+            userAvatarElement.style.backgroundImage = `url(${profile.avatar_url})`;
+            userAvatarElement.style.backgroundSize = 'cover';
+            userAvatarElement.style.backgroundPosition = 'center';
+            userInitialsElement.classList.add('hidden');
+            userAvatarElement.classList.remove('hidden');
+        } else {
+            userAvatarElement.classList.remove('hidden');
+            userInitialsElement.classList.remove('hidden');
+        }
+
+    } catch (error) {
+        console.error('Error al cargar el perfil del usuario:', error);
+    }
+}
+
+// Función para configurar el menú de usuario
+function setupUserMenu() {
+    if (!userMenuButton || !userDropdown) return;
+
+    userMenuButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        userDropdown.classList.toggle('hidden');
+    });
+
+    // Cerrar al hacer clic fuera
+    document.addEventListener('click', (e) => {
+        if (!userMenuButton.contains(e.target) && !userDropdown.contains(e.target)) {
+            userDropdown.classList.add('hidden');
+        }
+    });
+}
+
+// Función para manejar el cierre de sesión
+function setupLogout() {
+    const logout = async () => {
+        try {
+            const { error } = await supabase.auth.signOut();
+            if (error) throw error;
+            window.location.href = 'login.html';
+        } catch (error) {
+            console.error('Error al cerrar sesión:', error);
+            showError('Error al cerrar sesión. Por favor, intente de nuevo.');
+        }
+    };
+
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            logout();
+        });
+    }
+
+    if (mobileLogoutBtn) {
+        mobileLogoutBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            logout();
+        });
+    }
+}
+
+// Crear elemento de notificación
+function createNotificationElement(notification) {
+    try {
+        if (!notification) {
+            console.error('No se proporcionó una notificación válida');
+            return null;
+        }
+
+        const notificationElement = document.createElement('div');
+        if (!notificationElement) {
+            console.error('No se pudo crear el elemento de notificación');
+            return null;
+        }
+
+        // Asegurar que los valores sean seguros para usar en innerHTML
+        const safeTitle = String(notification.title || 'Notificación').replace(/[^\w\sáéíóúÁÉÍÓÚñÑ.,!?¿¡\- ]/g, '');
+        const safeMessage = String(notification.message || '').replace(/[^\w\sáéíóúÁÉÍÓÚñÑ.,!?¿¡\- ]/g, '');
+        const safeType = ['success', 'warning', 'error'].includes(notification.type) ? notification.type : 'info';
+        const isRead = Boolean(notification.read);
+        
+        // Construir el HTML de forma segura
+        notificationElement.className = `notification-item${isRead ? '' : ' unread'} ${safeType}`;
+        notificationElement.innerHTML = `
+            <div class="notification-icon">
+                <i class="fas ${getNotificationIcon(safeType)}"></i>
+            </div>
+            <div class="notification-content">
+                <div class="notification-title">${safeTitle}</div>
+                <div class="notification-message">${safeMessage}</div>
+                <div class="notification-time">${formatTimeAgo(notification.created_at || new Date().toISOString())}</div>
+            </div>
+        `;
+        
+        return notificationElement;
+    } catch (error) {
+        console.error('Error en createNotificationElement:', error);
+        return null;
+    }
+}
+
+// Obtener ícono para la notificación según el tipo
+function getNotificationIcon(type) {
+    switch(type) {
+        case 'success':
+            return 'fa-check-circle';
+        case 'warning':
+            return 'fa-exclamation-triangle';
+        case 'error':
+            return 'fa-times-circle';
+        default:
+            return 'fa-info-circle';
+    }
+}
+
+// Formatear fecha relativa (ej: "hace 5 minutos")
+function formatTimeAgo(dateString) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const seconds = Math.floor((now - date) / 1000);
+    
+    if (seconds < 60) return 'hace unos segundos';
+    
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `hace ${minutes} minuto${minutes === 1 ? '' : 's'}`;
+    
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `hace ${hours} hora${hours === 1 ? '' : 's'}`;
+    
+    const days = Math.floor(hours / 24);
+    return `hace ${days} día${days === 1 ? '' : 's'}`;
+}
+
+// Actualizar el contador de notificaciones
+function updateNotificationBadge() {
+    try {
+        const notificationCount = document.getElementById('notification-count');
+        if (!notificationCount) {
+            console.warn('No se encontró el contador de notificaciones');
+            return;
+        }
+        
+        const unreadElements = document.querySelectorAll('.notification-item.unread');
+        const unreadCount = unreadElements ? unreadElements.length : 0;
+        
+        notificationCount.textContent = unreadCount > 0 ? unreadCount.toString() : '';
+        notificationCount.style.display = unreadCount > 0 ? 'flex' : 'none';
+        
+        console.log(`Actualizado contador de notificaciones: ${unreadCount} sin leer`);
+    } catch (error) {
+        console.error('Error en updateNotificationBadge:', error);
+    }
+}
+
+// Inicializar la aplicación
+async function initApp() {
+    try {
+        console.log('Iniciando aplicación...');
+        
+        // Configurar menús básicos primero
+        setupMobileMenu();
+        setupDesktopMenu();
+        setupUserMenu();
+        
+        // Esperar a que el DOM esté completamente cargado
+        if (document.readyState === 'loading') {
+            await new Promise(resolve => {
+                document.addEventListener('DOMContentLoaded', resolve);
+            });
+        }
+        
+        // Configurar el resto de la aplicación
+        setupNotificationsMenu();
+        setupLogout();
+        
+        // Cargar perfil del usuario
+        try {
+            await loadUserProfile();
+        } catch (error) {
+            console.warn('Error al cargar perfil de usuario:', error);
+        }
+        
+        // Mostrar notificaciones de ejemplo después de un pequeño retraso
+        // para asegurar que el DOM esté listo
+        setTimeout(() => {
+            try {
+                showSampleNotifications();
+                // Configurar notificaciones en tiempo real después de mostrar las de ejemplo
+                setupPaymentNotifications();
+            } catch (error) {
+                console.error('Error al configurar notificaciones:', error);
+            }
+        }, 500);
+        
+        console.log('Aplicación iniciada correctamente');
+    } catch (error) {
+        console.error('Error en initApp:', error);
+        // Mostrar mensaje de error solo si el elemento existe
+        const errorElement = document.getElementById('error-message');
+        if (errorElement) {
+            errorElement.textContent = 'Error al iniciar la aplicación. Por favor, recarga la página.';
+            errorElement.style.display = 'block';
+        }
+    }
+}
+
+// Iniciar la aplicación cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', () => {
+    initApp();
+    
+    // Asegurar que el menú se cierre al redimensionar la ventana
+    window.addEventListener('resize', () => {
+        if (window.innerWidth >= 768 && isMobileMenuOpen) {
+            mobileMenu.classList.remove('open');
+            mobileMenuOverlay.classList.remove('open');
+            document.body.classList.remove('overflow-hidden');
+            isMobileMenuOpen = false;
+        }
+        updateMainContent();
+    });
+});
+
 // Elementos del DOM
 let paymentsTableBody, loading, searchInput, statusFilter, dateFilter, filterButton;
 let prevPageBtn, nextPageBtn, totalPagesSpan, paymentsCountSpan;
@@ -456,6 +828,63 @@ const MOCK_PAYMENTS = [
     }
   }
 ];
+
+// Mostrar notificación de nuevo pago
+function showNewPaymentNotification(payment) {
+  // Crear notificación
+  const notification = {
+    id: `payment-${Date.now()}`,
+    title: 'Nuevo Pago Recibido',
+    message: `Se ha recibido un nuevo pago de $${payment.amount} (${payment.payment_method})`,
+    type: 'success',
+    read: false,
+    created_at: new Date().toISOString(),
+    payment_id: payment.id
+  };
+  
+  // Mostrar notificación toast
+  showToast(notification.title, notification.message, notification.type);
+  
+  // Agregar a la lista de notificaciones
+  if (notificationsList) {
+    const notificationElement = createNotificationElement(notification);
+    notificationsList.insertBefore(notificationElement, notificationsList.firstChild);
+  }
+  
+  // Actualizar contador de notificaciones
+  updateNotificationBadge();
+}
+
+// Configurar notificaciones en tiempo real para nuevos pagos
+function setupPaymentNotifications() {
+  if (!storeId) {
+    console.error('No se puede configurar notificaciones: storeId no definido');
+    return;
+  }
+  
+  console.log('Configurando notificaciones en tiempo real para pagos...');
+  
+  // Suscribirse a cambios en la tabla de pagos
+  const subscription = supabase
+    .channel('payments_changes')
+    .on('postgres_changes', {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'payments',
+      filter: `store_id=eq.${storeId}`
+    }, (payload) => {
+      console.log('Nuevo pago recibido:', payload.new);
+      showNewPaymentNotification(payload.new);
+      // Recargar la lista de pagos
+      loadPayments();
+    })
+    .subscribe();
+  
+  console.log('Suscripción a notificaciones de pagos activada');
+  
+  // Devolver la suscripción para poder cancelarla si es necesario
+  return subscription;
+}
 
 // Función para cargar los pagos
 async function loadPayments() {
@@ -1340,6 +1769,19 @@ async function procesarReembolso(paymentId) {
     }
 }
 
+// Cerrar menú al hacer clic en los enlaces del menú
+document.addEventListener('DOMContentLoaded', () => {
+    const menuLinks = document.querySelectorAll('#mobile-menu a');
+    menuLinks.forEach(link => {
+        link.addEventListener('click', () => {
+            isMobileMenuOpen = false;
+            if (mobileMenu) mobileMenu.classList.remove('open');
+            if (mobileMenuOverlay) mobileMenuOverlay.classList.remove('open');
+            document.body.style.overflow = '';
+        });
+    });
+});
+
 // Hacer las funciones accesibles globalmente
 window.editarMetodoPago = editarMetodoPago;
 window.toggleMetodoPago = toggleMetodoPago;
@@ -1633,7 +2075,7 @@ function initializeTooltips() {
 }
 
 // Funciones globales para los botones de acción
-async function verDetallePago(id) {
+window.verDetallePago = async function(id) {
     try {
         const payment = payments.find(p => p.id === id);
         if (!payment) throw new Error('Pago no encontrado');
@@ -1852,6 +2294,69 @@ async function rechazarPago(id) {
         showError('No se pudo rechazar el pago: ' + (error.message || 'Error desconocido'));
     } finally {
         showLoading(false);
+    }
+}
+
+// Mostrar notificaciones de ejemplo
+function showSampleNotifications() {
+    try {
+        console.log('Mostrando notificaciones de ejemplo...');
+        
+        // Asegurarse de que notificationsList exista
+        const notificationsList = document.getElementById('notifications-list');
+        if (!notificationsList) {
+            console.warn('No se encontró el elemento notifications-list');
+            return;
+        }
+
+        // Notificaciones de ejemplo
+        const sampleNotifications = [
+            {
+                id: 'sample-1',
+                title: 'Pago Recibido',
+                message: 'Se ha recibido un pago de $150.000 (Nequi)',
+                type: 'success',
+                read: false,
+                created_at: new Date().toISOString()
+            },
+            {
+                id: 'sample-2',
+                title: 'Pago Pendiente',
+                message: 'Pago de $75.000 (Bancolombia) pendiente de confirmación',
+                type: 'warning',
+                read: false,
+                created_at: new Date(Date.now() - 5 * 60 * 1000).toISOString()
+            },
+            {
+                id: 'sample-3',
+                title: 'Pago Rechazado',
+                message: 'El pago de $120.000 (Daviplata) fue rechazado',
+                type: 'error',
+                read: true,
+                created_at: new Date(Date.now() - 3600 * 1000).toISOString()
+            }
+        ];
+
+        // Limpiar notificaciones existentes
+        notificationsList.innerHTML = '';
+
+        // Mostrar notificaciones de ejemplo
+        sampleNotifications.forEach(notification => {
+            try {
+                const notificationElement = createNotificationElement(notification);
+                if (notificationElement) {
+                    notificationsList.appendChild(notificationElement);
+                }
+            } catch (error) {
+                console.error('Error al crear notificación:', error);
+            }
+        });
+
+        // Actualizar contador
+        updateNotificationBadge();
+        console.log('Notificaciones de ejemplo mostradas correctamente');
+    } catch (error) {
+        console.error('Error en showSampleNotifications:', error);
     }
 }
 

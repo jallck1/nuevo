@@ -201,6 +201,119 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        
+        /* ===== ESTILOS PARA MÓVIL ===== */
+        /* Contenedor principal del menú móvil */
+        .mobile-menu-container {
+            position: fixed;
+            top: 0;
+            left: -250px; /* Inicialmente oculto fuera de la pantalla */
+            width: 250px;
+            height: 100vh;
+            z-index: 1000;
+            transition: left 0.3s ease-in-out;
+        }
+        
+        /* Menú móvil abierto */
+        .mobile-menu-container.open {
+            left: 0;
+        }
+        
+        /* Menú lateral */
+        .mobile-sidebar {
+            width: 100%;
+            height: 100%;
+            background-color: #1e40af; /* bg-blue-800 */
+            color: white;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Overlay del menú móvil */
+        .mobile-menu-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+            pointer-events: none;
+        }
+        
+        .mobile-menu-overlay.open {
+            display: block;
+            opacity: 1;
+            pointer-events: auto;
+        }
+        
+        /* ===== ESTILOS PARA ESCRITORIO ===== */
+        /* Sidebar de escritorio */
+        .desktop-sidebar {
+            display: none;
+            width: 16rem;
+            background-color: #1e40af; /* bg-blue-800 */
+            color: white;
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            overflow-y: auto;
+            z-index: 40;
+        }
+        
+        /* Contenido principal */
+        .main-content {
+            width: 100%;
+            margin-left: 0;
+            transition: margin-left 0.3s ease-in-out;
+        }
+        
+        /* Media queries para escritorio */
+        @media (min-width: 768px) {
+            /* Ocultar menú móvil y botones de hamburguesa */
+            .mobile-menu-container,
+            .mobile-menu-overlay,
+            #mobile-menu-button,
+            #toggle-sidebar {
+                display: none !important;
+            }
+            
+            /* Mostrar sidebar de escritorio */
+            .desktop-sidebar {
+                display: block;
+            }
+            
+            /* Ajustar contenido principal */
+            .main-content {
+                margin-left: 16rem;
+                width: calc(100% - 16rem);
+            }
+            
+            /* Sidebar colapsada */
+            .desktop-sidebar.collapsed {
+                width: 4rem;
+            }
+            
+            .desktop-sidebar.collapsed .sidebar-item-text,
+            .desktop-sidebar.collapsed .sidebar-header {
+                display: none;
+            }
+            
+            .desktop-sidebar.collapsed .sidebar-item-icon {
+                margin-right: 0;
+                margin-left: 0;
+            }
+            
+            .main-content.collapsed {
+                margin-left: 4rem;
+                width: calc(100% - 4rem);
+            }
+        }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -212,55 +325,150 @@
         </div>
     </div>
 
-    <div class="flex h-screen overflow-hidden relative">
-        <!-- Sidebar -->
-        <div id="sidebar" class="sidebar bg-blue-800 text-white flex-shrink-0 flex flex-col h-full">
-            <div class="p-4 border-b border-blue-700 flex justify-between items-center">
-                <div>
-                    <h2 class="text-xl font-bold">Panel de Control</h2>
-                    <p id="user-role" class="text-sm text-blue-200">Administrador</p>
+    <!-- Menú móvil (solo visible en móviles) -->
+    <div class="mobile-menu-container" id="mobile-menu">
+        <div class="mobile-sidebar">
+            <div class="p-4 border-b border-blue-700">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-xl font-bold">Menú</h2>
+                    <button id="close-mobile-menu" class="text-white">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
                 </div>
-                <button id="toggle-sidebar" class="text-white hover:text-blue-200">
-                    <i class="fas fa-bars text-xl"></i>
-                </button>
+                <p id="user-role-mobile" class="text-sm text-blue-200">Administrador</p>
             </div>
-
-            <nav class="flex-1 overflow-y-auto">
-                <ul class="space-y-1">
-                    <li>
-                        <a href="perfil.html" class="flex items-center px-4 py-2 text-gray-300 hover:bg-blue-700 hover:text-white rounded-md">
-                            <i class="fas fa-user mr-3"></i>
-                            Perfil
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#" class="flex items-center px-4 py-2 text-white bg-blue-700 rounded-md">
-                            <i class="fas fa-users mr-3"></i>
-                            Usuarios
-                        </a>
-                    </li>
-                    <li>
-                        <a href="catalogo.html" class="flex items-center px-4 py-2 text-gray-300 hover:bg-blue-700 hover:text-white rounded-md">
-                            <i class="fas fa-box mr-3"></i>
-                            Catálogo
-                        </a>
-                    </li>
-                    <li>
-                        <a href="orders.html" class="flex items-center px-4 py-2 text-gray-300 hover:bg-blue-700 hover:text-white rounded-md">
-                            <i class="fas fa-shopping-cart mr-3"></i>
-                            Órdenes
-                        </a>
-                    </li>
-                    <li>
-                        <a href="contenido-institucional.html" class="flex items-center px-4 py-2 text-gray-300 hover:bg-blue-700 hover:text-white rounded-md">
-                            <i class="fas fa-file-alt mr-3"></i>
-                            Contenido
-                        </a>
-                    </li>
-                </ul>
+            <nav class="flex-1 overflow-y-auto py-2">
+                <a href="dashboard.html" class="block py-3 px-6 hover:bg-blue-700 flex items-center">
+                    <i class="fas fa-tachometer-alt w-6 text-center mr-3"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="catalogo.html" class="block py-3 px-6 hover:bg-blue-700 flex items-center">
+                    <i class="fas fa-box w-6 text-center mr-3"></i>
+                    <span>Catálogo</span>
+                </a>
+                <a href="orders.html" class="block py-3 px-6 hover:bg-blue-700 flex items-center">
+                    <i class="fas fa-shopping-cart w-6 text-center mr-3"></i>
+                    <span>Órdenes</span>
+                    <span id="pending-orders-count-mobile" class="ml-auto bg-yellow-500 text-white text-xs font-bold px-2 py-1 rounded-full">0</span>
+                </a>
+                <a href="pagos.html" class="block py-3 px-6 hover:bg-blue-700 flex items-center">
+                    <i class="fas fa-credit-card w-6 text-center mr-3"></i>
+                    <span>Pagos</span>
+                </a>
+                <a href="devoluciones.html" class="block py-3 px-6 hover:bg-blue-700 flex items-center">
+                    <i class="fas fa-undo-alt w-6 text-center mr-3"></i>
+                    <span>Devoluciones</span>
+                </a>
+                <a href="usuarios.html" class="block py-3 px-6 hover:bg-blue-700 flex items-center bg-blue-900">
+                    <i class="fas fa-users w-6 text-center mr-3"></i>
+                    <span>Usuarios</span>
+                </a>
+                <a href="proveedores.html" class="block py-3 px-6 hover:bg-blue-700 flex items-center">
+                    <i class="fas fa-truck w-6 text-center mr-3"></i>
+                    <span>Proveedores</span>
+                </a>
+                <a href="reportes.html" class="block py-3 px-6 hover:bg-blue-700 flex items-center">
+                    <i class="fas fa-chart-bar w-6 text-center mr-3"></i>
+                    <span>Reportes</span>
+                </a>
+                <a href="configuracion.html" class="block py-3 px-6 hover:bg-blue-700 flex items-center">
+                    <i class="fas fa-cog w-6 text-center mr-3"></i>
+                    <span>Configuración</span>
+                </a>
+                <div class="mt-auto border-t border-blue-700">
+                    <a href="#" class="block py-3 px-6 hover:bg-blue-700 flex items-center" id="logout-btn-mobile">
+                        <i class="fas fa-sign-out-alt w-6 text-center mr-3"></i>
+                        <span>Cerrar Sesión</span>
+                    </a>
+                    <div class="p-4 text-xs text-blue-300">
+                        <p>Versión 1.0.0</p>
+                    </div>
+                </div>
             </nav>
         </div>
+    </div>
 
+    <!-- Overlay para el menú móvil -->
+    <div id="mobile-menu-overlay" class="mobile-menu-overlay"></div>
+
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar de escritorio (solo visible en pantallas grandes) -->
+        <div class="desktop-sidebar bg-blue-800 text-white w-64 flex flex-col h-full" id="desktop-sidebar">
+            <div class="p-4 border-b border-blue-700">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 class="text-xl font-bold">Panel de Control</h2>
+                        <p id="user-role" class="text-sm text-blue-200">Administrador</p>
+                    </div>
+                    <button id="toggle-sidebar" class="text-blue-200 hover:text-white">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        
+            <nav class="flex-1 overflow-y-auto py-1">
+                <a href="dashboard.html" class="block py-2 px-5 hover:bg-blue-700 flex items-center bg-blue-900">
+                    <i class="fas fa-tachometer-alt w-5 text-center mr-2"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="catalogo.html" class="block py-2 px-5 hover:bg-blue-700 flex items-center">
+                    <i class="fas fa-box w-5 text-center mr-2"></i>
+                    <span>Catálogo</span>
+                </a>
+                <a href="orders.html" class="block py-2 px-5 hover:bg-blue-700 flex items-center">
+                    <i class="fas fa-shopping-cart w-5 text-center mr-2"></i>
+                    <span>Órdenes</span>
+                    <span id="pending-orders-count" class="ml-auto bg-yellow-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">0</span>
+                </a>
+                <a href="pagos.html" class="block py-2 px-5 hover:bg-blue-700 flex items-center">
+                    <i class="fas fa-credit-card w-5 text-center mr-2"></i>
+                    <span>Pagos</span>
+                </a>
+                <a href="devoluciones.html" class="block py-2 px-5 hover:bg-blue-700 flex items-center">
+                    <i class="fas fa-undo-alt w-5 text-center mr-2"></i>
+                    <span>Devoluciones</span>
+                </a>
+                <a href="usuarios.html" class="block py-2 px-5 hover:bg-blue-700 flex items-center">
+                    <i class="fas fa-users w-5 text-center mr-2"></i>
+                    <span>Usuarios</span>
+                </a>
+                <a href="proveedores.html" class="block py-2 px-5 hover:bg-blue-700 flex items-center">
+                    <i class="fas fa-truck w-5 text-center mr-2"></i>
+                    <span>Proveedores</span>
+                </a>
+                <a href="reportes.html" class="block py-2 px-5 hover:bg-blue-700 flex items-center">
+                    <i class="fas fa-chart-bar w-5 text-center mr-2"></i>
+                    <span>Reportes</span>
+                </a>
+                <a href="auditoria.html" class="block py-2 px-5 hover:bg-blue-700 flex items-center">
+                    <i class="fas fa-clipboard-list w-5 text-center mr-2"></i>
+                    <span>Auditoría</span>
+                </a>
+                <a href="contenido-institucional.html" class="block py-2 px-5 hover:bg-blue-700 flex items-center">
+                    <i class="fas fa-file-alt w-5 text-center mr-2"></i>
+                    <span>Contenido Institucional</span>
+                </a>
+                <a href="pqrs.html" class="block py-2 px-5 hover:bg-blue-700 flex items-center">
+                    <i class="fas fa-comments w-5 text-center mr-2"></i>
+                    <span>PQRS</span>
+                    <span id="pending-pqrs" class="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">0</span>
+                </a>
+                <a href="perfil.html" class="block py-2 px-5 hover:bg-blue-700 flex items-center">
+                    <i class="fas fa-user-cog w-5 text-center mr-2"></i>
+                    <span>Configuración de Perfil</span>
+                </a>
+                <div class="mt-2 border-t border-blue-700">
+                    <a href="#" id="logout-btn" class="block py-2 px-5 hover:bg-blue-700 flex items-center text-red-200">
+                        <i class="fas fa-sign-out-alt w-5 text-center mr-2"></i>
+                        <span>Cerrar Sesión</span>
+                    </a>
+                    <div class="px-5 pt-2 pb-4 text-xs text-blue-300">
+                        <p>Versión 1.0.0</p>
+                    </div>
+                </div>
+            </nav>
+        </div>
+          
         <!-- Overlay para móvil -->
         <div id="sidebar-overlay" class="sidebar-overlay"></div>
 
@@ -276,16 +484,54 @@
                         <h1 class="text-xl font-semibold text-gray-800">Gestión de Clientes</h1>
                     </div>
                     <div class="flex items-center space-x-4">
-                        <button id="notifications-btn" class="relative text-gray-600 hover:text-gray-900">
-                            <i class="fas fa-bell text-xl"></i>
-                            <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">3</span>
-                        </button>
-                        <div class="relative" id="user-menu-button">
-                            <button type="button" class="flex items-center text-sm rounded-full focus:outline-none" id="user-menu" aria-expanded="false" aria-haspopup="true">
-                                <span class="sr-only">Abrir menú de usuario</span>
-                                <span class="mr-2 text-gray-700 hidden md:inline">Administrador</span>
-                                <i class="fas fa-user-circle text-2xl text-gray-500"></i>
+                        <!-- Botón de notificaciones -->
+                        <div class="relative">
+                            <button id="notifications-button" class="p-2 text-gray-600 hover:text-gray-900 focus:outline-none relative" onclick="event.stopPropagation();">
+                                <i class="fas fa-bell text-xl"></i>
+                                <span id="notification-badge" class="absolute top-1 right-1 w-3 h-3 bg-red-500 rounded-full hidden"></span>
                             </button>
+                            <!-- Dropdown de notificaciones -->
+                            <div id="notifications-dropdown" class="hidden absolute right-0 mt-2 w-72 bg-white rounded-md shadow-lg py-1 z-20 border border-gray-200">
+                                <div class="px-4 py-2 border-b border-gray-100 bg-gray-50">
+                                    <h3 class="text-sm font-medium text-gray-900">Notificaciones</h3>
+                                </div>
+                                <div id="notifications-list" class="max-h-60 overflow-y-auto">
+                                    <!-- Las notificaciones se cargarán aquí dinámicamente -->
+                                    <div class="px-4 py-3 text-center text-sm text-gray-500">
+                                        No hay notificaciones recientes
+                                    </div>
+                                </div>
+                                <div class="px-4 py-2 border-t border-gray-100 bg-gray-50 text-right">
+                                    <a href="#" class="text-xs text-blue-600 hover:underline">Ver todas</a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Menú de usuario -->
+                        <div class="relative">
+                            <button id="user-menu-button" class="flex items-center space-x-2 focus:outline-none group">
+                                <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold overflow-hidden">
+                                    <img id="user-avatar" src="" alt="Avatar" class="w-full h-full object-cover hidden">
+                                    <span id="user-initials" class="text-sm">U</span>
+                                </div>
+                                <span class="hidden md:inline-block text-sm font-medium text-gray-700 group-hover:text-blue-600">
+                                    <span id="user-name">Usuario</span>
+                                </span>
+                                <i class="fas fa-chevron-down text-xs text-gray-500 group-hover:text-blue-600"></i>
+                            </button>
+                            <!-- Dropdown de usuario -->
+                            <div id="user-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-20 border border-gray-200">
+                                <div class="px-4 py-2 border-b border-gray-100">
+                                    <p class="text-sm font-medium text-gray-900 truncate" id="dropdown-user-name">Usuario</p>
+                                    <p class="text-xs text-gray-500 truncate" id="dropdown-user-email">usuario@ejemplo.com</p>
+                                </div>
+                                <a href="perfil.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-user-circle mr-2 text-gray-500 w-4 text-center"></i> Mi Perfil
+                                </a>
+                                <a href="#" id="logout-btn" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-sign-out-alt mr-2 text-gray-500 w-4 text-center"></i> Cerrar Sesión
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -299,13 +545,15 @@
                         <h1 class="text-2xl font-bold text-gray-800">Gestión de Clientes</h1>
                         <p class="text-sm text-gray-500">Administra los usuarios del sistema</p>
                     </div>
-                    <button 
-                        type="button" 
-                        class="inline-flex items-center px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white text-sm font-medium rounded-lg shadow-md hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200" 
-                        onclick="openModal('newUserModal')">
-                        <i class="fas fa-plus-circle mr-2"></i> 
-                        <span>Nuevo Cliente</span>
-                    </button>
+                    <div class="flex space-x-3">
+                        <button onclick="showSolicitudesModal()" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500">
+                            <i class="fas fa-hand-holding-usd mr-2"></i> Solicitudes
+                            <span id="solicitudes-pendientes" class="ml-2 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-yellow-100 transform translate-x-1 -translate-y-1 bg-yellow-600 rounded-full">0</span>
+                        </button>
+                        <button onclick="showNewUserModal()" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            <i class="fas fa-plus mr-2"></i> Nuevo Cliente
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Filtros mejorados con diseño moderno -->
@@ -635,6 +883,56 @@
         </div>
     </div>
 
+    <!-- Modal de Solicitudes de Crédito -->
+    <div id="solicitudesModal" class="fixed inset-0 z-50 overflow-y-auto hidden">
+        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <!-- Fondo del modal -->
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onclick="hideSolicitudesModal()"></div>
+
+            <!-- Contenido del modal -->
+            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl w-full">
+                <!-- Encabezado -->
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 sm:mx-0 sm:h-10 sm:w-10">
+                            <i class="fas fa-hand-holding-usd text-yellow-600"></i>
+                        </div>
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900">
+                                Solicitudes de Crédito
+                            </h3>
+                            <p class="mt-1 text-sm text-gray-500">
+                                Gestión de solicitudes de aumento de crédito pendientes
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Cuerpo del modal -->
+                <div class="px-4 py-3 max-h-96 overflow-y-auto">
+                    <div id="solicitudes-loading" class="text-center py-4">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-600 mx-auto"></div>
+                        <p class="mt-2 text-sm text-gray-500">Cargando solicitudes...</p>
+                    </div>
+                    <div id="solicitudes-container" class="space-y-4">
+                        <!-- Las solicitudes se cargarán aquí dinámicamente -->
+                    </div>
+                    <div id="solicitudes-empty" class="text-center py-8 hidden">
+                        <i class="fas fa-inbox text-gray-300 text-4xl mb-2"></i>
+                        <p class="text-gray-500">No hay solicitudes pendientes</p>
+                    </div>
+                </div>
+                
+                <!-- Pie de página del modal -->
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="button" class="w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 sm:ml-3 sm:w-auto sm:text-sm" onclick="hideSolicitudesModal()">
+                        Cerrar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- jQuery (necesario para algunos plugins) -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     
@@ -786,6 +1084,212 @@
                 console.error('No se pudo inicializar Supabase');
             }
         });
+        
+        // Función para mostrar el modal de solicitudes
+        async function showSolicitudesModal() {
+            const modal = document.getElementById('solicitudesModal');
+            const loading = document.getElementById('solicitudes-loading');
+            const container = document.getElementById('solicitudes-container');
+            const empty = document.getElementById('solicitudes-empty');
+            
+            // Mostrar modal y estado de carga
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            loading.classList.remove('hidden');
+            container.innerHTML = '';
+            empty.classList.add('hidden');
+            
+            try {
+                // Obtener solicitudes pendientes
+                const { data: solicitudes, error } = await supabase
+                    .from('solicitudes_credito')
+                    .select('*')
+                    .eq('estado', 'pendiente')
+                    .order('created_at', { ascending: true });
+                
+                if (error) throw error;
+                
+                // Actualizar contador
+                const contador = document.getElementById('solicitudes-pendientes');
+                contador.textContent = solicitudes.length;
+                
+                if (solicitudes.length === 0) {
+                    empty.classList.remove('hidden');
+                } else {
+                    // Mostrar solicitudes
+                    solicitudes.forEach(solicitud => {
+                        const fecha = new Date(solicitud.created_at).toLocaleString('es-ES');
+                        const monto = new Intl.NumberFormat('es-PE', { 
+                            style: 'currency', 
+                            currency: 'PEN' 
+                        }).format(solicitud.monto_solicitado);
+                        
+                        const solicitudElement = document.createElement('div');
+                        solicitudElement.className = 'bg-gray-50 p-4 rounded-lg border border-gray-200';
+                        solicitudElement.innerHTML = `
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h4 class="font-medium text-gray-900">${solicitud.nombre_completo || 'Usuario sin nombre'}</h4>
+                                    <p class="text-sm text-gray-500">${solicitud.email || 'Sin email'}</p>
+                                    <p class="text-sm text-gray-500 mt-1">
+                                        <i class="far fa-clock text-yellow-500 mr-1"></i> ${fecha}
+                                    </p>
+                                </div>
+                                <div class="text-right">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                        ${monto}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="mt-4 flex justify-end space-x-2">
+                                <button onclick="aprobarSolicitud('${solicitud.id}', '${solicitud.user_id}', ${solicitud.monto_solicitado}, this)" 
+                                        class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                                    <i class="fas fa-check mr-1"></i> Aprobar
+                                </button>
+                                <button onclick="rechazarSolicitud('${solicitud.id}', this)" 
+                                        class="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                                    <i class="fas fa-times mr-1"></i> Rechazar
+                                </button>
+                            </div>
+                        `;
+                        container.appendChild(solicitudElement);
+                    });
+                }
+            } catch (error) {
+                console.error('Error al cargar solicitudes:', error);
+                container.innerHTML = `
+                    <div class="bg-red-50 border-l-4 border-red-400 p-4">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-exclamation-circle text-red-400"></i>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-red-700">
+                                    Error al cargar las solicitudes. Intente nuevamente.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } finally {
+                loading.classList.add('hidden');
+            }
+        }
+        
+        // Función para ocultar el modal de solicitudes
+        function hideSolicitudesModal() {
+            document.getElementById('solicitudesModal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+        
+        // Función para aprobar una solicitud de crédito
+        async function aprobarSolicitud(solicitudId, userId, monto, button) {
+            if (!confirm('¿Está seguro de aprobar esta solicitud de crédito?')) return;
+            
+            const loadingText = '<i class="fas fa-spinner fa-spin mr-1"></i> Procesando...';
+            const originalText = button.innerHTML;
+            button.disabled = true;
+            button.innerHTML = loadingText;
+            
+            try {
+                // Obtener el crédito actual del usuario
+                const { data: perfil, error: perfilError } = await supabase
+                    .from('profiles')
+                    .select('credit_assigned')
+                    .eq('id', userId)
+                    .single();
+                
+                if (perfilError) throw perfilError;
+                
+                // Calcular el nuevo crédito
+                const nuevoCupo = (perfil.credit_assigned || 0) + parseFloat(monto);
+                
+                // Actualizar el perfil con el nuevo cupo
+                const { error: updateError } = await supabase
+                    .from('profiles')
+                    .update({ 
+                        credit_assigned: nuevoCupo,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', userId);
+                
+                if (updateError) throw updateError;
+                
+                // Actualizar el estado de la solicitud
+                const { error: solicitudError } = await supabase
+                    .from('solicitudes_credito')
+                    .update({ 
+                        estado: 'aprobada',
+                        monto_aprobado: monto,
+                        aprobado_por: (await supabase.auth.getUser()).data.user.id,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', solicitudId);
+                
+                if (solicitudError) throw solicitudError;
+                
+                // Mostrar notificación
+                alert('Solicitud aprobada correctamente');
+                
+                // Recargar la lista de solicitudes
+                await showSolicitudesModal();
+                
+            } catch (error) {
+                console.error('Error al aprobar solicitud:', error);
+                alert('Error al aprobar la solicitud: ' + error.message);
+                button.disabled = false;
+                button.innerHTML = originalText;
+            }
+        }
+        
+        // Función para rechazar una solicitud de crédito
+        async function rechazarSolicitud(solicitudId, button) {
+            const motivo = prompt('Ingrese el motivo del rechazo:');
+            if (motivo === null) return; // Usuario canceló
+            
+            if (!motivo.trim()) {
+                alert('Debe ingresar un motivo de rechazo');
+                return;
+            }
+            
+            const loadingText = '<i class="fas fa-spinner fa-spin mr-1"></i> Procesando...';
+            const originalText = button.innerHTML;
+            button.disabled = true;
+            button.innerHTML = loadingText;
+            
+            try {
+                // Actualizar el estado de la solicitud
+                const { error } = await supabase
+                    .from('solicitudes_credito')
+                    .update({ 
+                        estado: 'rechazada',
+                        motivo_rechazo: motivo.trim(),
+                        aprobado_por: (await supabase.auth.getUser()).data.user.id,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', solicitudId);
+                
+                if (error) throw error;
+                
+                // Mostrar notificación
+                alert('Solicitud rechazada correctamente');
+                
+                // Recargar la lista de solicitudes
+                await showSolicitudesModal();
+                
+            } catch (error) {
+                console.error('Error al rechazar solicitud:', error);
+                alert('Error al rechazar la solicitud: ' + error.message);
+                button.disabled = false;
+                button.innerHTML = originalText;
+            }
+        }
+        
+        // Función para mostrar el modal de nuevo usuario
+        function showNewUserModal() {
+            document.getElementById('newUserModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
     </script>
 </body>
 </html>

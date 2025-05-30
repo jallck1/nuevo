@@ -2,6 +2,10 @@ import { defineConfig } from 'vite';
 import { resolve } from 'path';
 
 export default defineConfig({
+  // Configuración base
+  root: '.',
+  publicDir: 'public',
+  
   // Configuración de resolución de módulos
   resolve: {
     alias: {
@@ -9,8 +13,7 @@ export default defineConfig({
     }
   },
   
-  root: '.',
-  publicDir: 'public',
+  // Configuración de compilación
   build: {
     outDir: 'dist',
     emptyOutDir: true,
@@ -22,16 +25,15 @@ export default defineConfig({
       },
     },
   },
+  
+  // Configuración del servidor de desarrollo
   server: {
     port: 3000,
     open: true,
     host: true
   },
-  resolve: {
-    alias: {
-      '@': resolve(__dirname, './js')
-    }
-  },
+  
+  // Optimización de dependencias
   optimizeDeps: {
     include: ['@supabase/supabase-js']
   }

@@ -1,3 +1,58 @@
+// Elementos del menú móvil y de usuario
+const mobileMenuButton = document.getElementById('mobile-menu-button');
+const mobileMenu = document.getElementById('mobile-menu');
+const closeMobileMenu = document.getElementById('close-mobile-menu');
+const mobileMenuOverlay = document.getElementById('mobile-menu-overlay');
+const notificationsButton = document.getElementById('notifications-button');
+const notificationsDropdown = document.getElementById('notifications-dropdown');
+const userMenuButton = document.getElementById('user-menu-button');
+const userDropdown = document.getElementById('user-dropdown');
+const logoutBtn = document.getElementById('logout-btn');
+const mobileLogoutBtn = document.getElementById('logout-btn-mobile');
+const userNameElement = document.getElementById('user-name');
+const userInitialsElement = document.getElementById('user-initials');
+const userAvatarElement = document.getElementById('user-avatar');
+const dropdownUserName = document.getElementById('dropdown-user-name');
+const dropdownUserEmail = document.getElementById('dropdown-user-email');
+
+// Estado del menú
+let isMobileMenuOpen = false;
+
+// Función para configurar el menú móvil
+function setupMobileMenu() {
+    if (!mobileMenuButton || !mobileMenu || !closeMobileMenu || !mobileMenuOverlay) {
+        console.error('Elementos del menú móvil no encontrados');
+        return;
+    }
+
+    // Abrir menú
+    mobileMenuButton.addEventListener('click', (e) => {
+        e.preventDefault();
+        isMobileMenuOpen = true;
+        mobileMenu.classList.add('open');
+        mobileMenuOverlay.classList.add('open');
+        document.body.style.overflow = 'hidden';
+    });
+
+    // Cerrar menú con el botón de cerrar
+    closeMobileMenu.addEventListener('click', (e) => {
+        e.preventDefault();
+        isMobileMenuOpen = false;
+        mobileMenu.classList.remove('open');
+        mobileMenuOverlay.classList.remove('open');
+        document.body.style.overflow = '';
+    });
+
+    // Cerrar menú al hacer clic en el overlay
+    mobileMenuOverlay.addEventListener('click', (e) => {
+        e.preventDefault();
+        isMobileMenuOpen = false;
+        mobileMenu.classList.remove('open');
+        mobileMenuOverlay.classList.remove('open');
+        document.body.style.overflow = '';
+    });
+}
+
 // Estado de la aplicación
 let currentPage = 1;
 const itemsPerPage = 10;
@@ -413,11 +468,11 @@ function renderReturns(returns) {
                     ${formatDate(ret.return_date)}
                 </div>
             </td>
-            <td class="px-4 py-3 whitespace-nowrap">
-                <div class="text-sm text-gray-900">
+            <td class="px-4 py-3">
+                <div class="text-sm text-gray-900 order-reason-cell">
                     Orden: ${ret.order_id || 'N/A'}
                 </div>
-                <div class="text-xs text-gray-500">
+                <div class="text-xs text-gray-500 order-reason-cell">
                     ${ret.reason || 'Sin razón especificada'}
                 </div>
             </td>
@@ -1054,10 +1109,123 @@ async function updateProductStock(returnId, action) {
     }
 }
 
+// Función para configurar el menú de notificaciones
+function setupNotificationsMenu() {
+    if (!notificationsButton || !notificationsDropdown) return;
+
+    notificationsButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        notificationsDropdown.classList.toggle('hidden');
+    });
+
+    // Cerrar al hacer clic fuera
+    document.addEventListener('click', (e) => {
+        if (!notificationsButton.contains(e.target) && !notificationsDropdown.contains(e.target)) {
+            notificationsDropdown.classList.add('hidden');
+        }
+    });
+}
+
+// Función para cargar el perfil del usuario
+async function loadUserProfile() {
+    try {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        
+        if (error) throw error;
+        if (!user) return;
+
+        // Obtener el perfil completo del usuario
+        const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+
+        if (profileError) throw profileError;
+
+        // Mostrar información del usuario
+        const displayName = profile.full_name || user.email.split('@')[0];
+        const initials = displayName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+        
+        // Actualizar la interfaz de usuario
+        if (userNameElement) userNameElement.textContent = displayName;
+        if (userInitialsElement) userInitialsElement.textContent = initials;
+        if (dropdownUserName) dropdownUserName.textContent = displayName;
+        if (dropdownUserEmail) dropdownUserEmail.textContent = user.email;
+        
+        // Si el usuario tiene una imagen de perfil, mostrarla
+        if (userAvatarElement && profile.avatar_url) {
+            userAvatarElement.src = profile.avatar_url;
+            userAvatarElement.classList.remove('hidden');
+            userInitialsElement.classList.add('hidden');
+        }
+
+    } catch (error) {
+        console.error('Error al cargar el perfil del usuario:', error);
+    }
+}
+
+// Función para configurar el menú de usuario
+function setupUserMenu() {
+    if (!userMenuButton || !userDropdown) return;
+
+    userMenuButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        userDropdown.classList.toggle('hidden');
+    });
+
+    // Cerrar al hacer clic fuera
+    document.addEventListener('click', (e) => {
+        if (!userMenuButton.contains(e.target) && !userDropdown.contains(e.target)) {
+            userDropdown.classList.add('hidden');
+        }
+    });
+}
+
+// Función para manejar el cierre de sesión
+function setupLogout() {
+    const logout = async () => {
+        try {
+            const { error } = await supabase.auth.signOut();
+            if (error) throw error;
+            window.location.href = 'login.html';
+        } catch (error) {
+            console.error('Error al cerrar sesión:', error);
+            showError('Error al cerrar sesión. Por favor, intente de nuevo.');
+        }
+    };
+
+    if (logoutBtn) logoutBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        logout();
+    });
+
+    if (mobileLogoutBtn) mobileLogoutBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        logout();
+    });
+}
+
 // Función para inicializar la aplicación
 async function initApp() {
     try {
         console.log('Inicializando aplicación...');
+        
+        // Configurar el menú móvil
+        console.log('Configurando menú móvil...');
+        setupMobileMenu();
+        
+        // Configurar menú de notificaciones
+        console.log('Configurando menú de notificaciones...');
+        setupNotificationsMenu();
+        
+        // Configurar menú de usuario
+        console.log('Configurando menú de usuario...');
+        setupUserMenu();
+        
+        // Configurar cierre de sesión
+        console.log('Configurando cierre de sesión...');
+        setupLogout();
         
         // Inicializar elementos del DOM
         console.log('Inicializando elementos del DOM...');
@@ -1074,6 +1242,10 @@ async function initApp() {
         }
         
         console.log('Usuario autenticado:', user.email);
+        
+        // Cargar perfil del usuario
+        console.log('Cargando perfil del usuario...');
+        await loadUserProfile();
         
         // Obtener el ID de la tienda del usuario
         console.log('Obteniendo ID de la tienda...');
@@ -1102,7 +1274,7 @@ async function initApp() {
         showError('Error al inicializar la aplicación: ' + (error.message || 'Error desconocido'));
         
         // Redirigir a login si hay error de autenticación
-        if (error.message.includes('authentication') || error.message.includes('No hay usuario autenticado')) {
+        if (error.message && (error.message.includes('authentication') || error.message.includes('No hay usuario autenticado'))) {
             setTimeout(() => {
                 window.location.href = 'login.html';
             }, 2000);

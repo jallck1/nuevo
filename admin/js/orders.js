@@ -1,5 +1,48 @@
 // Estado de la aplicación
 let currentPage = 1;
+
+// Elementos del menú y perfil
+const mobileMenuButton = document.getElementById('mobile-menu-button');
+const desktopSidebar = document.getElementById('desktop-sidebar');
+const mobileMenu = document.getElementById('mobile-menu');
+const closeMobileMenu = document.getElementById('close-mobile-menu');
+const mobileMenuOverlay = document.getElementById('mobile-menu-overlay');
+const toggleSidebar = document.getElementById('toggle-sidebar');
+const notificationsButton = document.getElementById('notifications-button');
+const notificationsDropdown = document.getElementById('notifications-dropdown');
+const userMenuButton = document.getElementById('user-menu-button');
+const userDropdown = document.getElementById('user-dropdown');
+const logoutBtn = document.getElementById('logout-btn');
+const mobileLogoutBtn = document.getElementById('logout-btn-mobile');
+const userNameElement = document.getElementById('user-name');
+const userInitialsElement = document.getElementById('user-initials');
+const userAvatarElement = document.getElementById('user-avatar');
+const dropdownUserName = document.getElementById('dropdown-user-name');
+const dropdownUserEmail = document.getElementById('dropdown-user-email');
+
+// Verificar que los elementos del DOM estén presentes
+console.log('Elementos del DOM:');
+console.log('mobileMenuButton:', mobileMenuButton);
+console.log('desktopSidebar:', desktopSidebar);
+console.log('mobileMenu:', mobileMenu);
+console.log('closeMobileMenu:', closeMobileMenu);
+console.log('mobileMenuOverlay:', mobileMenuOverlay);
+console.log('toggleSidebar:', toggleSidebar);
+console.log('notificationsButton:', notificationsButton);
+console.log('notificationsDropdown:', notificationsDropdown);
+console.log('userMenuButton:', userMenuButton);
+console.log('userDropdown:', userDropdown);
+console.log('logoutBtn:', logoutBtn);
+console.log('mobileLogoutBtn:', mobileLogoutBtn);
+console.log('userNameElement:', userNameElement);
+console.log('userInitialsElement:', userInitialsElement);
+console.log('userAvatarElement:', userAvatarElement);
+console.log('dropdownUserName:', dropdownUserName);
+console.log('dropdownUserEmail:', dropdownUserEmail);
+
+// Estado del menú
+let isMobileMenuOpen = false;
+let isDesktopSidebarCollapsed = false;
 const itemsPerPage = 10;
 let totalItems = 0;
 let currentFilter = 'all';
@@ -30,6 +73,246 @@ function initElements() {
 }
 
 
+
+// Función para configurar el menú móvil
+function setupMobileMenu() {
+    if (!mobileMenuButton || !mobileMenu || !closeMobileMenu || !mobileMenuOverlay) {
+        console.error('Elementos del menú móvil no encontrados');
+        return;
+    }
+    
+    // Abrir menú móvil
+    const openMenu = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        mobileMenu.classList.add('open');
+        mobileMenuOverlay.classList.add('open');
+        document.body.classList.add('overflow-hidden');
+        isMobileMenuOpen = true;
+        console.log('Menú móvil abierto');
+    };
+    
+    // Cerrar menú móvil
+    const closeMenu = (e) => {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        mobileMenu.classList.remove('open');
+        mobileMenuOverlay.classList.remove('open');
+        document.body.classList.remove('overflow-hidden');
+        isMobileMenuOpen = false;
+        console.log('Menú móvil cerrado');
+    };
+    
+    // Configurar eventos
+    mobileMenuButton.addEventListener('click', openMenu);
+    closeMobileMenu.addEventListener('click', closeMenu);
+    mobileMenuOverlay.addEventListener('click', closeMenu);
+    
+    // Cerrar menú al hacer clic en un enlace (con retraso para permitir la navegación)
+    document.querySelectorAll('#mobile-menu a:not(#logout-btn-mobile)').forEach(link => {
+        link.addEventListener('click', (e) => {
+            if (!link.href || link.href.includes('#')) {
+                e.preventDefault();
+            }
+            setTimeout(closeMenu, 300);
+        });
+    });
+    
+    // Cerrar menú con la tecla Escape
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && isMobileMenuOpen) {
+            closeMenu();
+        }
+    });
+    
+    console.log('Menú móvil configurado correctamente');
+}
+
+// Función para configurar el menú de escritorio
+function setupDesktopMenu() {
+    if (!toggleSidebar || !desktopSidebar) {
+        console.error('Elementos del menú de escritorio no encontrados');
+        return;
+    }
+    
+    // Verificar el estado inicial del sidebar (colapsado o expandido)
+    const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+    if (isCollapsed) {
+        isDesktopSidebarCollapsed = true;
+        desktopSidebar.classList.add('collapsed');
+    }
+    
+    // Alternar barra lateral en escritorio
+    toggleSidebar.addEventListener('click', () => {
+        isDesktopSidebarCollapsed = !isDesktopSidebarCollapsed;
+        localStorage.setItem('sidebarCollapsed', isDesktopSidebarCollapsed);
+        updateMainContent();
+        console.log('Barra lateral ' + (isDesktopSidebarCollapsed ? 'colapsada' : 'expandida'));
+    });
+    
+    // Actualizar el contenido principal al cargar
+    updateMainContent();
+    console.log('Menú de escritorio configurado correctamente');
+}
+
+// Función para actualizar el contenido principal cuando se alterna el sidebar
+function updateMainContent() {
+    const mainContent = document.getElementById('main-content');
+    if (!mainContent) {
+        console.error('Contenido principal no encontrado');
+        return;
+    }
+    
+    if (isDesktopSidebarCollapsed) {
+        desktopSidebar.classList.add('collapsed');
+        mainContent.classList.add('sidebar-collapsed');
+    } else {
+        desktopSidebar.classList.remove('collapsed');
+        mainContent.classList.remove('sidebar-collapsed');
+    }
+    
+    console.log('Contenido principal actualizado para barra lateral ' + (isDesktopSidebarCollapsed ? 'colapsada' : 'expandida'));
+}
+
+// Función para configurar el menú de notificaciones
+function setupNotificationsMenu() {
+    if (!notificationsButton || !notificationsDropdown) return;
+    
+    notificationsButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        notificationsDropdown.classList.toggle('hidden');
+    });
+    
+    // Cerrar el menú de notificaciones al hacer clic fuera de él
+    document.addEventListener('click', (e) => {
+        if (!notificationsButton.contains(e.target) && !notificationsDropdown.contains(e.target)) {
+            notificationsDropdown.classList.add('hidden');
+        }
+    });
+}
+
+// Función para cargar el perfil del usuario
+async function loadUserProfile() {
+    try {
+        const { data: { user } } = await window.supabase.auth.getUser();
+        if (!user) return;
+        
+        // Obtener el perfil del usuario
+        const { data: profile, error: profileError } = await window.supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+            
+        if (profileError) throw profileError;
+        
+        // Actualizar la interfaz de usuario con los datos del perfil
+        const displayName = profile.full_name || user.email.split('@')[0];
+        const initials = displayName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+        
+        if (userNameElement) userNameElement.textContent = displayName;
+        if (userInitialsElement) userInitialsElement.textContent = initials;
+        if (dropdownUserName) dropdownUserName.textContent = displayName;
+        if (dropdownUserEmail) dropdownUserEmail.textContent = user.email;
+        
+        // Cargar imagen de perfil si existe
+        if (profile.avatar_url && userAvatarElement) {
+            userAvatarElement.src = profile.avatar_url;
+            userAvatarElement.classList.remove('hidden');
+            userInitialsElement.classList.add('hidden');
+        }
+        
+    } catch (error) {
+        console.error('Error al cargar el perfil del usuario:', error);
+    }
+}
+
+// Función para configurar el menú de usuario
+function setupUserMenu() {
+    if (!userMenuButton || !userDropdown) return;
+    
+    userMenuButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        userDropdown.classList.toggle('hidden');
+    });
+    
+    // Cerrar el menú de usuario al hacer clic fuera de él
+    document.addEventListener('click', (e) => {
+        if (!userMenuButton.contains(e.target) && !userDropdown.contains(e.target)) {
+            userDropdown.classList.add('hidden');
+        }
+    });
+}
+
+// Función para manejar el cierre de sesión
+function setupLogout() {
+    console.log('Configurando manejador de cierre de sesión...');
+    
+    // Función para cerrar sesión
+    const logout = async () => {
+        console.log('Iniciando cierre de sesión...');
+        try {
+            // Verificar si Supabase está disponible
+            if (!window.supabase) {
+                console.error('Error: Supabase no está disponible');
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            console.log('Llamando a supabase.auth.signOut()...');
+            const { error } = await window.supabase.auth.signOut();
+            
+            if (error) {
+                console.error('Error de Supabase al cerrar sesión:', error);
+                throw error;
+            }
+            
+            console.log('Cierre de sesión exitoso, redirigiendo a login.html');
+            window.location.href = 'login.html';
+        } catch (error) {
+            console.error('Error al cerrar sesión:', error);
+            showError('Error al cerrar sesión. Por favor, intente de nuevo.');
+        }
+    };
+
+    // Configurar manejador para el botón de cierre de sesión en el menú de usuario
+    if (logoutBtn) {
+        console.log('Agregando manejador de clic a logoutBtn (menú de usuario)');
+        // Eliminar cualquier manejador de eventos existente para evitar duplicados
+        logoutBtn.replaceWith(logoutBtn.cloneNode(true));
+        const newLogoutBtn = document.getElementById('logout-btn');
+        
+        newLogoutBtn.addEventListener('click', function(e) {
+            console.log('Clic en botón de cierre de sesión (menú de usuario)');
+            e.preventDefault();
+            e.stopPropagation();
+            logout();
+            return false;
+        });
+    } else {
+        console.error('No se encontró el elemento con ID logout-btn (menú de usuario)');
+    }
+
+    // Configurar manejador para el botón de cierre de sesión en el menú móvil
+    if (mobileLogoutBtn) {
+        console.log('Agregando manejador de clic a mobileLogoutBtn (menú móvil)');
+        // Eliminar cualquier manejador de eventos existente para evitar duplicados
+        mobileLogoutBtn.replaceWith(mobileLogoutBtn.cloneNode(true));
+        const newMobileLogoutBtn = document.getElementById('logout-btn-mobile');
+        
+        newMobileLogoutBtn.addEventListener('click', function(e) {
+            console.log('Clic en botón de cierre de sesión (menú móvil)');
+            e.preventDefault();
+            e.stopPropagation();
+            logout();
+            return false;
+        });
+    } else {
+        console.log('No se encontró el elemento con ID logout-btn-mobile (menú móvil)');
+    }
+}
 
 // Configurar manejadores de eventos
 function setupEventListeners() {
@@ -379,10 +662,16 @@ async function loadOrders() {
                                 ${statusText}
                             </span>
                         </td>
-                        <td class="px-2 py-4 whitespace-nowrap text-center">
+                        <td class="px-2 py-4 whitespace-nowrap text-center space-x-2">
                             <button onclick="showOrderDetails('${order.id}')" 
-                                    class="text-indigo-600 hover:text-indigo-900 hover:underline">
+                                    class="text-indigo-600 hover:text-indigo-900 hover:underline"
+                                    title="Ver detalles">
                                 <i class="fas fa-eye"></i>
+                            </button>
+                            <button onclick="editOrder('${order.id}')" 
+                                    class="text-yellow-600 hover:text-yellow-900 hover:underline"
+                                    title="Editar orden">
+                                <i class="fas fa-edit"></i>
                             </button>
                         </td>
                         <td class="px-4 py-4 whitespace-nowrap text-sm font-medium">
@@ -714,9 +1003,201 @@ async function initApp() {
     }
 }
 
+// Función para verificar si una función está disponible
+function isFunctionAvailable(fnName) {
+    return typeof window[fnName] === 'function';
+}
+
+// Función para esperar a que una función esté disponible
+function waitForFunction(fnName, callback, maxAttempts = 10, interval = 100) {
+    return new Promise((resolve, reject) => {
+        let attempts = 0;
+        
+        function check() {
+            attempts++;
+            if (isFunctionAvailable(fnName)) {
+                resolve(window[fnName]);
+            } else if (attempts < maxAttempts) {
+                setTimeout(check, interval);
+            } else {
+                reject(new Error(`La función ${fnName} no está disponible después de ${maxAttempts} intentos`));
+            }
+        }
+        
+        check();
+    });
+}
+
+// Función para editar una orden
+window.editOrder = async function(orderId) {
+    try {
+        console.log('Editando orden:', orderId);
+        
+        // Mostrar loading
+        showLoading(true);
+        
+        // Esperar a que openOrderModal esté disponible
+        try {
+            await waitForFunction('openOrderModal');
+            console.log('openOrderModal está disponible');
+        } catch (error) {
+            console.error('Error al cargar openOrderModal:', error);
+            showError('No se pudo cargar el editor de órdenes. Por favor, recarga la página.');
+            return;
+        }
+        
+        // Obtener los datos de la orden
+        const { data: order, error } = await window.supabase
+            .from('orders')
+            .select(`
+                *,
+                buyer:buyer_id (*),
+                order_items (
+                    *,
+                    product:products (*)
+                )
+            `)
+            .eq('id', orderId)
+            .single();
+            
+        if (error) throw error;
+        
+        console.log('Datos de la orden:', order);
+        
+        // Abrir el modal de orden directa
+        if (window.openOrderModal) {
+            // Abrir el modal primero
+            window.openOrderModal();
+            
+            // Pequeña pausa para asegurar que el modal esté en el DOM
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            // Configurar el modal en modo edición
+            const modal = document.querySelector('.fixed.inset-0');
+            if (modal) {
+                modal.setAttribute('data-order-id', orderId);
+                modal.setAttribute('data-edit-mode', 'true');
+            }
+            
+            // Función para seleccionar el cliente
+            const selectClient = () => {
+                const clientSelect = document.getElementById('clientSelect');
+                if (!clientSelect) {
+                    console.error('No se encontró el select de clientes');
+                    return false;
+                }
+
+                // Buscar la opción que coincida con el buyer_id
+                for (let i = 0; i < clientSelect.options.length; i++) {
+                    if (clientSelect.options[i].value === order.buyer_id) {
+                        clientSelect.selectedIndex = i;
+                        
+                        // Disparar el evento change para actualizar la UI
+                        const event = new Event('change');
+                        clientSelect.dispatchEvent(event);
+                        console.log('Cliente seleccionado:', order.buyer_id);
+                        return true;
+                    }
+                }
+                return false;
+            };
+
+            // Intentar seleccionar el cliente inmediatamente
+            let clientSelected = selectClient();
+            
+            // Si no se pudo seleccionar, cargar clientes y volver a intentar
+            if (!clientSelected && window.loadClients) {
+                console.log('Cargando clientes...');
+                await window.loadClients();
+                
+                // Esperar a que los clientes se carguen
+                let attempts = 0;
+                const maxAttempts = 5;
+                const checkClientLoaded = setInterval(() => {
+                    attempts++;
+                    console.log('Intentando seleccionar cliente, intento', attempts);
+                    if (selectClient() || attempts >= maxAttempts) {
+                        clearInterval(checkClientLoaded);
+                    }
+                }, 300);
+            }
+            
+            // Limpiar productos existentes
+            if (window.orderItems) {
+                window.orderItems = [];
+            }
+            
+            // Agregar los productos de la orden
+            if (order.order_items && order.order_items.length > 0) {
+                for (const item of order.order_items) {
+                    // Crear un objeto de producto compatible con el formato esperado
+                    const product = {
+                        id: item.product_id,
+                        name: item.product?.name || 'Producto no disponible',
+                        price: item.unit_price,
+                        quantity: item.quantity,
+                        discount_percentage: item.discount_percentage || 0,
+                        sku: item.product?.sku || '',
+                        image_url: item.product?.image_url || ''
+                    };
+                    
+                    // Verificar si addProductToOrder está disponible
+                    if (typeof window.addProductToOrder === 'function') {
+                        await window.addProductToOrder(product);
+                    } else {
+                        console.error('addProductToOrder no está disponible');
+                        // Intentar agregar directamente a orderItems si existe
+                        if (window.orderItems) {
+                            window.orderItems.push({
+                                ...product,
+                                unitPrice: product.price,
+                                discount: 0
+                            });
+                        }
+                    }
+                }
+                
+                // Actualizar totales si la función está disponible
+                if (typeof window.calculateTotals === 'function') {
+                    window.calculateTotals();
+                }
+                
+                // Actualizar la visualización de los productos
+                if (typeof window.updateOrderItemsDisplay === 'function') {
+                    window.updateOrderItemsDisplay();
+                }
+            }
+        } else {
+            console.error('La función openOrderModal no está disponible');
+            showError('No se pudo abrir el editor de órdenes');
+        }
+        
+    } catch (error) {
+        console.error('Error al cargar la orden para edición:', error);
+        showError('Error al cargar la orden: ' + (error.message || 'Error desconocido'));
+    } finally {
+        showLoading(false);
+    }
+};
+
 // Inicializar la aplicación cuando el DOM esté listo
-document.addEventListener('DOMContentLoaded', () => {
-    initApp();
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        // Configurar menús
+        setupMobileMenu();
+        setupDesktopMenu();
+        setupNotificationsMenu();
+        setupUserMenu();
+        setupLogout();
+        
+        // Cargar perfil del usuario
+        await loadUserProfile();
+        
+        // Inicializar la aplicación
+        initApp();
+    } catch (error) {
+        console.error('Error al inicializar la aplicación:', error);
+    }
 });
 
 // Función auxiliar para actualizar el estado con múltiples intentos

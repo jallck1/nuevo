@@ -208,14 +208,50 @@
               
               <!-- Botones de pago -->
               <div class="space-y-3">
-                <button id="pay-with-credit" class="w-full flex justify-center items-center px-6 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
-                  <i class="fas fa-credit-card mr-2"></i>
-                  Pagar con crédito
+                <!-- Pago con crédito -->
+                <button id="pay-with-credit" class="w-full flex justify-between items-center px-6 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                  <div class="flex items-center">
+                    <i class="fas fa-credit-card mr-2"></i>
+                    <span>Pagar con crédito</span>
+                  </div>
+                  <span class="text-xs opacity-75">Disponible</span>
                 </button>
-                <button id="pay-with-nequi" class="w-full flex justify-center items-center px-6 py-3 border border-gray-300 rounded-md shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                  <img src="https://www.vectorlogo.zone/logos/nequi/nequi-tile.svg" alt="Nequi" class="h-5 w-5 mr-2">
-                  Pagar con Nequi
+                
+                <!-- Pago en efectivo -->
+                <button id="pay-with-cash" class="w-full flex justify-between items-center px-6 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
+                  <div class="flex items-center">
+                    <i class="fas fa-money-bill-wave mr-2"></i>
+                    <span>Pagar en efectivo</span>
+                  </div>
+                  <span class="text-xs opacity-75">Contraentrega</span>
                 </button>
+                
+                <!-- Pago con Nequi -->
+                <button id="pay-with-nequi" class="w-full flex justify-between items-center px-6 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors">
+                  <div class="flex items-center">
+                    <i class="fas fa-mobile-alt mr-2"></i>
+                    <span>Pagar con Nequi</span>
+                  </div>
+                  <i class="fas fa-arrow-right"></i>
+                </button>
+                
+                <!-- Pago con Solana -->
+                <button id="pay-with-solana" class="w-full flex justify-between items-center px-6 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-gradient-to-r from-black to-gray-900 hover:from-gray-900 hover:to-black focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors">
+                  <div class="flex items-center">
+                    <i class="fab fa-bitcoin mr-2"></i>
+                    <span>Pagar con Solana</span>
+                  </div>
+                  <i class="fas fa-wallet text-xs"></i>
+                </button>
+                
+                <!-- Pago con PSE -->
+                <a href="https://www.pse.com.co/persona" target="_blank" class="w-full flex justify-between items-center px-6 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-gradient-to-r from-blue-900 to-blue-800 hover:from-blue-800 hover:to-blue-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                  <div class="flex items-center">
+                    <i class="fas fa-university mr-2"></i>
+                    <span>Pagar con PSE</span>
+                  </div>
+                  <i class="fas fa-external-link-alt text-xs"></i>
+                </a>
               </div>
             </div>
               
@@ -391,7 +427,12 @@
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
-<script src="js/carrito.js"></script>
+    <!-- Solana Web3 -->
+    <script src="https://unpkg.com/@solana/web3.js@1.70.1/lib/index.iife.min.js"></script>
+    
+    <!-- Scripts de la aplicación -->
+    <script src="js/carrito.js"></script>
+    <script src="js/solana-payment.js"></script>
 <script src="js/catalogo_fix.js"></script>
 </body>
 </html>

@@ -1,5 +1,30 @@
 // Elementos del DOM
 let usersTableBody;
+
+// Elementos del menú móvil
+const mobileMenuButton = document.getElementById('mobile-menu-button');
+const desktopSidebar = document.getElementById('desktop-sidebar');
+const mobileMenu = document.getElementById('mobile-menu');
+const closeMobileMenu = document.getElementById('close-mobile-menu');
+const mobileMenuOverlay = document.getElementById('mobile-menu-overlay');
+const toggleSidebar = document.getElementById('toggle-sidebar');
+
+// Elementos de notificaciones y perfil
+const notificationsButton = document.getElementById('notifications-button');
+const notificationsDropdown = document.getElementById('notifications-dropdown');
+const userMenuButton = document.getElementById('user-menu-button');
+const userDropdown = document.getElementById('user-dropdown');
+const logoutBtn = document.getElementById('logout-btn');
+const mobileLogoutBtn = document.getElementById('logout-btn-mobile');
+const userNameElement = document.getElementById('user-name');
+const userInitialsElement = document.getElementById('user-initials');
+const userAvatarElement = document.getElementById('user-avatar');
+const dropdownUserName = document.getElementById('dropdown-user-name');
+const dropdownUserEmail = document.getElementById('dropdown-user-email');
+
+// Estado del menú
+let isMobileMenuOpen = false;
+let isDesktopSidebarCollapsed = false;
 let usersSearchInput;
 let newUserModal;
 let editUserModal;
@@ -201,6 +226,212 @@ async function initElements() {
     }
 }
 
+// Función para configurar el menú móvil
+function setupMobileMenu() {
+    if (mobileMenuButton) {
+        mobileMenuButton.addEventListener('click', () => {
+            isMobileMenuOpen = !isMobileMenuOpen;
+            if (mobileMenu) mobileMenu.classList.toggle('open', isMobileMenuOpen);
+            if (mobileMenuOverlay) mobileMenuOverlay.classList.toggle('open', isMobileMenuOpen);
+        });
+    }
+
+    if (closeMobileMenu) {
+        closeMobileMenu.addEventListener('click', () => {
+            isMobileMenuOpen = false;
+            if (mobileMenu) mobileMenu.classList.remove('open');
+            if (mobileMenuOverlay) mobileMenuOverlay.classList.remove('open');
+        });
+    }
+
+    if (mobileMenuOverlay) {
+        mobileMenuOverlay.addEventListener('click', () => {
+            isMobileMenuOpen = false;
+            if (mobileMenu) mobileMenu.classList.remove('open');
+            mobileMenuOverlay.classList.remove('open');
+        });
+    }
+}
+
+// Función para configurar el menú de escritorio
+function setupDesktopMenu() {
+    if (toggleSidebar) {
+        toggleSidebar.addEventListener('click', () => {
+            isDesktopSidebarCollapsed = !isDesktopSidebarCollapsed;
+            if (desktopSidebar) {
+                desktopSidebar.classList.toggle('collapsed', isDesktopSidebarCollapsed);
+            }
+            updateMainContent();
+        });
+    }
+}
+
+// Función para actualizar el contenido principal cuando se alterna el sidebar
+function updateMainContent() {
+    const mainContent = document.getElementById('main-content');
+    if (!mainContent) return;
+
+    if (window.innerWidth >= 768) {
+        if (isDesktopSidebarCollapsed) {
+            mainContent.style.marginLeft = '4rem';
+            mainContent.style.width = 'calc(100% - 4rem)';
+        } else {
+            mainContent.style.marginLeft = '16rem';
+            mainContent.style.width = 'calc(100% - 16rem)';
+        }
+    } else {
+        mainContent.style.marginLeft = '0';
+        mainContent.style.width = '100%';
+    }
+}
+
+// Función para configurar el menú de notificaciones
+function setupNotificationsMenu() {
+    if (!notificationsButton || !notificationsDropdown) return;
+
+    notificationsButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        notificationsDropdown.classList.toggle('hidden');
+    });
+
+    // Cerrar al hacer clic fuera
+    document.addEventListener('click', (e) => {
+        if (!notificationsButton.contains(e.target) && !notificationsDropdown.contains(e.target)) {
+            notificationsDropdown.classList.add('hidden');
+        }
+    });
+}
+
+// Función para cargar el perfil del usuario
+async function loadUserProfile() {
+    try {
+        console.log('Cargando perfil del usuario...');
+        const { data: { user }, error } = await window.supabase.auth.getUser();
+        
+        if (error) {
+            console.error('Error al obtener el usuario autenticado:', error);
+            throw error;
+        }
+        
+        if (!user) {
+            console.log('No hay usuario autenticado');
+            return;
+        }
+
+        console.log('Usuario autenticado:', user.email);
+        
+        // Obtener el perfil completo del usuario
+        console.log('Obteniendo perfil del usuario...');
+        const { data: profile, error: profileError } = await window.supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+
+        if (profileError) {
+            console.error('Error al obtener el perfil del usuario:', profileError);
+            throw profileError;
+        }
+
+        console.log('Perfil del usuario cargado:', profile);
+        
+        // Mostrar información del usuario
+        const displayName = profile.full_name || user.email.split('@')[0];
+        const initials = displayName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+        
+        console.log('Actualizando interfaz de usuario...');
+        console.log('Nombre a mostrar:', displayName);
+        console.log('Iniciales:', initials);
+        
+        // Actualizar la interfaz de usuario
+        if (userNameElement) {
+            console.log('Actualizando nombre de usuario en la interfaz');
+            userNameElement.textContent = displayName;
+        }
+        
+        if (userInitialsElement) {
+            console.log('Actualizando iniciales en la interfaz');
+            userInitialsElement.textContent = initials;
+        }
+        
+        if (dropdownUserName) {
+            console.log('Actualizando nombre en el menú desplegable');
+            dropdownUserName.textContent = displayName;
+        }
+        
+        if (dropdownUserEmail) {
+            console.log('Actualizando correo electrónico en el menú desplegable');
+            dropdownUserEmail.textContent = user.email;
+        }
+        
+        // Si el usuario tiene una imagen de perfil, mostrarla
+        if (userAvatarElement && profile.avatar_url) {
+            console.log('Cargando imagen de perfil:', profile.avatar_url);
+            userAvatarElement.src = profile.avatar_url;
+            userAvatarElement.onload = function() {
+                console.log('Imagen de perfil cargada correctamente');
+                userAvatarElement.classList.remove('hidden');
+                if (userInitialsElement) userInitialsElement.classList.add('hidden');
+            };
+            userAvatarElement.onerror = function() {
+                console.error('Error al cargar la imagen de perfil');
+                if (userInitialsElement) userInitialsElement.classList.remove('hidden');
+            };
+        } else {
+            console.log('No se encontró imagen de perfil o el elemento no está disponible');
+            if (userInitialsElement) userInitialsElement.classList.remove('hidden');
+        }
+
+    } catch (error) {
+        console.error('Error al cargar el perfil del usuario:', error);
+    }
+}
+
+// Función para configurar el menú de usuario
+function setupUserMenu() {
+    if (!userMenuButton || !userDropdown) return;
+
+    userMenuButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        userDropdown.classList.toggle('hidden');
+    });
+
+    // Cerrar al hacer clic fuera
+    document.addEventListener('click', (e) => {
+        if (!userMenuButton.contains(e.target) && !userDropdown.contains(e.target)) {
+            userDropdown.classList.add('hidden');
+        }
+    });
+}
+
+// Función para manejar el cierre de sesión
+function setupLogout() {
+    const logout = async () => {
+        try {
+            const { error } = await window.supabase.auth.signOut();
+            if (error) throw error;
+            window.location.href = 'login.html';
+        } catch (error) {
+            console.error('Error al cerrar sesión:', error);
+            showError('Error al cerrar sesión. Por favor, intente de nuevo.');
+        }
+    };
+
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            logout();
+        });
+    }
+
+    if (mobileLogoutBtn) {
+        mobileLogoutBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            logout();
+        });
+    }
+}
+
 // Esperar a que el DOM y Supabase estén listos
 async function initializeApp() {
     console.log('Inicializando aplicación...');
@@ -220,6 +451,22 @@ async function initializeApp() {
         
         // Inicializar elementos del DOM
         await initElements();
+        
+        // Configurar menús
+        setupMobileMenu();
+        setupDesktopMenu();
+        setupNotificationsMenu();
+        setupUserMenu();
+        setupLogout();
+        
+        // Cargar perfil del usuario
+        await loadUserProfile();
+        
+        // Actualizar el contenido principal
+        updateMainContent();
+        
+        // Manejar cambios de tamaño de ventana
+        window.addEventListener('resize', updateMainContent);
         
         // Verificar autenticación
         const { data: { user }, error } = await window.supabase.auth.getUser();

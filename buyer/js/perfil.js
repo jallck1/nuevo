@@ -27,6 +27,7 @@ function initEvents() {
   const profileForm = document.getElementById('profile-form');
   const passwordForm = document.getElementById('password-form');
   const avatarUpload = document.getElementById('avatar-upload');
+  const solicitarCreditoBtn = document.getElementById('solicitar-credito-btn');
   
   if (profileForm) {
     profileForm.addEventListener('submit', handleProfileSubmit);
@@ -38,6 +39,10 @@ function initEvents() {
   
   if (avatarUpload) {
     avatarUpload.addEventListener('change', handleImageUpload);
+  }
+  
+  if (solicitarCreditoBtn) {
+    solicitarCreditoBtn.addEventListener('click', handleSolicitarCredito);
   }
 }
 
@@ -575,6 +580,87 @@ async function uploadProfileImage(file) {
   } catch (error) {
     console.error('Error al subir la imagen:', error);
     throw new Error(error.message || 'Error al subir la imagen de perfil');
+  }
+}
+
+// Manejar solicitud de crédito
+async function handleSolicitarCredito() {
+  try {
+    // Obtener la sesión actual
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError) throw sessionError;
+    if (!session) {
+      showError('Debes iniciar sesión para solicitar un crédito');
+      return;
+    }
+
+    // Obtener el perfil del usuario
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', session.user.id)
+      .single();
+
+    if (profileError) throw profileError;
+
+    // Mostrar modal para ingresar el monto solicitado
+    const montoSolicitado = prompt('Ingrese el monto de crédito que desea solicitar:');
+    
+    if (!montoSolicitado || isNaN(montoSolicitado) || parseFloat(montoSolicitado) <= 0) {
+      showError('Por favor ingrese un monto válido');
+      return;
+    }
+
+    // Crear la solicitud de crédito
+    const { data: solicitud, error: solicitudError } = await supabase
+      .from('solicitudes_credito')
+      .insert([{
+        user_id: session.user.id,
+        email: session.user.email,
+        nombre_completo: `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Usuario sin nombre',
+        monto_solicitado: parseFloat(montoSolicitado),
+        estado: 'pendiente',
+        store_id: profile.store_id
+      }])
+      .select();
+
+    if (solicitudError) throw solicitudError;
+
+    // Notificar a los administradores
+    await notificarAdminSolicitudCredito(session.user.email, montoSolicitado);
+    
+    showNotification('Solicitud de crédito enviada correctamente. Un administrador la revisará pronto.', 'success');
+  } catch (error) {
+    console.error('Error al solicitar crédito:', error);
+    showError('Error al procesar la solicitud de crédito: ' + error.message);
+  }
+}
+
+// Notificar a los administradores sobre la nueva solicitud
+async function notificarAdminSolicitudCredito(emailUsuario, monto) {
+  try {
+    // Insertar notificación para administradores
+    const { error } = await supabase
+      .from('notificaciones')
+      .insert([{
+        tipo: 'solicitud_credito',
+        titulo: 'Nueva solicitud de crédito',
+        mensaje: `El usuario ${emailUsuario} ha solicitado un crédito por $${monto}`,
+        leido: false,
+        user_role: 'admin', // Solo para administradores
+        metadata: {
+          tipo: 'solicitud_credito',
+          email_usuario: emailUsuario,
+          monto_solicitado: monto
+        }
+      }]);
+
+    if (error) throw error;
+    
+    return true;
+  } catch (error) {
+    console.error('Error al notificar a los administradores:', error);
+    return false;
   }
 }
 

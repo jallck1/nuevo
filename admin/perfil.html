@@ -7,6 +7,86 @@
     
     <!-- Estilos de carga -->
     <style>
+        /* Estilos para el menú móvil */
+        @media (max-width: 991.98px) {
+            /* Ocultar el sidebar en móviles */
+            .sidebar {
+                display: none !important;
+            }
+            
+            /* Estilo para el botón de inicio en móvil - Tron Legacy */
+            .mobile-home-button {
+                display: flex !important;
+                align-items: center;
+                justify-content: center;
+                position: fixed;
+                bottom: 25px;
+                right: 25px;
+                width: 70px;
+                height: 70px;
+                border-radius: 50%;
+                background: #0a0a1a;
+                color: #00f7ff;
+                box-shadow: 0 0 15px rgba(0, 247, 255, 0.7);
+                border: 2px solid #00f7ff;
+                z-index: 1000;
+                cursor: pointer;
+                font-size: 24px;
+                transition: all 0.3s ease;
+                text-decoration: none;
+                overflow: hidden;
+            }
+            
+            .mobile-home-button::before {
+                content: '';
+                position: absolute;
+                top: -2px;
+                left: -2px;
+                right: -2px;
+                bottom: -2px;
+                border-radius: 50%;
+                border: 2px solid transparent;
+                border-top-color: #00f7ff;
+                animation: spin 2s linear infinite;
+                z-index: -1;
+            }
+            
+            .mobile-home-button:hover {
+                box-shadow: 0 0 25px rgba(0, 247, 255, 0.9);
+                transform: scale(1.05);
+            }
+            
+            .mobile-home-button:active {
+                transform: scale(0.95);
+            }
+            
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+            
+            .mobile-home-button i {
+                font-size: 24px;
+            }
+            
+            /* Asegurar que el contenido ocupe todo el ancho */
+            #main-content {
+                width: 100%;
+                padding-bottom: 60px; /* Espacio para el botón flotante */
+            }
+        }
+        
+        /* Asegurar que el menú sea visible en pantallas grandes */
+        @media (min-width: 992px) {
+            .sidebar {
+                transform: none !important;
+            }
+            
+            .sidebar-overlay {
+                display: none !important;
+            }
+        }
+        
         #loading {
             position: fixed;
             top: 0;
@@ -98,12 +178,24 @@
                 opacity: 1 !important;
                 pointer-events: auto !important;
                 display: flex !important;
+                transition: none !important;
+                width: 280px !important;
+                min-width: 280px !important;
             }
             
             .main-content {
-                margin-left: 16rem;
-                width: calc(100% - 16rem);
-                transition: all 0.3s ease;
+                margin-left: 280px !important;
+                width: calc(100% - 280px) !important;
+                transition: none !important;
+            }
+            
+            .sidebar-overlay {
+                display: none !important;
+            }
+            
+            /* Ocultar cualquier botón de toggle en escritorio */
+            #toggle-sidebar {
+                display: none !important;
             }
         }
         
@@ -153,78 +245,141 @@
 
     <div class="flex h-screen overflow-hidden relative">
         <!-- Sidebar -->
-        <div id="sidebar" class="sidebar bg-blue-800 text-white flex-shrink-0 flex flex-col h-full">
+        <div class="sidebar bg-blue-800 text-white flex-shrink-0 flex flex-col h-full">
             <div class="p-4 border-b border-blue-700 flex justify-between items-center">
-                <div>
-                    <h2 class="text-xl font-bold">Panel de Control</h2>
-                    <p id="user-role" class="text-sm text-blue-200">Administrador</p>
-                </div>
-                <button id="toggle-sidebar" class="text-white hover:text-blue-200">
-                    <i class="fas fa-bars text-xl"></i>
-                </button>
+              <div>
+                <h2 class="text-xl font-bold">Panel de Control</h2>
+                <p id="user-role" class="text-sm text-blue-200">Administrador</p>
+              </div>
+              <button id="close-sidebar" class="text-white hover:text-blue-200 md:hidden">
+                <i class="fas fa-times text-xl"></i>
+              </button>
             </div>
-
-            <nav class="flex-1 overflow-y-auto">
-                <ul class="space-y-1">
-                    <li>
-                        <a href="perfil.html" class="flex items-center px-4 py-2 text-gray-300 hover:bg-blue-700 hover:text-white rounded-md">
-                            <i class="fas fa-user mr-3"></i>
-                            Perfil
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#" class="flex items-center px-4 py-2 text-white bg-blue-700 rounded-md">
-                            <i class="fas fa-comments mr-3"></i>
-                            PQRS
-                        </a>
-                    </li>
-                    <li>
-                        <a href="catalogo.html" class="flex items-center px-4 py-2 text-gray-300 hover:bg-blue-700 hover:text-white rounded-md">
-                            <i class="fas fa-box mr-3"></i>
-                            Catálogo
-                        </a>
-                    </li>
-                    <li>
-                        <a href="orders.html" class="flex items-center px-4 py-2 text-gray-300 hover:bg-blue-700 hover:text-white rounded-md">
-                            <i class="fas fa-shopping-cart mr-3"></i>
-                            Órdenes
-                        </a>
-                    </li>
-                    <li>
-                        <a href="contenido-institucional.html" class="flex items-center px-4 py-2 text-gray-300 hover:bg-blue-700 hover:text-white rounded-md">
-                            <i class="fas fa-file-alt mr-3"></i>
-                            Contenido
-                        </a>
-                    </li>
-                </ul>
+          
+            <nav class="mt-6">
+              <a href="dashboard.html" class="block py-2 px-6 hover:bg-blue-700 flex items-center bg-blue-900">
+                <i class="fas fa-tachometer-alt w-6 text-center mr-3"></i>
+                <span>Dashboard</span>
+              </a>
+              <a href="catalogo.html" class="block py-2 px-6 hover:bg-blue-700 flex items-center">
+                <i class="fas fa-box w-6 text-center mr-3"></i>
+                <span>Catálogo</span>
+              </a>
+              <a href="orders.html" class="block py-2 px-6 hover:bg-blue-700 flex items-center">
+                <i class="fas fa-shopping-cart w-6 text-center mr-3"></i>
+                <span>Órdenes</span>
+                <span id="pending-orders-count" class="ml-auto bg-yellow-500 text-white text-xs font-bold px-2 py-1 rounded-full">0</span>
+              </a>
+              <a href="pagos.html" class="block py-2 px-6 hover:bg-blue-700 flex items-center">
+                <i class="fas fa-credit-card w-6 text-center mr-3"></i>
+                <span>Pagos</span>
+              </a>
+              <a href="devoluciones.html" class="block py-2 px-6 hover:bg-blue-700 flex items-center">
+                <i class="fas fa-undo-alt w-6 text-center mr-3"></i>
+                <span>Devoluciones</span>
+              </a>
+              <a href="usuarios.html" class="block py-2 px-6 hover:bg-blue-700 flex items-center">
+                <i class="fas fa-users w-6 text-center mr-3"></i>
+                <span>Usuarios</span>
+              </a>
+              <a href="proveedores.html" class="block py-2 px-6 hover:bg-blue-700 flex items-center">
+                <i class="fas fa-truck w-6 text-center mr-3"></i>
+                <span>Proveedores</span>
+              </a>
+              <a href="reportes.html" class="block py-2 px-6 hover:bg-blue-700 flex items-center">
+                <i class="fas fa-chart-bar w-6 text-center mr-3"></i>
+                <span>Reportes</span>
+              </a>
+              <a href="auditoria.html" class="block py-2 px-6 hover:bg-blue-700 flex items-center">
+                <i class="fas fa-clipboard-list w-6 text-center mr-3"></i>
+                <span>Auditoría</span>
+              </a>
+              <a href="contenido-institucional.html" class="block py-2 px-6 hover:bg-blue-700 flex items-center">
+                <i class="fas fa-file-alt w-6 text-center mr-3"></i>
+                <span>Contenido Institucional</span>
+              </a>
+              <a href="pqrs.html" class="block py-2 px-6 hover:bg-blue-700 flex items-center">
+                <i class="fas fa-comments w-6 text-center mr-3"></i>
+                <span>PQRS</span>
+                <span id="pending-pqrs" class="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">0</span>
+              </a>
+              <a href="perfil.html" class="block py-2 px-6 hover:bg-blue-700 flex items-center">
+                <i class="fas fa-user-cog w-6 text-center mr-3"></i>
+                <span>Configuración de Perfil</span>
+              </a>
+          
+              <div class="mt-auto border-t border-blue-700">
+                <a href="#" id="logout-btn" class="block py-2 px-6 hover:bg-blue-700 flex items-center">
+                  <i class="fas fa-sign-out-alt w-6 text-center mr-3"></i>
+                  <span>Cerrar Sesión</span>
+                </a>
+                <div class="p-4 text-xs text-blue-300">
+                  <p>Versión 1.0.0</p>
+                </div>
+              </div>
             </nav>
-        </div>
-
+          </div>
+          
         <!-- Overlay para móvil -->
         <div id="sidebar-overlay" class="sidebar-overlay"></div>
 
         <!-- Contenido principal -->
         <div id="main-content" class="flex-1 flex flex-col overflow-hidden">
             <!-- Barra superior -->
-            <header class="bg-white shadow-sm sticky top-0 z-10">
-                <div class="flex justify-between items-center p-4">
-                    <div class="flex items-center">
-                        <button id="mobile-menu-button" class="md:hidden text-gray-600 hover:text-gray-900 mr-4">
-                            <i class="fas fa-bars text-xl"></i>
-                        </button>
-                        <h1 class="text-xl font-semibold text-gray-800">Gestión de Perfil</h1>
-                    </div>
-                    <div class="flex items-center space-x-4">
-                        <button id="notifications-btn" class="relative text-gray-600 hover:text-gray-900">
-                            <i class="fas fa-bell text-xl"></i>
-                            <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">3</span>
-                        </button>
-                        <div class="relative" id="user-menu-button">
-                            <button type="button" class="flex items-center text-sm rounded-full focus:outline-none" id="user-menu" aria-expanded="false" aria-haspopup="true">
-                                <span class="sr-only">Abrir menú de usuario</span>
-                                <span class="mr-2 text-gray-700 hidden md:inline">Administrador</span>
-                                <i class="fas fa-user-circle text-2xl text-gray-500"></i>
+        <header class="bg-white shadow-sm sticky top-0 z-10">
+            <div class="flex justify-between items-center p-4">
+                <div class="flex items-center">
+                    <span class="text-xl font-semibold text-blue-800">Mi Perfil</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                        <!-- Notificaciones -->
+                        <div class="relative">
+                            <button id="notifications-button" class="p-2 text-gray-600 hover:text-gray-900 focus:outline-none relative">
+                                <i class="fas fa-bell text-xl"></i>
+                                <span id="notification-count" class="absolute top-0 right-0 h-5 w-5 bg-red-500 text-white text-xs flex items-center justify-center rounded-full hidden">0</span>
+                            <button type="button" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-500" onclick="togglePasswordVisibility('current-password')">
+                                <i class="far fa-eye"></i>
                             </button>
+                            <!-- Menú desplegable de notificaciones -->
+                            <div id="notifications-dropdown" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg overflow-hidden z-50 border border-gray-200">
+                                <div class="p-3 border-b border-gray-200 bg-gray-50">
+                                    <div class="flex justify-between items-center">
+                                        <h3 class="text-sm font-medium text-gray-700">Notificaciones</h3>
+                                        <button id="mark-all-read" class="text-xs text-blue-600 hover:text-blue-800">Marcar todo como leído</button>
+                                    </div>
+                                </div>
+                                <div id="notifications-list" class="max-h-96 overflow-y-auto">
+                                    <!-- Las notificaciones se cargarán aquí dinámicamente -->
+                                    <div class="p-4 text-center text-sm text-gray-500">No hay notificaciones nuevas</div>
+                                </div>
+                                <div class="p-3 border-t border-gray-200 bg-gray-50 text-center">
+                                    <a href="#" class="text-xs text-blue-600 hover:text-blue-800">Ver todas las notificaciones</a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Menú de usuario -->
+                        <div class="relative">
+                            <button id="user-menu-button" class="flex items-center space-x-2 focus:outline-none">
+                                <div class="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-medium text-sm">
+                                    <span id="user-initials">AD</span>
+                                </div>
+                                <span class="hidden md:inline-block text-sm font-medium text-gray-700" id="user-name">Administrador</span>
+                                <i class="fas fa-chevron-down text-xs text-gray-500"></i>
+                            </button>
+                            <!-- Menú desplegable de usuario -->
+                            <div id="user-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg overflow-hidden z-50 border border-gray-200">
+                                <div class="px-4 py-3 border-b border-gray-200">
+                                    <p class="text-sm text-gray-900 font-medium" id="dropdown-user-name">Administrador</p>
+                                    <p class="text-xs text-gray-500 truncate" id="dropdown-user-email">admin@ejemplo.com</p>
+                                </div>
+                                <a href="perfil.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-user-cog mr-2"></i> Mi perfil
+                                </a>
+                                <a href="#" id="logout-btn" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+                                    <i class="fas fa-sign-out-alt mr-2"></i> Cerrar sesión
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -888,6 +1043,140 @@
             }
         }
         
+        // Cargar historial de actividad del perfil
+        async function loadActivityHistory(userId) {
+            try {
+                console.log('Cargando actividad del perfil para el usuario:', userId);
+                
+                // Obtener los datos del perfil
+                const { data: profile, error } = await supabase
+                    .from('profiles')
+                    .select('created_at, updated_at')
+                    .eq('id', userId)
+                    .single();
+                
+                if (error) throw error;
+                
+                console.log('Datos del perfil cargados:', profile);
+                
+                // Actualizar la interfaz con la actividad del perfil
+                const activityList = document.querySelector('#activity-section ul');
+                if (!activityList) return;
+                
+                // Limpiar la lista actual
+                activityList.innerHTML = '';
+                
+                if (!profile) {
+                    activityList.innerHTML = `
+                        <li class="py-4 text-center text-gray-500">
+                            No se encontró información del perfil.
+                        </li>
+                    `;
+                    return;
+                }
+                
+                // Función para formatear la fecha relativa
+                const formatRelativeTime = (dateString) => {
+                    if (!dateString) return 'Fecha no disponible';
+                    
+                    const now = new Date();
+                    const date = new Date(dateString);
+                    const diffInSeconds = Math.floor((now - date) / 1000);
+                    
+                    if (diffInSeconds < 60) return 'Hace unos segundos';
+                    if (diffInSeconds < 3600) return `Hace ${Math.floor(diffInSeconds / 60)} minutos`;
+                    if (diffInSeconds < 86400) return `Hace ${Math.floor(diffInSeconds / 3600)} horas`;
+                    if (diffInSeconds < 172800) return 'Ayer';
+                    if (diffInSeconds < 604800) return `Hace ${Math.floor(diffInSeconds / 86400)} días`;
+                    
+                    // Si es más de una semana, mostrar la fecha completa
+                    return date.toLocaleDateString('es-ES', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                };
+                
+                // Crear actividades basadas en las fechas del perfil
+                const activities = [];
+                
+                // Agregar actividad de última actualización si existe
+                if (profile.updated_at) {
+                    activities.push({
+                        type: 'update',
+                        title: 'Perfil actualizado',
+                        description: 'Se actualizó la información del perfil',
+                        date: profile.updated_at,
+                        icon: 'user-edit',
+                        color: 'purple'
+                    });
+                }
+                
+                // Agregar actividad de creación de cuenta
+                if (profile.created_at) {
+                    activities.push({
+                        type: 'create',
+                        title: 'Cuenta creada',
+                        description: 'Se creó la cuenta de usuario',
+                        date: profile.created_at,
+                        icon: 'user-plus',
+                        color: 'green'
+                    });
+                }
+                
+                // Ordenar actividades por fecha (más reciente primero)
+                activities.sort((a, b) => new Date(b.date) - new Date(a.date));
+                
+                if (activities.length === 0) {
+                    activityList.innerHTML = `
+                        <li class="py-4 text-center text-gray-500">
+                            No hay actividad reciente para mostrar.
+                        </li>
+                    `;
+                    return;
+                }
+                
+                // Agregar cada actividad a la lista
+                activities.forEach(activity => {
+                    const activityItem = document.createElement('li');
+                    activityItem.className = 'py-4';
+                    activityItem.innerHTML = `
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <span class="h-8 w-8 rounded-full bg-${activity.color}-100 flex items-center justify-center">
+                                    <i class="fas fa-${activity.icon} text-${activity.color}-600"></i>
+                                </span>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm font-medium text-gray-900">
+                                    ${activity.title}
+                                </p>
+                                <p class="text-sm text-gray-500">
+                                    ${activity.description} • ${formatRelativeTime(activity.date)}
+                                </p>
+                            </div>
+                        </div>
+                    `;
+                    
+                    activityList.appendChild(activityItem);
+                });
+                
+            } catch (error) {
+                console.error('Error al cargar la actividad del perfil:', error);
+                // Mostrar mensaje de error en la interfaz
+                const activityList = document.querySelector('#activity-section ul');
+                if (activityList) {
+                    activityList.innerHTML = `
+                        <li class="py-4 text-center text-red-500">
+                            Error al cargar la actividad reciente.
+                        </li>
+                    `;
+                }
+            }
+        }
+        
         // Cargar perfil del usuario
         async function loadProfile() {
             showLoading(true);
@@ -910,8 +1199,25 @@
                 
                 console.log('Perfil cargado:', profile);
                 
+                // Si el perfil tiene un store_id, obtener el nombre de la tienda
+                if (profile.store_id) {
+                    const { data: store, error: storeError } = await supabase
+                        .from('stores')
+                        .select('name')
+                        .eq('id', profile.store_id)
+                        .single();
+                    
+                    if (!storeError && store) {
+                        // Agregar el nombre de la tienda al objeto de perfil
+                        profile.store_name = store.name;
+                    }
+                }
+                
                 // Actualizar la interfaz con los datos del perfil
                 updateProfileUI(profile, session.user);
+                
+                // Cargar el historial de actividad
+                await loadActivityHistory(session.user.id);
                 
             } catch (error) {
                 console.error('Error al cargar el perfil:', error);
@@ -933,10 +1239,33 @@
             // Actualizar campos del formulario
             setInputValue('first-name', firstName);
             setInputValue('last-name', lastName);
-            setInputValue('email', user.email || '');
+            setInputValue('email', user?.email || '');
             setInputValue('phone', profile.phone || '');
             setInputValue('role', profile.role || '');
-            setInputValue('store', profile.store_name || profile.store_id || '');
+            
+            // Obtener el nombre de la tienda (ya sea de la relación o del campo directo)
+            const storeName = profile.stores?.name || profile.store_name || '';
+            setInputValue('store', storeName);
+            
+            // Actualizar información del perfil en la tarjeta
+            document.getElementById('user-fullname').textContent = `${firstName} ${lastName}`.trim() || 'Usuario';
+            document.getElementById('user-role').textContent = profile.role ? profile.role.charAt(0).toUpperCase() + profile.role.slice(1) : '';
+            document.getElementById('user-store').textContent = storeName || 'Sin tienda asignada';
+            
+            // Formatear y mostrar la fecha de creación
+            if (user.created_at) {
+                const joinDate = new Date(user.created_at);
+                const options = { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric',
+                    timeZone: 'America/Bogota' // Ajusta según la zona horaria necesaria
+                };
+                const formattedDate = joinDate.toLocaleDateString('es-ES', options);
+                document.getElementById('join-date').textContent = formattedDate;
+            } else {
+                document.getElementById('join-date').textContent = 'No disponible';
+            }
             
             // Actualizar avatar si está disponible
             updateAvatar(profile);
@@ -1009,6 +1338,7 @@
                 // Mostrar vista previa
                 const reader = new FileReader();
                 reader.onload = function(event) {
+                    // Actualizar imagen en el formulario
                     const avatarImg = document.getElementById('user-avatar');
                     const initialsSpan = document.getElementById('user-initials');
                     
@@ -1016,6 +1346,15 @@
                         avatarImg.src = event.target.result;
                         avatarImg.classList.remove('hidden');
                         initialsSpan.classList.add('hidden');
+                    }
+                    
+                    // Actualizar imagen en el menú de usuario
+                    const menuAvatar = document.querySelector('.user-menu-avatar');
+                    const menuInitials = document.querySelector('.user-menu-initials');
+                    if (menuAvatar && menuInitials) {
+                        menuAvatar.src = event.target.result;
+                        menuAvatar.classList.remove('hidden');
+                        menuInitials.classList.add('hidden');
                     }
                 };
                 reader.readAsDataURL(file);
@@ -1090,8 +1429,43 @@
             }
         }
         
+        // Registrar acción en la tabla de auditoría
+        async function logAudit(action, targetEntity, targetId, details = {}) {
+            try {
+                const { data: { user }, error: userError } = await supabase.auth.getUser();
+                if (userError) throw userError;
+                
+                const { data: profileData } = await supabase
+                    .from('profiles')
+                    .select('store_id')
+                    .eq('id', user.id)
+                    .single();
+                
+                const auditData = {
+                    profile_id: user.id,
+                    store_id: profileData?.store_id || null,
+                    action: action,
+                    target_entity: targetEntity,
+                    target_id: targetId,
+                    details: details,
+                    timestamp: new Date().toISOString()
+                };
+                
+                const { error } = await supabase
+                    .from('audit_logs')
+                    .insert(auditData);
+                    
+                if (error) console.error('Error al registrar auditoría:', error);
+                
+                return !error;
+            } catch (error) {
+                console.error('Error en logAudit:', error);
+                return false;
+            }
+        }
+        
         // Actualizar perfil del usuario en la base de datos
-        async function updateUserProfile(updates) {
+        async function updateUserProfile(updates, action = 'update', details = {}) {
             try {
                 const { data: { user }, error: userError } = await supabase.auth.getUser();
                 if (userError) throw userError;
@@ -1104,8 +1478,27 @@
                     
                 if (error) throw error;
                 
-                // Actualizar la UI con los nuevos datos
+                // Registrar en auditoría
                 if (data && data.length > 0) {
+                    // Crear un objeto con solo los campos que cambiaron
+                    const changes = {};
+                    Object.keys(updates).forEach(key => {
+                        if (key !== 'updated_at') {
+                            changes[key] = updates[key];
+                        }
+                    });
+                    
+                    // Si no se proporcionaron detalles específicos, usar los cambios
+                    const auditDetails = Object.keys(details).length > 0 ? details : { changes };
+                    
+                    await logAudit(
+                        action,
+                        'profiles',
+                        user.id,
+                        auditDetails
+                    );
+                    
+                    // Actualizar la UI con los nuevos datos
                     updateProfileUI(data[0], user);
                 }
                 
@@ -1209,33 +1602,81 @@
             try {
                 console.log('Actualizando perfil...');
                 
+                // Obtener el usuario actual
+                const { data: { user }, error: userError } = await supabase.auth.getUser();
+                if (userError) throw userError;
+                
                 // Obtener los datos del formulario
                 const formData = new FormData(e.target);
+                const firstName = formData.get('first_name') || '';
+                const lastName = formData.get('last_name') || '';
+                const phoneValue = formData.get('phone') || null;
+                
+                // Obtener los valores actuales para comparar cambios
+                const { data: currentProfile } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', user.id)
+                    .single();
+                
+                // Preparar los cambios para auditoría
+                const changes = {};
+                if (currentProfile) {
+                    const newName = `${firstName} ${lastName}`.trim();
+                    if (currentProfile.name !== newName) {
+                        changes.name = {
+                            from: currentProfile.name,
+                            to: newName
+                        };
+                    }
+                    if (currentProfile.phone !== phoneValue) {
+                        changes.phone = {
+                            from: currentProfile.phone,
+                            to: phoneValue
+                        };
+                    }
+                }
+                
+                // Combinar nombre y apellido en un solo campo 'name'
                 const updates = {
-                    name: formData.get('nombre') || '',
-                    phone: formData.get('telefono') || '',
-                    address: formData.get('direccion') || '',
-                    city: formData.get('ciudad') || '',
-                    country: formData.get('pais') || '',
+                    name: `${firstName} ${lastName}`.trim(),
                     updated_at: new Date().toISOString()
                 };
                 
-                // Obtener la sesión actual
-                const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-                if (sessionError) throw sessionError;
-                if (!session) throw new Error('No hay una sesión activa');
+                // Solo agregar el teléfono si tiene un valor
+                if (phoneValue) {
+                    // Intentar convertir a número si el campo lo requiere
+                    updates.phone = isNaN(phoneValue) ? phoneValue : Number(phoneValue);
+                }
                 
                 // Actualizar el perfil en la base de datos
-                const { data, error } = await supabase
+                const { data: updatedProfile, error: updateError } = await supabase
                     .from('profiles')
                     .update(updates)
-                    .eq('id', session.user.id)
-                    .select();
+                    .eq('id', user.id)
+                    .select('*, stores:store_id (name)')
+                    .single();
+                    
+                if (updateError) throw updateError;
                 
-                if (error) throw error;
+                // Registrar en auditoría si hay cambios
+                if (Object.keys(changes).length > 0) {
+                    await logAudit(
+                        'update_profile',
+                        'profiles',
+                        user.id,
+                        { 
+                            changes: changes,
+                            updated_fields: Object.keys(updates).filter(k => k !== 'updated_at')
+                        }
+                    );
+                }
                 
-                console.log('Perfil actualizado:', data);
+                // Mostrar notificación de éxito
                 showNotification('Perfil actualizado correctamente', 'success');
+                
+                // Actualizar la interfaz con los datos actualizados
+                updateProfileUI(updatedProfile, user);
                 
             } catch (error) {
                 console.error('Error al actualizar el perfil:', error);
@@ -1286,8 +1727,300 @@
             document.body.appendChild(errorDiv);
         }
     </script>
-    
+        <!-- Botón de inicio flotante para móviles -->
+        <a id="mobile-home-button" class="mobile-home-button md:hidden" href="dashboard">
+            <i class="fas fa-home"></i>
+        </a>
+    </div>
+
     <!-- Scripts de Bootstrap -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Script para el menú móvil -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Función para manejar el redimensionamiento de la ventana
+            function handleResize() {
+                // Restaurar el scroll si es necesario
+                if (window.innerWidth > 991.98) {
+                    document.documentElement.style.overflow = '';
+                    document.body.style.overflow = '';
+                }
+            }
+
+            window.addEventListener('resize', handleResize);
+        });
+    </script>
+
+    <!-- Script para notificaciones y menú de usuario -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Elementos del DOM
+            const notificationsButton = document.getElementById('notifications-button');
+            const notificationsDropdown = document.getElementById('notifications-dropdown');
+            const notificationsList = document.getElementById('notifications-list');
+            const notificationCount = document.getElementById('notification-count');
+            const markAllReadButton = document.getElementById('mark-all-read');
+            const userMenuButton = document.getElementById('user-menu-button');
+            const userDropdown = document.getElementById('user-dropdown');
+            const userNameElement = document.getElementById('user-name');
+            const userInitialsElement = document.getElementById('user-initials');
+            const dropdownUserName = document.getElementById('dropdown-user-name');
+            const dropdownUserEmail = document.getElementById('dropdown-user-email');
+            const logoutBtn = document.getElementById('logout-btn');
+
+            // Estado de la aplicación
+            let notifications = [];
+            let unreadCount = 0;
+
+            // Inicializar menús desplegables
+            function initDropdowns() {
+                // Cerrar menús al hacer clic fuera
+                document.addEventListener('click', (e) => {
+                    if (notificationsButton && notificationsDropdown && 
+                        !notificationsButton.contains(e.target) && 
+                        !notificationsDropdown.contains(e.target)) {
+                        notificationsDropdown.classList.add('hidden');
+                    }
+                    
+                    if (userMenuButton && userDropdown && 
+                        !userMenuButton.contains(e.target) && 
+                        !userDropdown.contains(e.target)) {
+                        userDropdown.classList.add('hidden');
+                    }
+                });
+                
+                // Toggle menú de notificaciones
+                if (notificationsButton) {
+                    notificationsButton.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        notificationsDropdown.classList.toggle('hidden');
+                        if (userDropdown) userDropdown.classList.add('hidden');
+                    });
+                }
+                
+                // Toggle menú de usuario
+                if (userMenuButton) {
+                    userMenuButton.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        if (userDropdown) userDropdown.classList.toggle('hidden');
+                        if (notificationsDropdown) notificationsDropdown.classList.add('hidden');
+                    });
+                }
+                
+                // Marcar todo como leído
+                if (markAllReadButton) {
+                    markAllReadButton.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        markAllNotificationsAsRead();
+                    });
+                }
+                
+                // Cerrar sesión
+                if (logoutBtn) {
+                    logoutBtn.addEventListener('click', async (e) => {
+                        e.preventDefault();
+                        try {
+                            const { error } = await supabase.auth.signOut();
+                            if (error) throw error;
+                            window.location.href = 'login.html';
+                        } catch (error) {
+                            console.error('Error al cerrar sesión:', error);
+                            alert('Error al cerrar sesión');
+                        }
+                    });
+                }
+            }
+
+            // Actualizar la interfaz de notificaciones
+            function updateNotificationsUI() {
+                if (!notificationsList) return;
+
+                // Actualizar contador
+                if (notificationCount) {
+                    if (unreadCount > 0) {
+                        notificationCount.textContent = unreadCount > 9 ? '9+' : unreadCount;
+                        notificationCount.classList.remove('hidden');
+                    } else {
+                        notificationCount.classList.add('hidden');
+                    }
+                }
+
+
+                // Actualizar lista de notificaciones
+                if (notifications.length === 0) {
+                    notificationsList.innerHTML = `
+                        <div class="p-4 text-center text-sm text-gray-500">
+                            No hay notificaciones nuevas
+                        </div>`;
+                    return;
+                }
+                
+                notificationsList.innerHTML = notifications.map(notification => `
+                    <div class="border-b border-gray-100 last:border-0">
+                        <a href="${notification.link || '#'}" class="block px-4 py-3 hover:bg-gray-50 transition-colors ${!notification.read ? 'bg-blue-50' : ''}">
+                            <div class="flex items-start">
+                                <div class="flex-shrink-0 pt-0.5">
+                                    <i class="${getNotificationIcon(notification.type)} ${getNotificationColor(notification.type)}"></i>
+                                </div>
+                                <div class="ml-3 flex-1">
+                                    <p class="text-sm font-medium text-gray-900">${notification.title || 'Nueva notificación'}</p>
+                                    <p class="text-xs text-gray-500 mt-1">${notification.message || ''}</p>
+                                    <p class="text-xs text-gray-400 mt-1">${formatDate(notification.created_at)}</p>
+                                </div>
+                                ${!notification.read ? '<span class="flex-shrink-0 ml-2 w-2 h-2 mt-1.5 rounded-full bg-blue-500"></span>' : ''}
+                            </div>
+                        </a>
+                    </div>`).join('');
+            }
+
+            // Obtener ícono para el tipo de notificación
+            function getNotificationIcon(type) {
+                const icons = {
+                    success: 'fas fa-check-circle',
+                    error: 'fas fa-exclamation-circle',
+                    warning: 'fas fa-exclamation-triangle',
+                    info: 'fas fa-info-circle',
+                    default: 'fas fa-bell'
+                };
+                return icons[type] || icons.default;
+            }
+
+            // Obtener color para el tipo de notificación
+            function getNotificationColor(type) {
+                const colors = {
+                    success: 'text-green-500',
+                    error: 'text-red-500',
+                    warning: 'text-yellow-500',
+                    info: 'text-blue-500',
+                    default: 'text-gray-500'
+                };
+                return colors[type] || colors.default;
+            }
+
+            // Formatear fecha
+            function formatDate(dateString) {
+                if (!dateString) return '';
+                const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+                return new Date(dateString).toLocaleDateString('es-ES', options);
+            }
+
+            // Obtener iniciales del nombre
+            function getInitials(name) {
+                if (!name) return 'U';
+                return name.split(' ')
+                    .map(part => part[0])
+                    .join('')
+                    .toUpperCase()
+                    .substring(0, 2);
+            }
+
+            // Marcar notificación como leída
+            async function markNotificationAsRead(notificationId) {
+                try {
+                    const { error } = await supabase
+                        .from('notifications')
+                        .update({ read: true })
+                        .eq('id', notificationId);
+                        
+                    if (error) throw error;
+                    
+                    // Actualizar estado local
+                    const notification = notifications.find(n => n.id === notificationId);
+                    if (notification && !notification.read) {
+                        notification.read = true;
+                        unreadCount--;
+                        updateNotificationsUI();
+                    }
+                } catch (error) {
+                    console.error('Error al marcar notificación como leída:', error);
+                }
+            }
+
+            // Marcar todas las notificaciones como leídas
+            async function markAllNotificationsAsRead() {
+                try {
+                    const unreadIds = notifications
+                        .filter(n => !n.read)
+                        .map(n => n.id);
+                        
+                    if (unreadIds.length === 0) return;
+                    
+                    const { error } = await supabase
+                        .from('notifications')
+                        .update({ read: true })
+                        .in('id', unreadIds);
+                        
+                    if (error) throw error;
+                    
+                    // Actualizar estado local
+                    notifications.forEach(n => { n.read = true; });
+                    unreadCount = 0;
+                    updateNotificationsUI();
+                    
+                } catch (error) {
+                    console.error('Error al marcar todas las notificaciones como leídas:', error);
+                }
+            }
+
+            // Cargar notificaciones
+            async function loadNotifications() {
+                try {
+                    const { data: { user } } = await supabase.auth.getUser();
+                    if (!user) return;
+
+                    const { data, error } = await supabase
+                        .from('notifications')
+                        .select('*')
+                        .eq('user_id', user.id)
+                        .order('created_at', { ascending: false })
+                        .limit(10);
+
+                    if (error) throw error;
+
+                    notifications = data || [];
+                    unreadCount = notifications.filter(n => !n.read).length;
+                    
+                    updateNotificationsUI();
+                } catch (error) {
+                    console.error('Error al cargar notificaciones:', error);
+                }
+            }
+
+            // Actualizar información del usuario en la interfaz
+            async function updateUserUI() {
+                try {
+                    const { data: { user }, error } = await supabase.auth.getUser();
+                    if (error || !user) return;
+                    
+                    const displayName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Usuario';
+                    const initials = getInitials(displayName);
+                    
+                    if (userNameElement) userNameElement.textContent = displayName;
+                    if (userInitialsElement) userInitialsElement.textContent = initials;
+                    if (dropdownUserName) dropdownUserName.textContent = displayName;
+                    if (dropdownUserEmail) dropdownUserEmail.textContent = user.email || '';
+                } catch (error) {
+                    console.error('Error al cargar información del usuario:', error);
+                }
+            }
+
+            // Inicializar todo cuando el DOM esté listo
+            async function init() {
+                initDropdowns();
+                await Promise.all([
+                    loadNotifications(),
+                    updateUserUI()
+                ]);
+                
+                // Actualizar notificaciones cada minuto
+                setInterval(loadNotifications, 60000);
+            }
+
+            // Iniciar la aplicación
+            init();
+        });
+    </script>
 </body>
 </html>

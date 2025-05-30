@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ubicación y Contacto - CrediControl</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .map-container {
+            height: 100%;
+            min-height: 400px;
+        }
+        .contact-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .contact-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Encabezado -->
+    <div class="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-16">
+        <div class="container mx-auto px-4 text-center">
+            <h1 class="text-4xl md:text-5xl font-bold mb-4">Encuéntranos</h1>
+            <p class="text-xl text-blue-100 max-w-2xl mx-auto">Estamos aquí para atenderte en nuestras oficinas principales y a través de nuestros canales de contacto.</p>
+        </div>
+    </div>
+
+    <!-- Mapa y Ubicación -->
+    <div class="container mx-auto px-4 py-16">
+        <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+            <div class="md:flex">
+                <!-- Mapa -->
+                <div class="md:w-2/3">
+                    <div class="map-container">
+                        <iframe 
+                            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3901.965183423743!2d-77.0330726846748!3d-12.04621934569198!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x9105c5f619ee3ec7%3A0x14206bd9d59dca3e!2sPlaza%20Mayor%20de%20Lima!5e0!3m2!1ses-419!2spe!4v1620000000000!5m2!1ses-419!2spe" 
+                            width="100%" 
+                            height="100%" 
+                            style="border:0;" 
+                            allowfullscreen="" 
+                            loading="lazy"
+                            class="min-h-[400px] md:min-h-[600px]">
+                        </iframe>
+                    </div>
+                </div>
+                
+                <!-- Información de Contacto -->
+                <div class="md:w-1/3 p-8 bg-gray-50">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6">Oficina Principal</h2>
+                    
+                    <div class="space-y-6">
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0 bg-blue-100 p-3 rounded-full text-blue-600">
+                                <i class="fas fa-map-marker-alt text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="font-semibold text-gray-800">Dirección</h3>
+                                <p class="text-gray-600">Av. Principal 123, Piso 8<br>San Isidro, Lima 15073<br>Perú</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0 bg-blue-100 p-3 rounded-full text-blue-600">
+                                <i class="fas fa-phone-alt text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="font-semibold text-gray-800">Teléfonos</h3>
+                                <p class="text-gray-600">
+                                    <a href="tel:+5111234567" class="hover:text-blue-600">(01) 123-4567</a><br>
+                                    <a href="tel:+51987654321" class="hover:text-blue-600">987 654 321</a>
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0 bg-blue-100 p-3 rounded-full text-blue-600">
+                                <i class="fas fa-envelope text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="font-semibold text-gray-800">Correo Electrónico</h3>
+                                <p class="text-gray-600">
+                                    <a href="mailto:info@credicontrol.com" class="hover:text-blue-600">info@credicontrol.com</a><br>
+                                    <a href="mailto:servicioalcliente@credicontrol.com" class="hover:text-blue-600">servicioalcliente@credicontrol.com</a>
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0 bg-blue-100 p-3 rounded-full text-blue-600">
+                                <i class="fas fa-clock text-xl"></i>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="font-semibold text-gray-800">Horario de Atención</h3>
+                                <p class="text-gray-600">
+                                    Lunes a Viernes: 9:00 AM - 6:00 PM<br>
+                                    Sábados: 9:00 AM - 1:00 PM<br>
+                                    Domingos: Cerrado
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-8 pt-6 border-t border-gray-200">
+                        <h3 class="font-semibold text-gray-800 mb-4">Síguenos en Redes Sociales</h3>
+                        <div class="flex space-x-4">
+                            <a href="#" class="text-blue-600 hover:text-blue-800 text-2xl">
+                                <i class="fab fa-facebook"></i>
+                            </a>
+                            <a href="#" class="text-blue-400 hover:text-blue-600 text-2xl">
+                                <i class="fab fa-twitter"></i>
+                            </a>
+                            <a href="#" class="text-pink-600 hover:text-pink-800 text-2xl">
+                                <i class="fab fa-instagram"></i>
+                            </a>
+                            <a href="#" class="text-blue-700 hover:text-blue-900 text-2xl">
+                                <i class="fab fa-linkedin"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Otras Ubicaciones -->
+    <div class="bg-gray-100 py-16">
+        <div class="container mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center text-gray-800 mb-12">Nuestras Otras Sucursales</h2>
+            
+            <div class="grid md:grid-cols-3 gap-8">
+                <!-- Sucursal 1 -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden contact-card">
+                    <div class="h-48 bg-gray-200 flex items-center justify-center">
+                        <i class="fas fa-building text-6xl text-gray-400"></i>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-2">Sucursal Miraflores</h3>
+                        <p class="text-gray-600 mb-4">Av. Larco 456, Miraflores<br>Lima, Perú</p>
+                        <p class="text-sm text-gray-500">
+                            <i class="fas fa-phone-alt mr-2"></i> (01) 765-4321
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Sucursal 2 -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden contact-card">
+                    <div class="h-48 bg-gray-200 flex items-center justify-center">
+                        <i class="fas fa-building text-6xl text-gray-400"></i>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-2">Sucursal La Molina</h3>
+                        <p class="text-gray-600 mb-4">Av. La Molina 789, La Molina<br>Lima, Perú</p>
+                        <p class="text-sm text-gray-500">
+                            <i class="fas fa-phone-alt mr-2"></i> (01) 345-6789
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Sucursal 3 -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden contact-card">
+                    <div class="h-48 bg-gray-200 flex items-center justify-center">
+                        <i class="fas fa-building text-6xl text-gray-400"></i>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-2">Sucursal San Miguel</h3>
+                        <p class="text-gray-600 mb-4">Av. La Marina 1010, San Miguel<br>Lima, Perú</p>
+                        <p class="text-sm text-gray-500">
+                            <i class="fas fa-phone-alt mr-2"></i> (01) 987-6543
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Formulario de Contacto -->
+    <div class="container mx-auto px-4 py-16">
+        <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-lg overflow-hidden">
+            <div class="md:flex">
+                <div class="md:w-1/2 bg-blue-600 text-white p-8">
+                    <h2 class="text-2xl font-bold mb-4">¿Tienes alguna pregunta?</h2>
+                    <p class="mb-6 text-blue-100">Estamos aquí para ayudarte. Completa el formulario y nos pondremos en contacto contigo a la brevedad.</p>
+                    <div class="space-y-4">
+                        <div class="flex items-center">
+                            <div class="bg-blue-500 p-3 rounded-full mr-4">
+                                <i class="fas fa-headset text-xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold">Atención al Cliente</h3>
+                                <p class="text-sm text-blue-100">24/7 para asistencia inmediata</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="bg-blue-500 p-3 rounded-full mr-4">
+                                <i class="fas fa-comment-alt text-xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold">Chat en Vivo</h3>
+                                <p class="text-sm text-blue-100">Chatea con un asesor ahora</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="md:w-1/2 p-8">
+                    <form>
+                        <div class="mb-4">
+                            <label for="name" class="block text-gray-700 text-sm font-medium mb-2">Nombre Completo</label>
+                            <input type="text" id="name" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Tu nombre">
+                        </div>
+                        <div class="mb-4">
+                            <label for="email" class="block text-gray-700 text-sm font-medium mb-2">Correo Electrónico</label>
+                            <input type="email" id="email" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="tu@email.com">
+                        </div>
+                        <div class="mb-4">
+                            <label for="subject" class="block text-gray-700 text-sm font-medium mb-2">Asunto</label>
+                            <input type="text" id="subject" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="¿Cómo podemos ayudarte?">
+                        </div>
+                        <div class="mb-6">
+                            <label for="message" class="block text-gray-700 text-sm font-medium mb-2">Mensaje</label>
+                            <textarea id="message" rows="4" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Escribe tu mensaje aquí..."></textarea>
+                        </div>
+                        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition duration-300">Enviar Mensaje</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

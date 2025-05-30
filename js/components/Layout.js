@@ -117,28 +117,41 @@ export function renderLayout(content = '', user = null) {
       </main>
 
       <!-- Footer -->
-      <footer class="bg-white border-t border-gray-200 mt-12">
-        <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-          <div class="md:flex md:items-center md:justify-between">
-            <div class="flex justify-center space-x-6 md:order-2">
-              <a href="#" class="text-gray-400 hover:text-gray-500">
-                <span class="sr-only">Facebook</span>
-                <i class="fab fa-facebook h-6 w-6"></i>
-              </a>
-              <a href="#" class="text-gray-400 hover:text-gray-500">
-                <span class="sr-only">Instagram</span>
-                <i class="fab fa-instagram h-6 w-6"></i>
-              </a>
-              <a href="#" class="text-gray-400 hover:text-gray-500">
-                <span class="sr-only">Twitter</span>
-                <i class="fab fa-twitter h-6 w-6"></i>
-              </a>
+      <footer class="bg-gray-800 text-white py-12">
+        <div class="container mx-auto px-4">
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <!-- Sección 1: Logo y descripción -->
+            <div class="md:col-span-1">
+              <h3 class="text-2xl font-bold mb-4 text-white">Horizont</h3>
+              <p class="text-gray-400">Sistema integral de gestión de créditos para compradores y administradores.</p>
             </div>
-            <div class="mt-8 md:mt-0 md:order-1">
-              <p class="text-center text-base text-gray-400">
-                &copy; ${new Date().getFullYear()} Horizont. Todos los derechos reservados.
-              </p>
+            
+            <!-- Sección 2: Enlaces a archivos de adminsuper -->
+            <div class="md:col-span-3">
+              <h4 class="text-lg font-semibold mb-4 text-white">Enlaces</h4>
+              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                  <h5 class="font-medium text-gray-300 mb-2">Información</h5>
+                  <ul class="space-y-2">
+                    <li><a href="/adminsuper/planes.html" class="text-gray-400 hover:text-white transition-colors block">Planes</a></li>
+                    <li><a href="/adminsuper/quienes-somos.html" class="text-gray-400 hover:text-white transition-colors block">Quiénes Somos</a></li>
+                    <li><a href="/adminsuper/ubicacion.html" class="text-gray-400 hover:text-white transition-colors block">Ubicación</a></li>
+                  </ul>
+                </div>
+                <div>
+                  <h5 class="font-medium text-gray-300 mb-2">Legal</h5>
+                  <ul class="space-y-2">
+                    <li><a href="/adminsuper/terminos-condiciones.html" class="text-gray-400 hover:text-white transition-colors block">Términos y Condiciones</a></li>
+                    <li><a href="/adminsuper/polyticadatos.html" class="text-gray-400 hover:text-white transition-colors block">Política de Privacidad</a></li>
+                  </ul>
+                </div>
+              </div>
             </div>
+          </div>
+          
+          <!-- Derechos de autor -->
+          <div class="border-t border-gray-700 mt-12 pt-8 text-center text-gray-400">
+            <p>&copy; ${new Date().getFullYear()} CréditoFácil. Todos los derechos reservados.</p>
           </div>
         </div>
       </footer>

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Planes Enterprise</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      margin: 0;
+      padding: 2rem;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 2rem;
+    }
+
+    .card {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      padding: 2rem;
+      max-width: 300px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .card h2 {
+      margin-top: 0;
+      color: #333;
+    }
+
+    .price {
+      font-size: 2rem;
+      color: #0078D7;
+      margin: 1rem 0;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    ul li {
+      padding: 0.5rem 0;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .btn {
+      margin-top: auto;
+      padding: 0.75rem;
+      background: #0078D7;
+      color: white;
+      text-align: center;
+      border-radius: 5px;
+      text-decoration: none;
+    }
+
+    .btn:hover {
+      background: #005bb5;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Plan Básico -->
+  <div class="card">
+    <h2>Enterprise Básico</h2>
+    <div class="price">$499/mes</div>
+    <ul>
+      <li>10 usuarios incluidos</li>
+      <li>1 TB de almacenamiento</li>
+      <li>Soporte por correo</li>
+      <li>Dashboard personalizado</li>
+    </ul>
+    <a href="#" class="btn">Seleccionar</a>
+  </div>
+
+  <!-- Plan Profesional -->
+  <div class="card">
+    <h2>Enterprise Pro</h2>
+    <div class="price">$999/mes</div>
+    <ul>
+      <li>50 usuarios incluidos</li>
+      <li>5 TB de almacenamiento</li>
+      <li>Soporte 24/7</li>
+      <li>Integración API</li>
+      <li>Seguridad avanzada</li>
+    </ul>
+    <a href="#" class="btn">Seleccionar</a>
+  </div>
+
+  <!-- Plan Ultimate -->
+  <div class="card">
+    <h2>Enterprise Ultimate</h2>
+    <div class="price">Desde $1999/mes</div>
+    <ul>
+      <li>Usuarios ilimitados</li>
+      <li>Almacenamiento ilimitado</li>
+      <li>Soporte dedicado</li>
+      <li>Consultoría personalizada</li>
+      <li>Onboarding completo</li>
+    </ul>
+    <a href="#" class="btn">Seleccionar</a>
+  </div>
+
+</body>
+</html>

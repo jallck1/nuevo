@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auditoría de Productos</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Configuración de Supabase -->
+    <script>
+        // Configuración de Supabase - Asegúrate de reemplazar con tus credenciales
+        const SUPABASE_URL = 'https://tu-proyecto.supabase.co';
+        const SUPABASE_ANON_KEY = 'tu-clave-anon';
+        
+        // Inicializar Supabase
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        window.supabase = supabase; // Hacerlo global para el módulo de auditoría
+    </script>
+    <!-- Módulo de auditoría de productos -->
+    <script src="js/auditoria-productos.js"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="min-h-screen">
+        <!-- Barra de navegación -->
+        <nav class="bg-white shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex">
+                        <div class="flex-shrink-0 flex items-center">
+                            <span class="text-xl font-bold text-gray-800">Auditoría de Productos</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Contenido principal -->
+        <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+            <div class="px-4 py-6 sm:px-0">
+                <div class="bg-white rounded-lg shadow overflow-hidden">
+                    <div class="px-4 py-5 border-b border-gray-200 sm:px-6">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900">
+                            Registro de Auditoría de Productos
+                        </h3>
+                        <p class="mt-1 text-sm text-gray-500">
+                            Historial de cambios realizados en los productos.
+                        </p>
+                    </div>
+                    <div class="bg-white px-4 py-5 sm:p-6">
+                        <div id="audit-log-container" class="space-y-4">
+                            <!-- Aquí se cargarán los registros de auditoría -->
+                            <div class="text-center text-gray-500 py-8">
+                                <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                                <p>Cargando registros de auditoría...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Script para cargar los registros de auditoría -->
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                // Verificar autenticación
+                const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+                
+                if (sessionError || !session) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                // Cargar registros de auditoría de productos
+                await loadProductAuditLogs();
+                
+            } catch (error) {
+                console.error('Error al cargar la página:', error);
+                document.getElementById('audit-log-container').innerHTML = `
+                    <div class="bg-red-50 border-l-4 border-red-400 p-4">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-exclamation-circle text-red-400"></i>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-red-700">
+                                    Error al cargar los registros de auditoría. Por favor, recarga la página.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+
+        // Función para cargar los registros de auditoría de productos
+        async function loadProductAuditLogs() {
+            const container = document.getElementById('audit-log-container');
+            
+            try {
+                // Obtener los registros de auditoría de productos
+                const { data: logs, error } = await supabase
+                    .from('audit_logs')
+                    .select('*')
+                    .eq('target_entity', 'products')
+                    .order('created_at', { ascending: false })
+                    .limit(50);
+
+                if (error) throw error;
+
+                if (!logs || logs.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center text-gray-500 py-8">
+                            <i class="far fa-clipboard text-4xl mb-3"></i>
+                            <p>No hay registros de auditoría disponibles.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Mostrar los registros
+                container.innerHTML = '';
+                logs.forEach(log => {
+                    const logElement = createAuditLogElement(log);
+                    container.appendChild(logElement);
+                });
+
+            } catch (error) {
+                console.error('Error al cargar registros de auditoría:', error);
+                container.innerHTML = `
+                    <div class="bg-red-50 border-l-4 border-red-400 p-4">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-exclamation-circle text-red-400"></i>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-red-700">
+                                    Error al cargar los registros de auditoría: ${error.message}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Función para crear un elemento de registro de auditoría
+        function createAuditLogElement(log) {
+            const date = new Date(log.created_at);
+            const formattedDate = date.toLocaleString('es-ES', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
+            const actionLabels = {
+                'create': 'Creación',
+                'update': 'Actualización',
+                'delete': 'Eliminación',
+                'status_change': 'Cambio de estado'
+            };
+
+            const actionIcons = {
+                'create': 'plus-circle text-green-500',
+                'update': 'edit text-blue-500',
+                'delete': 'trash-alt text-red-500',
+                'status_change': 'exchange-alt text-yellow-500'
+            };
+
+            const actionLabel = actionLabels[log.action] || log.action;
+            const actionIcon = actionIcons[log.action] || 'info-circle';
+
+            const logElement = document.createElement('div');
+            logElement.className = 'bg-white shadow overflow-hidden sm:rounded-lg mb-4 border-l-4 border-blue-500';
+            
+            logElement.innerHTML = `
+                <div class="px-4 py-5 sm:px-6">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <i class="fas ${actionIcon} text-xl mr-3"></i>
+                            <h3 class="text-lg leading-6 font-medium text-gray-900">
+                                ${actionLabel} de producto
+                            </h3>
+                        </div>
+                        <div class="text-sm text-gray-500">
+                            <i class="far fa-clock mr-1"></i> ${formattedDate}
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <span class="text-sm text-gray-500">ID del producto:</span>
+                        <span class="ml-1 font-medium">${log.target_id || 'N/A'}</span>
+                    </div>
+                </div>
+                <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
+                    <h4 class="text-sm font-medium text-gray-500 mb-3">Detalles de los cambios:</h4>
+                    <div id="details-${log.id}" class="mt-2">
+                        ${window.ProductAudit ? 
+                            window.ProductAudit.formatAuditDetails(log.details) : 
+                            '<pre class="text-sm bg-gray-100 p-3 rounded overflow-auto max-h-60">' + JSON.stringify(log.details, null, 2) + '</pre>'}
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 text-right">
+                    <span class="text-xs text-gray-500">
+                        <i class="fas fa-user-circle mr-1"></i> Usuario ID: ${log.user_id || 'N/A'}
+                        <span class="mx-2">•</span>
+                        <i class="fas fa-store mr-1"></i> Tienda ID: ${log.store_id || 'N/A'}
+                    </span>
+                </div>
+            `;
+
+            return logElement;
+        }
+    </script>
+</body>
+</html>

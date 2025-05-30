@@ -10,30 +10,35 @@ window.cartModule = (function() {
   // 1. Inicialización del módulo
   async function init() {
     try {
-      // Cargar Supabase
-      await loadSupabase();
-      
-      // Verificar autenticación
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        console.error('Usuario no autenticado');
-        window.location.href = 'login.html?redirect=carrito.html';
-        return;
+      // Cargar Supabase (si es necesario para otras funcionalidades)
+      try {
+        await loadSupabase();
+      } catch (error) {
+        console.warn('No se pudo cargar Supabase, pero el carrito funcionará en modo local');
       }
-      
-      // Cargar perfil del usuario
-      userProfile = await getUserProfile(user.id);
       
       // Configurar eventos
       setupEventListeners();
       
-      // Actualizar interfaz
+      // Actualizar interfaz del carrito
       updateCartDisplay();
-      updateCreditDisplay();
+      
+      // Actualizar crédito solo si el usuario está autenticado
+      try {
+        if (supabase) {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            userProfile = await getUserProfile(user.id);
+            updateCreditDisplay();
+          }
+        }
+      } catch (error) {
+        console.warn('No se pudo cargar la información del usuario, pero el carrito funcionará en modo local');
+      }
       
     } catch (error) {
       console.error('Error al inicializar el carrito:', error);
-      showNotification('Error al cargar el carrito: ' + error.message, 'error');
+      // No mostrar error al usuario para no interrumpir la experiencia
     }
   }
   
@@ -257,10 +262,19 @@ window.cartModule = (function() {
     
     // Actualizar contador de items
     const itemCount = cart.reduce((total, item) => total + (parseInt(item.quantity) || 0), 0);
-    cartCountElements.forEach(el => {
+    console.log('Actualizando contador del carrito. Total de items:', itemCount);
+    
+    // Actualizar todos los elementos con id que contenga 'cart-count'
+    document.querySelectorAll('[id*="cart-count"]').forEach(el => {
       if (el) {
         el.textContent = itemCount;
-        el.classList.toggle('hidden', itemCount === 0);
+        // Solo ocultar si no hay items, pero asegurarse de que se muestre cuando hay items
+        if (itemCount > 0) {
+          el.classList.remove('hidden');
+        } else {
+          el.classList.add('hidden');
+        }
+        console.log('Contador actualizado en elemento:', el);
       }
     });
     
@@ -271,25 +285,57 @@ window.cartModule = (function() {
       return;
     }
     
-    // Calcular totales
-    // El subtotal es la suma de los precios con IVA (sin descuentos)
+    // Calcular la cantidad total de productos
+    const totalItems = cart.reduce((total, item) => total + parseInt(item.quantity), 0);
+    
+    // Calcular el subtotal (precio final con IVA, sin descuentos)
     const subtotal = cart.reduce((sum, item) => {
-      const priceWithVAT = parseFloat(item.price) + (parseFloat(item.tax) || 0);
-      return sum + (priceWithVAT * parseInt(item.quantity));
+      return sum + (parseFloat(item.price) * parseInt(item.quantity));
     }, 0);
     
-    // El IVA ya está incluido en el precio, pero lo mostramos para referencia
-    const totalTax = cart.reduce((sum, item) => sum + (parseFloat(item.tax || 0) * parseInt(item.quantity)), 0);
+    // Calcular el subtotal sin IVA (precio base)
+    const subtotalWithoutVAT = cart.reduce((sum, item) => {
+      const price = parseFloat(item.price) / 1.19; // Convertir a precio sin IVA
+      return sum + (price * parseInt(item.quantity));
+    }, 0);
     
-    // Calcular el total de descuentos
-    const totalDiscount = cart.reduce((sum, item) => sum + (parseFloat(item.discount_amount || 0) * parseInt(item.quantity)), 0);
+    // Calcular el IVA total (19% del subtotal sin IVA)
+    const totalTax = subtotalWithoutVAT * 0.19;
     
-    // El total es la suma de los precios finales (con IVA y descuentos aplicados)
-    const total = cart.reduce((sum, item) => sum + (parseFloat(item.final_price || item.price) * parseInt(item.quantity)), 0);
+    // Si hay un tax_amount definido en el ítem, usarlo
+    const totalTaxFromItems = cart.reduce((sum, item) => {
+      return sum + (parseFloat(item.tax_amount || 0) * parseInt(item.quantity));
+    }, 0);
+    
+    // Usar el mayor valor entre el IVA calculado y el IVA de los ítems
+    const totalTaxFinal = Math.max(totalTax, totalTaxFromItems);
+    
+    // Calcular el total de descuentos (ya incluyen IVA)
+    const totalDiscount = cart.reduce((sum, item) => {
+      const discount = parseFloat(item.discount_amount) || 0;
+      return sum + (discount * parseInt(item.quantity));
+    }, 0);
+    
+    // Calcular el total usando el precio base (sin descuentos)
+    const total = cart.reduce((sum, item) => {
+      // Usar el precio base (sin descuentos) que ya incluye IVA
+      return sum + (parseFloat(item.price) * parseInt(item.quantity));
+    }, 0);
     
     // Actualizar totales
-    if (cartSubtotalElement) cartSubtotalElement.textContent = `$${subtotal.toFixed(2)}`;
-    if (cartTaxesElement) cartTaxesElement.textContent = `$${totalTax.toFixed(2)}`;
+    if (cartSubtotalElement) {
+      cartSubtotalElement.textContent = `$${subtotal.toFixed(2)}`;
+      // Actualizar el contador de productos en el resumen
+      const productText = totalItems === 1 ? 'producto' : 'productos';
+      cartSubtotalElement.previousElementSibling.textContent = `Subtotal (${totalItems} ${productText})`;
+    }
+    
+    // Mostrar IVA (19% del subtotal sin IVA)
+    if (cartTaxesElement) {
+      cartTaxesElement.textContent = `$${totalTaxFinal.toFixed(2)}`;
+    }
+    
+    // Mostrar descuentos
     if (cartDiscountsElement) {
       if (totalDiscount > 0) {
         cartDiscountsElement.innerHTML = `-$${totalDiscount.toFixed(2)}`;
@@ -298,16 +344,28 @@ window.cartModule = (function() {
         cartDiscountsElement.parentElement.classList.add('hidden');
       }
     }
-    if (cartTotalElement) cartTotalElement.textContent = `$${total.toFixed(2)}`;
+    
+    // Mostrar total (precio base con IVA, sin descuentos)
+    if (cartTotalElement) {
+      cartTotalElement.textContent = `$${subtotal.toFixed(2)}`;
+    }
+    
+    // Si hay descuentos, mostrar el total con descuento en otro lugar
+    if (totalDiscount > 0) {
+      const totalWithDiscount = (subtotal - totalDiscount).toFixed(2);
+      // Puedes agregar aquí un elemento para mostrar el total con descuento si es necesario
+      console.log('Total con descuento:', totalWithDiscount);
+    }
     
     // Mostrar items del carrito
     if (cartItemsContainer) {
       cartItemsContainer.innerHTML = cart.map(item => {
+        // Usar el precio base (con IVA) para mostrar en el carrito
         const price = parseFloat(item.price) || 0;
         const tax = parseFloat(item.tax) || 0;
         const discount = parseFloat(item.discount) || 0;
         const discountAmount = parseFloat(item.discount_amount) || 0;
-        const finalPrice = (item.final_price || (price + tax - discountAmount)) * item.quantity;
+        const finalPrice = price * item.quantity; // Mostrar precio sin descuentos
         const hasDiscount = discount > 0;
         
         return `
@@ -325,11 +383,11 @@ window.cartModule = (function() {
                   <p class="text-sm text-gray-500">${item.store_name || 'Tienda'}</p>
                 </div>
                 <div class="text-right">
-                  <p class="text-base font-medium text-gray-900">$${finalPrice.toFixed(2)}</p>
+                  <p class="text-base font-medium text-gray-900">$${price.toFixed(2)}</p>
                   ${hasDiscount ? `
-                    <p class="text-xs text-gray-500 line-through">$${(price * item.quantity).toFixed(2)}</p>
+                    <p class="text-xs text-gray-500">${discount}% de descuento aplicado al finalizar</p>
                     <span class="text-xs bg-green-100 text-green-800 px-1.5 py-0.5 rounded">
-                      ${discount}% OFF
+                      ¡Ahorras $${(discountAmount * item.quantity).toFixed(2)}!
                     </span>
                   ` : ''}
                 </div>
@@ -441,17 +499,28 @@ window.cartModule = (function() {
   
   // 11. Configurar manejadores de eventos
   function setupEventListeners() {
-    // Botón de pago con crédito
+    // Botón de pago con crédito (funcional)
     const payWithCreditBtn = document.getElementById('pay-with-credit');
     if (payWithCreditBtn) {
       payWithCreditBtn.addEventListener('click', handleCreditPayment);
     }
     
-    // Botón de pago con Nequi
+    // Botón de pago en efectivo
+    const payWithCashBtn = document.getElementById('pay-with-cash');
+    if (payWithCashBtn) {
+      payWithCashBtn.addEventListener('click', handleCashPayment);
+    }
+    
+    // Botón de pago con Nequi (redirige a la página oficial)
     const payWithNequiBtn = document.getElementById('pay-with-nequi');
     if (payWithNequiBtn) {
-      payWithNequiBtn.addEventListener('click', handleNequiPayment);
+      payWithNequiBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        window.open('https://www.nequi.com.co/', '_blank');
+      });
     }
+    
+    // Botón de pago con Solana ya tiene su enlace en el HTML
     
     // Delegación de eventos para los botones de cantidad y eliminar
     document.addEventListener('click', (e) => {
@@ -491,13 +560,14 @@ window.cartModule = (function() {
     try {
       const cart = getCart();
       if (cart.length === 0) {
-        throw new Error('El carrito está vacío');
+        showNotification('El carrito está vacío', 'error');
+        return;
       }
       
       // Verificar autenticación
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError || !user) {
-        console.error('Error de autenticación:', authError);
+        showNotification('Debes iniciar sesión para continuar', 'error');
         window.location.href = 'login.html?redirect=carrito.html';
         return;
       }
@@ -621,16 +691,24 @@ window.cartModule = (function() {
             
             // Calcular valores por producto
             const itemsWithTotals = cart.map(item => {
-              const price = parseFloat(item.price);
+              const price = parseFloat(item.price); // Precio ya incluye IVA
               const quantity = parseInt(item.quantity);
-              const taxRate = 0.19; // 19% de IVA por defecto
-              const subtotal = price * quantity;
-              const tax = subtotal * taxRate;
-              const total = subtotal + tax;
+              const taxRate = 0.19; // 19% de IVA
+              
+              // Calcular el precio sin IVA
+              const priceWithoutVAT = price / (1 + taxRate);
+              
+              // Calcular el monto del IVA
+              const taxAmount = price - priceWithoutVAT;
+              
+              // Calcular totales
+              const subtotal = priceWithoutVAT * quantity;
+              const tax = taxAmount * quantity;
+              const total = price * quantity; // Total con IVA incluido
               
               return {
                 ...item,
-                price,
+                price: priceWithoutVAT, // Mostrar precio sin IVA
                 quantity,
                 subtotal,
                 tax,
@@ -652,18 +730,21 @@ window.cartModule = (function() {
             const totalTax = itemsWithTotals.reduce((sum, item) => sum + item.tax, 0);
             const total = itemsWithTotals.reduce((sum, item) => sum + item.total, 0);
             
+            // Agregar fila de subtotal
             data.push([
               { content: 'SUBTOTAL', colSpan: 3, styles: { fontStyle: 'bold', halign: 'right' }},
               '',
               { content: `$${subtotal.toFixed(2)}`, styles: { fontStyle: 'bold' }}
             ]);
             
+            // Agregar fila de IVA
             data.push([
               { content: 'TOTAL IVA (19%)', colSpan: 3, styles: { halign: 'right' }},
               { content: `$${totalTax.toFixed(2)}` },
               { content: '' }
             ]);
             
+            // Agregar fila de total
             data.push([
               { content: 'TOTAL A PAGAR', colSpan: 3, styles: { fontStyle: 'bold', halign: 'right', fillColor: [37, 99, 235] }},
               { content: `$${total.toFixed(2)}`, colSpan: 2, styles: { fontStyle: 'bold', halign: 'right', fillColor: [37, 99, 235] }}
@@ -697,25 +778,42 @@ window.cartModule = (function() {
             doc.text('¡Gracias por su compra!', margin, doc.internal.pageSize.height - 20);
             doc.text('Factura generada automáticamente por CrediControl', margin, doc.internal.pageSize.height - 15);
             
-            // Guardar el PDF
-            doc.save(`factura-${order.id.substring(0, 8)}.pdf`);
-            
+            // Retornar el documento generado
+            return doc;
           } catch (error) {
             console.error('Error al generar la factura:', error);
+            return null;
           }
         };
         
-        generateInvoice(order, cart);
+        // Generar la factura
+        const invoice = generateInvoice(order, cart);
         
-        // Mostrar mensaje de éxito
-        await Swal.fire({
+        // Mostrar mensaje de éxito con opción de ver factura
+        const result = await Swal.fire({
           title: '¡Compra exitosa!',
-          html: `Tu pedido #${orderNumber} ha sido procesado correctamente.<br><br>La factura se ha descargado automáticamente.`,
+          html: `Tu pedido #${orderNumber} ha sido procesado correctamente.<br><br>¿Deseas ver la factura ahora?`,
           icon: 'success',
-          confirmButtonText: 'Ver pedido',
+          showCancelButton: true,
+          confirmButtonText: 'Ver factura',
+          cancelButtonText: 'Ver pedido',
           confirmButtonColor: '#3085d6',
-          allowOutsideClick: false
+          cancelButtonColor: '#6c757d',
+          allowOutsideClick: false,
+          footer: '<div class="text-sm text-gray-500">También puedes descargar la factura más tarde desde la sección de pedidos</div>'
         });
+        
+        if (result.isConfirmed && invoice) {
+          // Mostrar la factura en una nueva pestaña
+          const pdfBlob = invoice.output('blob');
+          const pdfUrl = URL.createObjectURL(pdfBlob);
+          window.open(pdfUrl, '_blank');
+          
+          // Opcional: Descargar automáticamente después de mostrar
+          setTimeout(() => {
+            invoice.save(`factura-${order.id.substring(0, 8)}.pdf`);
+          }, 1000);
+        }
         
         // Redirigir a la página del pedido
         window.location.href = `pedidos.html?id=${order.id}`;
@@ -743,52 +841,250 @@ window.cartModule = (function() {
     }
   }
   
-  // 13. Manejador de pago con Nequi (implementación básica)
-  async function handleNequiPayment() {
-    const cart = getCart();
-    if (cart.length === 0) {
-      Swal.fire('Error', 'El carrito está vacío', 'error');
-      return;
-    }
-    
-    const total = cart.reduce((sum, item) => sum + (parseFloat(item.price) * parseInt(item.quantity)), 0);
-    
-    Swal.fire({
-      title: 'Pago con Nequi',
-      html: `Redirigiendo a Nequi para pagar $${total.toFixed(2)}...`,
-      icon: 'info',
-      showConfirmButton: false,
-      allowOutsideClick: false
-    });
-    
-    // Simular redirección a Nequi
-    setTimeout(() => {
-      Swal.fire({
-        title: 'Pago pendiente',
-        html: 'Por favor completa el pago en la aplicación de Nequi',
-        icon: 'warning',
+  // 13. Manejador de pago en efectivo
+  async function handleCashPayment() {
+    try {
+      const cart = getCart();
+      if (cart.length === 0) {
+        showNotification('El carrito está vacío', 'error');
+        return;
+      }
+      
+      // Verificar autenticación
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        showNotification('Debes iniciar sesión para continuar', 'error');
+        window.location.href = 'login.html?redirect=carrito.html';
+        return;
+      }
+      
+      // Obtener el total
+      const total = getCartTotal();
+      
+      // Mostrar confirmación con SweetAlert2
+      const confirmResult = await Swal.fire({
+        title: 'Confirmar pago en efectivo',
+        html: `¿Deseas confirmar el pedido por un total de <b>$${total.toFixed(2)}</b>?<br><br>El pago se realizará al momento de la entrega.`,
+        icon: 'question',
         showCancelButton: true,
-        confirmButtonText: 'Ya pagué',
-        cancelButtonText: 'Cancelar'
-      }).then(async (result) => {
-        if (result.isConfirmed) {
-          try {
-            // Crear orden
-            const storeId = cart[0].store_id;
-            const { order } = await createOrder(cart, storeId);
-            
-            // Limpiar carrito
-            localStorage.removeItem(CART_STORAGE_KEY);
-            
-            // Redirigir a la página del pedido
-            window.location.href = `pedidos.html?id=${order.id}`;
-          } catch (error) {
-            console.error('Error al crear la orden:', error);
-            Swal.fire('Error', 'No se pudo crear la orden', 'error');
-          }
+        confirmButtonText: 'Sí, confirmar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        footer: '<div class="text-sm text-gray-500 mt-2">IVA incluido</div>'
+      });
+      
+      if (!confirmResult.isConfirmed) return;
+      
+      // Mostrar loader
+      Swal.fire({
+        title: 'Procesando pedido...',
+        text: 'Por favor espera mientras procesamos tu pedido',
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
         }
       });
-    }, 2000);
+      
+      // Crear orden con estado 'Pendiente de pago'
+      const { order } = await createOrder(cart, cart[0].store_id);
+      
+      // Actualizar estado de la orden a 'Pendiente de pago'
+      const { error: updateError } = await supabase
+        .from('orders')
+        .update({ 
+          status: 'Pendiente de pago',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', order.id);
+      
+      if (updateError) throw updateError;
+      
+      // Limpiar carrito
+      clearCart();
+      
+      // Generar factura
+      const generateInvoice = (order, cart) => {
+        try {
+          const { jsPDF } = window.jspdf;
+          const doc = new jsPDF();
+          
+          // Configuración del documento
+          const pageWidth = doc.internal.pageSize.getWidth();
+          const margin = 15;
+          
+          // Logo y encabezado
+          doc.setFontSize(22);
+          doc.setTextColor(37, 99, 235);
+          doc.setFont('helvetica', 'bold');
+          doc.text('FACTURA', margin, 20);
+          
+          // Información de la empresa
+          doc.setFontSize(10);
+          doc.setTextColor(0, 0, 0);
+          doc.setFont('helvetica', 'normal');
+          doc.text('Tienda', margin, 30);
+          doc.text('NIT: 123456789-0', margin, 35);
+          doc.text('Dirección de la tienda', margin, 40);
+          doc.text('Ciudad, País', margin, 45);
+          doc.text('Tel: (123) 456 7890', margin, 50);
+          
+          // Información del cliente
+          doc.setFont('helvetica', 'bold');
+          doc.text('Cliente:', margin, 70);
+          doc.setFont('helvetica', 'normal');
+          doc.text(userProfile?.full_name || 'Cliente', margin + 20, 70);
+          
+          doc.setFont('helvetica', 'bold');
+          doc.text('Documento:', margin, 75);
+          doc.setFont('helvetica', 'normal');
+          doc.text(userProfile?.document_number || 'N/A', margin + 30, 75);
+          
+          // Información de la factura
+          doc.setFont('helvetica', 'bold');
+          doc.text('Factura #', pageWidth - margin - 60, 30);
+          doc.setFont('helvetica', 'normal');
+          doc.text(order.id.substring(0, 8).toUpperCase(), pageWidth - margin - 10, 30, { align: 'right' });
+          
+          doc.setFont('helvetica', 'bold');
+          doc.text('Fecha:', pageWidth - margin - 40, 35);
+          doc.setFont('helvetica', 'normal');
+          doc.text(new Date().toLocaleDateString('es-CO'), pageWidth - margin - 10, 35, { align: 'right' });
+          
+          // Tabla de productos
+          const headers = [['Descripción', 'Cant.', 'V. Unitario', 'IVA (19%)', 'Total']];
+          
+          // Calcular valores por producto
+          const itemsWithTotals = cart.map(item => {
+            const price = parseFloat(item.price);
+            const quantity = parseInt(item.quantity);
+            const taxRate = 0.19; // 19% de IVA
+            const subtotal = price * quantity;
+            const tax = subtotal * taxRate;
+            const total = subtotal + tax;
+            
+            return [
+              item.name,
+              quantity.toString(),
+              `$${price.toFixed(2)}`,
+              `$${tax.toFixed(2)}`,
+              `$${total.toFixed(2)}`
+            ];
+          });
+          
+          // Agregar fila de totales
+          const subtotal = cart.reduce((sum, item) => sum + (parseFloat(item.price) * parseInt(item.quantity)), 0);
+          const taxTotal = subtotal * 0.19;
+          const grandTotal = subtotal + taxTotal;
+          
+          itemsWithTotals.push([
+            { content: 'SUBTOTAL', colSpan: 4, styles: { fontStyle: 'bold', halign: 'right' } },
+            { content: `$${subtotal.toFixed(2)}`, styles: { fontStyle: 'bold' } }
+          ]);
+          
+          itemsWithTotals.push([
+            { content: 'IVA (19%)', colSpan: 4, styles: { halign: 'right' } },
+            { content: `$${taxTotal.toFixed(2)}`, styles: {} }
+          ]);
+          
+          itemsWithTotals.push([
+            { content: 'TOTAL', colSpan: 4, styles: { fontStyle: 'bold', halign: 'right' } },
+            { content: `$${grandTotal.toFixed(2)}`, styles: { fontStyle: 'bold' } }
+          ]);
+          
+          // Generar tabla
+          doc.autoTable({
+            startY: 90,
+            head: headers,
+            body: itemsWithTotals,
+            margin: { left: margin, right: margin },
+            headStyles: { 
+              fillColor: [37, 99, 235],
+              textColor: 255,
+              fontStyle: 'bold'
+            },
+            alternateRowStyles: { fillColor: [245, 245, 245] },
+            styles: { 
+              fontSize: 9,
+              cellPadding: 3,
+              overflow: 'linebreak',
+              lineWidth: 0.1
+            },
+            columnStyles: {
+              0: { cellWidth: 'auto' },
+              1: { cellWidth: 20, halign: 'center' },
+              2: { cellWidth: 30, halign: 'right' },
+              3: { cellWidth: 30, halign: 'right' },
+              4: { cellWidth: 30, halign: 'right' }
+            }
+          });
+          
+          // Pie de página
+          const pageCount = doc.internal.getNumberOfPages();
+          for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            doc.setFontSize(8);
+            doc.setTextColor(100);
+            doc.text(
+              `Página ${i} de ${pageCount} | Factura generada el ${new Date().toLocaleString()}`,
+              pageWidth / 2,
+              doc.internal.pageSize.getHeight() - 10,
+              { align: 'center' }
+            );
+          }
+          
+          return doc;
+        } catch (error) {
+          console.error('Error al generar factura:', error);
+          return null;
+        }
+      };
+      
+      // Generar y descargar factura
+      const invoice = generateInvoice(order, cart);
+      
+      // Mostrar confirmación con opción de ver factura
+      Swal.fire({
+        title: '¡Pedido realizado con éxito!',
+        html: `Tu pedido #${order.id} ha sido registrado.<br><br>Total: <b>$${total.toFixed(2)}</b><br><br>Deberás pagar al momento de la entrega.`,
+        icon: 'success',
+        showCancelButton: true,
+        confirmButtonText: 'Ver factura',
+        cancelButtonText: 'Cerrar',
+        footer: '<div class="text-sm text-gray-500">Puedes descargar la factura más tarde desde la sección de pedidos</div>'
+      }).then((result) => {
+        if (result.isConfirmed && invoice) {
+          // Guardar la factura para mostrarla en una nueva pestaña
+          const pdfBlob = invoice.output('blob');
+          const pdfUrl = URL.createObjectURL(pdfBlob);
+          window.open(pdfUrl, '_blank');
+        }
+        // Redirigir a la página de pedidos en cualquier caso
+        window.location.href = 'pedidos.html';
+      });
+      
+    } catch (error) {
+      console.error('Error en el pago en efectivo:', error);
+      Swal.fire({
+        title: 'Error',
+        text: 'Error al procesar el pedido: ' + (error.message || 'Error desconocido'),
+        icon: 'error'
+      });
+    }
+  }
+  
+  // 14. Manejador de pago con Nequi (redirige a la página oficial)
+  function handleNequiPayment() {
+    // Redirigir directamente a la página de Nequi
+    window.open('https://www.nequi.com.co/', '_blank');
+    
+    // Mostrar mensaje informativo
+    Swal.fire({
+      title: 'Redirigiendo a Nequi',
+      text: 'Serás redirigido a la aplicación de Nequi para completar tu pago.',
+      icon: 'info',
+      confirmButtonText: 'Entendido'
+    });
   }
   
   // 14. Mostrar notificación
@@ -835,24 +1131,22 @@ window.cartModule = (function() {
           }
         }
         
-        // El precio ya incluye IVA, así que necesitamos separar el precio base del IVA
-        const priceWithVAT = parseFloat(product.price) || 0;
+        // El precio ya incluye IVA (viene del catálogo)
+        const price = parseFloat(product.price) || 0; // Precio con IVA incluido
         const taxRate = 0.19; // 19% de IVA
         
-        // Calcular el precio base (sin IVA) a partir del precio con IVA
-        const price = priceWithVAT / (1 + taxRate);
+        // Calcular el precio sin IVA (para referencia)
+        const priceWithoutVAT = price / (1 + taxRate);
         
-        // El IVA ya está incluido en el precio, así que lo calculamos para referencia
-        const tax = price * taxRate;
+        // Calcular el monto del IVA
+        const tax = price - priceWithoutVAT;
         
-        // Manejar descuentos
+        // Manejar descuentos (se aplican sobre el precio con IVA)
         const discount = product.discount ? parseFloat(product.discount) : 0;
-        const discountAmount = product.discount_amount ? 
-          parseFloat(product.discount_amount) : 
-          (priceWithVAT * (discount / 100));
-          
-        // El precio final ya incluye IVA, así que restamos el descuento del precio con IVA
-        const finalPrice = priceWithVAT - discountAmount;
+        const discountAmount = price * (discount / 100);
+        
+        // Precio final con descuento (ya incluye IVA)
+        const finalPrice = price - discountAmount;
         
         const existingItem = cart.find(item => item.id === product.id);
         
@@ -920,17 +1214,14 @@ window.cartModule = (function() {
     const cart = getCart();
     return cart.reduce((sum, item) => {
       // Usar final_price si está disponible, de lo contrario usar el precio base (que ya incluye IVA)
-      // y restar el descuento si existe
       let finalPrice;
       
       if (item.final_price !== undefined) {
-        // Si ya tenemos un precio final calculado, usarlo
+        // Usar el precio final directamente de la base de datos
         finalPrice = parseFloat(item.final_price);
       } else {
-        // Si no, usar el precio base (que ya incluye IVA) y restar el descuento si existe
-        const priceWithVAT = parseFloat(item.price) + (parseFloat(item.tax) || 0);
-        const discountAmount = parseFloat(item.discount_amount || 0);
-        finalPrice = priceWithVAT - discountAmount;
+        // Si no hay precio final, usar el precio base (que ya incluye IVA)
+        finalPrice = parseFloat(item.price);
       }
       
       // Asegurarse de que el precio no sea negativo

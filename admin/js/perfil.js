@@ -2,6 +2,24 @@
 let currentUser = null;
 const loadingOverlay = document.getElementById('loading');
 
+// Elementos del menú y notificaciones
+const notificationsButton = document.getElementById('notifications-button');
+const notificationsDropdown = document.getElementById('notifications-dropdown');
+const notificationsList = document.getElementById('notifications-list');
+const notificationCount = document.getElementById('notification-count');
+const markAllReadButton = document.getElementById('mark-all-read');
+const userMenuButton = document.getElementById('user-menu-button');
+const userDropdown = document.getElementById('user-dropdown');
+const userNameElement = document.getElementById('user-name');
+const userInitialsElement = document.getElementById('user-initials');
+const dropdownUserName = document.getElementById('dropdown-user-name');
+const dropdownUserEmail = document.getElementById('dropdown-user-email');
+const logoutBtn = document.getElementById('logout-btn');
+
+// Estado de la aplicación
+let notifications = [];
+let unreadCount = 0;
+
 // Mostrar/ocultar carga
 function showLoading(show) {
     if (loadingOverlay) {
@@ -942,9 +960,216 @@ function showToast(message, type = 'info') {
     });
     
     // Cerrar automáticamente después de 5 segundos
-    setTimeout(() => {
-        toast.remove();
-    }, 3000);
+}
+
+// Función para cargar notificaciones
+async function loadNotifications() {
+    try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data, error } = await supabase
+            .from('notifications')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false })
+            .limit(10);
+
+        if (error) throw error;
+
+        notifications = data || [];
+        unreadCount = notifications.filter(n => !n.read).length;
+        
+        updateNotificationsUI();
+    } catch (error) {
+        console.error('Error al cargar notificaciones:', error);
+    }
+}
+
+// Actualizar la interfaz de notificaciones
+function updateNotificationsUI() {
+    if (!notificationsList) return;
+
+    // Actualizar contador
+    if (notificationCount) {
+        if (unreadCount > 0) {
+            notificationCount.textContent = unreadCount > 9 ? '9+' : unreadCount;
+            notificationCount.classList.remove('hidden');
+        } else {
+            notificationCount.classList.add('hidden');
+        }
+    }
+
+    // Actualizar lista de notificaciones
+    if (notifications.length === 0) {
+        notificationsList.innerHTML = `
+            <div class="p-4 text-center text-sm text-gray-500">
+                No hay notificaciones nuevas
+            </div>`;
+        return;
+    }
+    
+    notificationsList.innerHTML = notifications.map(notification => `
+        <div class="border-b border-gray-100 last:border-0">
+            <a href="${notification.link || '#'}" class="block px-4 py-3 hover:bg-gray-50 transition-colors ${!notification.read ? 'bg-blue-50' : ''}">
+                <div class="flex items-start">
+                    <div class="flex-shrink-0 pt-0.5">
+                        <i class="${getNotificationIcon(notification.type)} ${getNotificationColor(notification.type)}"></i>
+                    </div>
+                    <div class="ml-3 flex-1">
+                        <p class="text-sm font-medium text-gray-900">${notification.title || 'Nueva notificación'}</p>
+                        <p class="text-xs text-gray-500 mt-1">${notification.message || ''}</p>
+                        <p class="text-xs text-gray-400 mt-1">${formatDate(notification.created_at)}</p>
+                    </div>
+                    ${!notification.read ? '<span class="flex-shrink-0 ml-2 w-2 h-2 mt-1.5 rounded-full bg-blue-500"></span>' : ''}
+                </div>
+            </a>
+        </div>`).join('');
+}
+
+// Obtener ícono para el tipo de notificación
+function getNotificationIcon(type) {
+    const icons = {
+        success: 'fas fa-check-circle',
+        error: 'fas fa-exclamation-circle',
+        warning: 'fas fa-exclamation-triangle',
+        info: 'fas fa-info-circle',
+        default: 'fas fa-bell'
+    };
+    return icons[type] || icons.default;
+}
+
+// Obtener color para el tipo de notificación
+function getNotificationColor(type) {
+    const colors = {
+        success: 'text-green-500',
+        error: 'text-red-500',
+        warning: 'text-yellow-500',
+        info: 'text-blue-500',
+        default: 'text-gray-500'
+    };
+    return colors[type] || colors.default;
+}
+
+// Marcar notificación como leída
+async function markNotificationAsRead(notificationId) {
+    try {
+        const { error } = await supabase
+            .from('notifications')
+            .update({ read: true })
+            .eq('id', notificationId);
+            
+        if (error) throw error;
+        
+        // Actualizar estado local
+        const notification = notifications.find(n => n.id === notificationId);
+        if (notification && !notification.read) {
+            notification.read = true;
+            unreadCount--;
+            updateNotificationsUI();
+        }
+    } catch (error) {
+        console.error('Error al marcar notificación como leída:', error);
+    }
+}
+
+// Marcar todas las notificaciones como leídas
+async function markAllNotificationsAsRead() {
+    try {
+        const unreadIds = notifications
+            .filter(n => !n.read)
+            .map(n => n.id);
+            
+        if (unreadIds.length === 0) return;
+        
+        const { error } = await supabase
+            .from('notifications')
+            .update({ read: true })
+            .in('id', unreadIds);
+            
+        if (error) throw error;
+        
+        // Actualizar estado local
+        notifications.forEach(n => { n.read = true; });
+        unreadCount = 0;
+        updateNotificationsUI();
+        
+    } catch (error) {
+        console.error('Error al marcar todas las notificaciones como leídas:', error);
+    }
+}
+
+// Inicializar menús desplegables
+function initDropdowns() {
+    // Cerrar menús al hacer clic fuera
+    document.addEventListener('click', (e) => {
+        if (notificationsButton && notificationsDropdown && 
+            !notificationsButton.contains(e.target) && 
+            !notificationsDropdown.contains(e.target)) {
+            notificationsDropdown.classList.add('hidden');
+        }
+        
+        if (userMenuButton && userDropdown && 
+            !userMenuButton.contains(e.target) && 
+            !userDropdown.contains(e.target)) {
+            userDropdown.classList.add('hidden');
+        }
+    });
+    
+    // Toggle menú de notificaciones
+    if (notificationsButton) {
+        notificationsButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            notificationsDropdown.classList.toggle('hidden');
+            if (userDropdown) userDropdown.classList.add('hidden');
+        });
+    }
+    
+    // Toggle menú de usuario
+    if (userMenuButton) {
+        userMenuButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (userDropdown) userDropdown.classList.toggle('hidden');
+            if (notificationsDropdown) notificationsDropdown.classList.add('hidden');
+        });
+    }
+    
+    // Marcar todo como leído
+    if (markAllReadButton) {
+        markAllReadButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            markAllNotificationsAsRead();
+        });
+    }
+    
+    // Cerrar sesión
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            try {
+                const { error } = await supabase.auth.signOut();
+                if (error) throw error;
+                window.location.href = 'login.html';
+            } catch (error) {
+                console.error('Error al cerrar sesión:', error);
+                showError('Error al cerrar sesión');
+            }
+        });
+    }
+}
+
+// Actualizar información del usuario en la interfaz
+function updateUserUI(user) {
+    if (!user) return;
+    
+    const displayName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Usuario';
+    const initials = getInitials(displayName);
+    
+    if (userNameElement) userNameElement.textContent = displayName;
+    if (userInitialsElement) userInitialsElement.textContent = initials;
+    if (dropdownUserName) dropdownUserName.textContent = displayName;
+    if (dropdownUserEmail) dropdownUserEmail.textContent = user.email || '';
 }
 
 // Función para verificar la sesión del usuario
@@ -957,6 +1182,14 @@ async function checkSession() {
             window.location.href = 'login.html';
             return false;
         }
+        
+        // Inicializar menús y cargar notificaciones si el usuario está autenticado
+        initDropdowns();
+        loadNotifications();
+        updateUserUI(session.user);
+        
+        // Actualizar notificaciones cada minuto
+        setInterval(loadNotifications, 60000);
         
         return true;
     } catch (error) {

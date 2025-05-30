@@ -190,41 +190,40 @@ async function loadDashboardData(profile) {
 // Función para obtener productos con descuento
 async function fetchDiscountedProducts() {
   try {
-    // Primero, obtener los IDs de productos con descuento
-    const { data: discounts, error: discountError } = await supabase
-      .from('discounts')
-      .select('product_id, discount_percentage, end_date')
-      .gt('end_date', new Date().toISOString()) // Solo descuentos vigentes
-      .order('discount_percentage', { ascending: false });
-
-    if (discountError) throw discountError;
-    if (!discounts || discounts.length === 0) return [];
-
-    // Obtener los IDs de los productos con descuento
-    const productIds = discounts.map(d => d.product_id);
-
-    // Obtener los detalles completos de los productos
-    const { data: products, error: productError } = await supabase
+    // Obtener productos que tengan descuento (discount_percentage > 0)
+    const { data: products, error } = await supabase
       .from('products')
-      .select('*')
-      .in('id', productIds);
+      .select(`
+        *,
+        categories (name)
+      `)
+      .gt('discount_percentage', 0) // Solo productos con descuento
+      .order('discount_percentage', { ascending: false })
+      .limit(8); // Limitar a 8 productos para mejorar rendimiento
 
-    if (productError) throw productError;
-    if (!products) return [];
+    if (error) throw error;
+    if (!products || products.length === 0) return [];
 
-    // Combinar la información de descuento con los productos
+    // Formatear los datos para incluir la categoría y la información de descuento
     return products.map(product => {
-      const discountInfo = discounts.find(d => d.product_id === product.id);
+      const discount = parseFloat(product.discount_percentage);
+      const originalPrice = parseFloat(product.price);
+      const discountedPrice = originalPrice * (1 - (discount / 100));
+      const discountAmount = originalPrice - discountedPrice;
+      
       return {
         ...product,
-        discount_percentage: discountInfo.discount_percentage,
-        discounted_price: product.price * (1 - (discountInfo.discount_percentage / 100)),
-        end_date: discountInfo.end_date
+        category_name: product.categories?.name || 'Sin categoría',
+        original_price: originalPrice,
+        discounted_price: discountedPrice,
+        discount_amount: discountAmount,
+        // Si hay una fecha de finalización de oferta, se puede agregar aquí
+        // end_date: product.end_date
       };
     });
   } catch (error) {
-    console.error('Error fetching discounted products:', error);
-    showError('Error al cargar las ofertas. Por favor, intenta de nuevo.');
+    console.error('Error al cargar productos con descuento:', error);
+    showError('No se pudieron cargar las ofertas. Por favor, intente de nuevo.');
     return [];
   }
 }
@@ -232,68 +231,134 @@ async function fetchDiscountedProducts() {
 // Función para renderizar los productos en oferta
 function renderDiscountedProducts(products) {
   const container = document.getElementById('discounted-products-container');
+  const sectionTitle = document.getElementById('special-offers-title');
+  
   if (!container) return;
 
   if (!products || products.length === 0) {
+    if (sectionTitle) sectionTitle.classList.add('hidden');
     container.innerHTML = `
-      <div class="col-span-1 md:col-span-3 text-center py-8">
-        <p class="text-gray-500">No hay ofertas disponibles en este momento.</p>
+      <div class="col-span-full text-center py-12 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl">
+        <i class="fas fa-tag text-4xl text-blue-400 mb-3"></i>
+        <h3 class="text-xl font-semibold text-gray-700 mb-2">No hay ofertas disponibles</h3>
+        <p class="text-gray-500 max-w-md mx-auto">Vuelve pronto para descubrir nuestras promociones especiales.</p>
       </div>
     `;
     return;
   }
 
-  // Tomar los primeros 3 productos con mayor descuento
+  // Mostrar el título de la sección si hay productos
+  if (sectionTitle) sectionTitle.classList.remove('hidden');
+
+  // Ordenar por mayor descuento y tomar los primeros 4 productos
   const topDiscountedProducts = [...products]
     .sort((a, b) => b.discount_percentage - a.discount_percentage)
-    .slice(0, 3);
+    .slice(0, 4);
 
-  container.innerHTML = topDiscountedProducts.map(product => `
-    <div class="bg-white rounded-lg shadow-md overflow-hidden transition-transform hover:scale-105">
-      <div class="h-48 bg-gray-200 overflow-hidden">
-        <img src="${product.image_url || 'https://via.placeholder.com/400x300/f3f4f6/9ca3af?text=Sin+imagen'}" 
-             alt="${product.name}" 
-             class="w-full h-full object-cover hover:opacity-90 transition-opacity"
-             onerror="this.onerror=null; this.src='https://via.placeholder.com/400x300/f3f4f6/9ca3af?text=Imagen+no+disponible'"
+  container.innerHTML = topDiscountedProducts.map(product => {
+    const originalPrice = parseFloat(product.price);
+    const discount = parseFloat(product.discount_percentage);
+    const discountedPrice = originalPrice * (1 - (discount / 100));
+    const discountAmount = originalPrice - discountedPrice;
+    
+    return `
+    <div class="relative bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 group">
+      <!-- Badge de descuento -->
+      <div class="absolute top-4 right-4 z-10">
+        <div class="bg-gradient-to-r from-red-500 to-red-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg transform rotate-6 group-hover:scale-110 transition-transform">
+          <span class="inline-block transform -rotate-6">${Math.round(discount)}% OFF</span>
+        </div>
+      </div>
+      
+      <!-- Imagen del producto -->
+      <div class="relative h-48 bg-gray-100 overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent z-0"></div>
+        <img 
+          src="${product.image_url || 'https://via.placeholder.com/400x300/f3f4f6/9ca3af?text=Sin+imagen'}" 
+          alt="${product.name}" 
+          class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          loading="lazy"
+          onerror="this.onerror=null; this.src='https://via.placeholder.com/400x300/f3f4f6/9ca3af?text=Imagen+no+disponible'"
         >
       </div>
-      <div class="p-6">
-        <div class="flex justify-between items-start mb-2">
-          <h3 class="text-lg font-semibold text-gray-900">${product.name}</h3>
-          <span class="bg-red-100 text-red-800 text-xs font-semibold px-2.5 py-0.5 rounded">
-            ${product.discount_percentage}% OFF
-          </span>
+      
+      <!-- Contenido -->
+      <div class="p-5">
+        <!-- Nombre y categoría -->
+        <div class="mb-2">
+          <h3 class="text-lg font-bold text-gray-900 mb-1 line-clamp-1">${product.name}</h3>
+          <p class="text-xs text-gray-500">${product.category_name || 'Sin categoría'}</p>
         </div>
-        <p class="text-gray-600 text-sm mb-4 line-clamp-2">${product.description || 'Sin descripción disponible'}</p>
-        <div class="flex justify-between items-center">
-          <span class="text-lg font-bold text-gray-900">$${product.discounted_price.toFixed(2)}</span>
-          <span class="text-sm text-gray-500 line-through">$${parseFloat(product.price).toFixed(2)}</span>
+        
+        <!-- Precios -->
+        <div class="mb-4">
+          <div class="flex items-baseline gap-2">
+            <span class="text-2xl font-extrabold text-gray-900">$${discountedPrice.toFixed(2)}</span>
+            <span class="text-sm text-gray-500 line-through">$${originalPrice.toFixed(2)}</span>
+          </div>
+          <div class="text-xs text-green-600 font-medium mt-1 flex items-center">
+            <i class="fas fa-tag mr-1"></i>
+            ¡Ahorras $${discountAmount.toFixed(2)}!
+          </div>
         </div>
-        <button onclick="window.location.href='producto.html?id=${product.id}'" 
-                class="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md transition duration-200">
+        
+        <!-- Botón de acción -->
+        <button 
+          onclick="window.location.href='producto.html?id=${product.id}'"
+          class="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium py-2.5 px-4 rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
+        >
+          <i class="fas fa-shopping-cart"></i>
           Ver oferta
         </button>
+        
+        <!-- Tiempo restante (opcional) -->
+        ${product.end_date ? `
+        <div class="mt-3 pt-3 border-t border-gray-100">
+          <div class="text-xs text-gray-500 flex items-center">
+            <i class="far fa-clock mr-1.5"></i>
+            <span>Termina en: ${new Date(product.end_date).toLocaleDateString()}</span>
+          </div>
+        </div>` : ''}
       </div>
     </div>
-  `).join('');
+  `}).join('');
 }
 
-// Función para cargar las ofertas
+// Función para cargar las ofertas especiales
 async function loadSpecialOffers() {
   const loadingElement = document.getElementById('offers-loading');
   const offersContainer = document.getElementById('discounted-products-container');
+  const errorElement = document.getElementById('offers-error');
   
   try {
+    // Mostrar estado de carga
     if (loadingElement) loadingElement.classList.remove('hidden');
     if (offersContainer) offersContainer.classList.add('hidden');
+    if (errorElement) errorElement.classList.add('hidden');
     
+    // Obtener productos con descuento
     const products = await fetchDiscountedProducts();
+    
+    // Renderizar los productos
     renderDiscountedProducts(products);
+    
   } catch (error) {
-    console.error('Error loading special offers:', error);
-    showError('Error al cargar las ofertas especiales');
+    console.error('Error al cargar ofertas especiales:', error);
+    
+    // Mostrar mensaje de error
+    if (errorElement) {
+      errorElement.textContent = 'No se pudieron cargar las ofertas. Intente recargar la página.';
+      errorElement.classList.remove('hidden');
+    }
+    
+    // Asegurarse de que la sección de ofertas esté vacía
+    if (offersContainer) offersContainer.innerHTML = '';
+    
   } finally {
+    // Ocultar indicador de carga
     if (loadingElement) loadingElement.classList.add('hidden');
+    
+    // Mostrar contenedor de ofertas (incluso si está vacío)
     if (offersContainer) offersContainer.classList.remove('hidden');
   }
 }

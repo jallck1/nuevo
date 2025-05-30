@@ -9,8 +9,13 @@ let searchQuery = '';
 let suppliersTableBody, loading, currentPageInput, totalItemsSpan, showingFromSpan, showingToSpan;
 let totalPagesSpan, prevPageBtn, nextPageBtn, searchSuppliersInput;
 
+// Elementos del menú de usuario y notificaciones
+let userMenuButton, userDropdown, notificationsButton, notificationsDropdown, logoutBtn;
+let userInitialsElement, userAvatarElement, dropdownUserName, dropdownUserEmail;
+
 // Función para inicializar elementos del DOM
 function initElements() {
+    console.log('Inicializando elementos del DOM...');
     // Obtener referencias a los elementos del DOM
     suppliersTableBody = document.getElementById('suppliersTableBody');
     loading = document.getElementById('loading');
@@ -22,7 +27,20 @@ function initElements() {
     prevPageBtn = document.getElementById('prevPage');
     nextPageBtn = document.getElementById('nextPage');
     searchSuppliersInput = document.getElementById('searchSuppliers');
+    
+    // Obtener referencias a los elementos del menú de usuario
+    userMenuButton = document.getElementById('user-menu-button');
+    userDropdown = document.getElementById('user-dropdown');
+    userInitialsElement = document.getElementById('user-initials');
+    userAvatarElement = document.getElementById('user-avatar');
+    dropdownUserName = document.getElementById('dropdown-user-name');
+    dropdownUserEmail = document.getElementById('dropdown-user-email');
+    notificationsButton = document.getElementById('notifications-button');
+    notificationsDropdown = document.getElementById('notifications-dropdown');
+    logoutBtn = document.getElementById('logout-btn');
 
+    console.log('Elementos del DOM inicializados');
+    
     // Configurar manejadores de eventos
     if (prevPageBtn) prevPageBtn.addEventListener('click', () => changePage(-1));
     if (nextPageBtn) nextPageBtn.addEventListener('click', () => changePage(1));
@@ -33,8 +51,6 @@ function initElements() {
             loadSuppliers();
         }, 300));
     }
-    
-    // No hay filtros de estado activo/inactivo
     
     // Configurar botón de nuevo proveedor
     const btnNewSupplier = document.getElementById('btnNewSupplier');
@@ -620,6 +636,474 @@ function debounce(func, wait) {
     };
 }
 
+// Función para actualizar la notificación en la campanita
+function actualizarNotificacionStock(estado, cantidad = 0, productos = []) {
+  const notificationBadge = document.getElementById('notification-badge');
+  const notificationList = document.getElementById('notification-list');
+  
+  // Verificar si los elementos existen
+  if (!notificationList) {
+    console.warn('❌ No se encontró el elemento notification-list');
+    return; // Salir si no existe el elemento
+  }
+  
+  // Limpiar notificaciones anteriores
+  notificationList.innerHTML = '';
+  
+  // Configurar notificación según el estado
+  if (estado === 'bajo') {
+    // Notificación para stock bajo
+    notificationBadge.classList.remove('hidden');
+    notificationBadge.textContent = cantidad > 9 ? '9+' : cantidad.toString();
+    notificationBadge.classList.remove('bg-blue-500', 'bg-green-500');
+    notificationBadge.classList.add('bg-yellow-500');
+    
+    // Agregar notificación a la lista
+    const notificationItem = document.createElement('a');
+    notificationItem.href = '#';
+    notificationItem.className = 'block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100';
+    notificationItem.innerHTML = `
+      <div class="flex items-center">
+        <div class="flex-shrink-0">
+          <i class="fas fa-exclamation-triangle text-yellow-500"></i>
+        </div>
+        <div class="ml-3">
+          <p class="text-sm font-medium text-gray-900">Stock Bajo</p>
+          <p class="text-xs text-gray-500">${cantidad} productos con stock bajo</p>
+        </div>
+      </div>
+    `;
+    notificationList.appendChild(notificationItem);
+    
+  } else if (estado === 'exceso') {
+    // Notificación para exceso de stock
+    notificationBadge.classList.remove('hidden');
+    notificationBadge.textContent = cantidad > 9 ? '9+' : cantidad.toString();
+    notificationBadge.classList.remove('bg-yellow-500', 'bg-green-500');
+    notificationBadge.classList.add('bg-blue-500');
+    
+    // Agregar notificación a la lista
+    const notificationItem = document.createElement('a');
+    notificationItem.href = '#';
+    notificationItem.className = 'block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100';
+    notificationItem.innerHTML = `
+      <div class="flex items-center">
+        <div class="flex-shrink-0">
+          <i class="fas fa-boxes text-blue-500"></i>
+        </div>
+        <div class="ml-3">
+          <p class="text-sm font-medium text-gray-900">Exceso de Stock</p>
+          <p class="text-xs text-gray-500">${cantidad} productos con exceso de stock</p>
+        </div>
+      </div>
+    `;
+    notificationList.appendChild(notificationItem);
+    
+  } else {
+    // Estado óptimo - Ocultar notificación
+    if (notificationBadge) {
+      notificationBadge.classList.add('hidden');
+    }
+  }
+}
+
+// Función para verificar y mostrar el estado del stock
+async function checkStockBajo() {
+  console.log('🔍 Verificando estado del stock...');
+  const alertasContainer = document.getElementById('alertas-container');
+  
+  // Verificar si el contenedor de alertas existe
+  if (!alertasContainer) {
+    console.error('❌ No se encontró el contenedor de alertas');
+    // Intentar crear el contenedor si no existe
+    const mainContent = document.querySelector('main');
+    if (mainContent) {
+      const newAlertContainer = document.createElement('div');
+      newAlertContainer.id = 'alertas-container';
+      newAlertContainer.className = 'w-full mb-6';
+      mainContent.prepend(newAlertContainer);
+      console.log('✅ Contenedor de alertas creado dinámicamente');
+      return checkStockBajo(); // Volver a intentar después de crear el contenedor
+    }
+    return;
+  }
+
+  try {
+    // Obtener todos los productos
+    console.log('🔎 Consultando productos...');
+    const { data: todosProductos, error: errorTodos } = await supabase
+      .from('products')
+      .select('*')
+      .order('stock', { ascending: true });
+
+    if (errorTodos) {
+      console.error('❌ Error en la consulta de productos:', errorTodos);
+      throw errorTodos;
+    }
+
+    // Filtrar productos por estado
+    const productosBajoStock = todosProductos.filter(p => p.stock < 5);
+    const productosExcesoStock = todosProductos.filter(p => p.stock > 5000);
+
+    // Determinar el estado principal (prioridad: bajo > exceso > óptimo)
+    if (productosBajoStock.length > 0) {
+      // Estado: Stock Bajo
+      console.log(`⚠️ Se encontraron ${productosBajoStock.length} productos con stock bajo`);
+      actualizarNotificacionStock('bajo', productosBajoStock.length, productosBajoStock);
+      
+      alertasContainer.innerHTML = `
+        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+          <div class="flex">
+            <div class="flex-shrink-0">
+              <i class="fas fa-exclamation-triangle text-yellow-400 text-xl"></i>
+            </div>
+            <div class="ml-3">
+              <p class="text-sm text-yellow-700">
+                <strong>¡Atención!</strong> Hay ${productosBajoStock.length} productos con stock bajo (menos de 5 unidades).
+                <a href="proveedores.html" class="font-medium text-yellow-700 underline hover:text-yellow-600">
+                  Ver productos
+                </a>
+              </p>
+              <div class="mt-2 text-sm text-yellow-700">
+                <p>Productos con stock crítico:</p>
+                <ul class="list-disc pl-5 mt-1">
+                  ${productosBajoStock.slice(0, 3).map(p => 
+                    `<li>${p.name || 'Producto sin nombre'} - ${p.stock} unidades</li>`
+                  ).join('')}
+                  ${productosBajoStock.length > 3 ? `<li>...y ${productosBajoStock.length - 3} más</li>` : ''}
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      // Si también hay exceso de stock, mostrarlo como advertencia secundaria
+      if (productosExcesoStock.length > 0) {
+        alertasContainer.innerHTML += `
+          <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4">
+            <div class="flex">
+              <div class="flex-shrink-0">
+                <i class="fas fa-boxes text-blue-400 text-xl"></i>
+              </div>
+              <div class="ml-3">
+                <p class="text-sm text-blue-700">
+                  <strong>Exceso de stock:</strong> Hay ${productosExcesoStock.length} productos con más de 5000 unidades.
+                </p>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+      
+    } else if (productosExcesoStock.length > 0) {
+      // Estado: Exceso de Stock
+      console.log(`ℹ️ Se encontraron ${productosExcesoStock.length} productos con exceso de stock`);
+      actualizarNotificacionStock('exceso', productosExcesoStock.length, productosExcesoStock);
+      
+      alertasContainer.innerHTML = `
+        <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4">
+          <div class="flex">
+            <div class="flex-shrink-0">
+              <i class="fas fa-boxes text-blue-400 text-xl"></i>
+            </div>
+            <div class="ml-3">
+              <p class="text-sm text-blue-700">
+                <strong>Exceso de stock:</strong> Hay ${productosExcesoStock.length} productos con más de 5000 unidades.
+                <a href="proveedores.html" class="font-medium text-blue-700 underline hover:text-blue-600">
+                  Ver productos
+                </a>
+              </p>
+              <div class="mt-2 text-sm text-blue-700">
+                <p>Productos con exceso de stock:</p>
+                <ul class="list-disc pl-5 mt-1">
+                  ${productosExcesoStock.slice(0, 3).map(p => 
+                    `<li>${p.name || 'Producto sin nombre'} - ${p.stock} unidades</li>`
+                  ).join('')}
+                  ${productosExcesoStock.length > 3 ? `<li>...y ${productosExcesoStock.length - 3} más</li>` : ''}
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      
+    } else {
+      // Estado: Stock Óptimo
+      console.log('✅ Estado de stock óptimo');
+      actualizarNotificacionStock('optimo');
+      
+      alertasContainer.innerHTML = `
+        <div class="bg-green-50 border-l-4 border-green-400 p-4 mb-4">
+          <div class="flex">
+            <div class="flex-shrink-0">
+              <i class="fas fa-check-circle text-green-400 text-xl"></i>
+            </div>
+            <div class="ml-3">
+              <p class="text-sm text-green-700">
+                <strong>¡Excelente!</strong> Todos los productos tienen niveles de stock óptimos (entre 5 y 5000 unidades).
+              </p>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+  } catch (error) {
+    console.error('❌ Error en checkStockBajo:', error);
+  }
+}
+
+// Función para cargar el perfil del usuario
+async function loadUserProfile() {
+    try {
+        console.log('Cargando perfil del usuario...');
+        
+        // Asegurarse de que los elementos del DOM estén disponibles
+        userAvatarElement = document.getElementById('user-avatar');
+        userInitialsElement = document.getElementById('user-initials');
+        dropdownUserName = document.getElementById('dropdown-user-name');
+        dropdownUserEmail = document.getElementById('dropdown-user-email');
+        
+        console.log('Elementos del perfil:', { userAvatarElement, userInitialsElement, dropdownUserName, dropdownUserEmail });
+        
+        const { data: { user }, error: userError } = await window.supabase.auth.getUser();
+        
+        if (userError) throw userError;
+        if (!user) {
+            console.error('No hay usuario autenticado');
+            return;
+        }
+        
+        console.log('Usuario autenticado:', user);
+        
+        // Obtener el perfil del usuario
+        const { data: profile, error: profileError } = await window.supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+            
+        if (profileError) {
+            console.error('Error al cargar el perfil:', profileError);
+            throw profileError;
+        }
+        
+        console.log('Perfil cargado:', profile);
+        
+        // Actualizar la interfaz de usuario con la información del perfil
+        const userName = profile.full_name || user.email.split('@')[0];
+        const userInitials = userName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+        
+        // Actualizar elementos en la barra superior
+        if (userInitialsElement) {
+            userInitialsElement.textContent = userInitials;
+            console.log('Iniciales del usuario actualizadas:', userInitials);
+        }
+        
+        if (dropdownUserName) {
+            dropdownUserName.textContent = userName;
+            console.log('Nombre de usuario actualizado:', userName);
+        }
+        
+        if (dropdownUserEmail) {
+            dropdownUserEmail.textContent = user.email;
+            console.log('Email del usuario actualizado:', user.email);
+        }
+        
+        // Actualizar avatar si existe
+        if (userAvatarElement) {
+            if (profile.avatar_url) {
+                console.log('Actualizando avatar con URL:', profile.avatar_url);
+                userAvatarElement.src = profile.avatar_url;
+                userAvatarElement.onload = function() {
+                    console.log('Imagen de perfil cargada correctamente');
+                    userAvatarElement.classList.remove('hidden');
+                    if (userInitialsElement) userInitialsElement.classList.add('hidden');
+                };
+                userAvatarElement.onerror = function() {
+                    console.error('Error al cargar la imagen de perfil');
+                    userAvatarElement.classList.add('hidden');
+                    if (userInitialsElement) userInitialsElement.classList.remove('hidden');
+                };
+            } else {
+                console.log('No se encontró avatar para el usuario');
+                userAvatarElement.classList.add('hidden');
+                if (userInitialsElement) userInitialsElement.classList.remove('hidden');
+            }
+        } else {
+            console.error('Elemento userAvatarElement no encontrado');
+        }
+        
+        console.log('Perfil del usuario cargado correctamente');
+    } catch (error) {
+        console.error('Error al cargar el perfil del usuario:', error);
+    }
+}
+
+// Función para alternar el menú de notificaciones
+function toggleNotificationsMenu() {
+  console.log('Alternando menú de notificaciones...');
+  
+  // Asegurarse de que los elementos del DOM estén disponibles
+  if (!notificationsDropdown) notificationsDropdown = document.getElementById('notifications-dropdown');
+  if (!notificationsButton) notificationsButton = document.getElementById('notifications-button');
+  if (!userDropdown) userDropdown = document.getElementById('user-dropdown');
+  
+  console.log('Elementos del menú de notificaciones:', { notificationsDropdown, notificationsButton, userDropdown });
+  
+  if (notificationsDropdown) {
+    const isHidden = notificationsDropdown.classList.contains('hidden');
+    console.log('Estado actual del menú de notificaciones:', isHidden ? 'oculto' : 'visible');
+    
+    // Cerrar menú de usuario si está abierto
+    if (userDropdown && !userDropdown.classList.contains('hidden')) {
+      userDropdown.classList.add('hidden');
+      console.log('Menú de usuario cerrado');
+    }
+    
+    // Alternar visibilidad del menú de notificaciones
+    if (isHidden) {
+      notificationsDropdown.classList.remove('hidden');
+      console.log('Menú de notificaciones mostrado');
+    } else {
+      notificationsDropdown.classList.add('hidden');
+      console.log('Menú de notificaciones ocultado');
+    }
+  } else {
+    console.error('Elemento notificationsDropdown no encontrado');
+  }
+}
+
+// Función para alternar el menú de usuario
+function toggleUserMenu() {
+    console.log('Alternando menú de usuario...');
+    
+    // Asegurarse de que los elementos del DOM estén disponibles
+    if (!userDropdown) userDropdown = document.getElementById('user-dropdown');
+    if (!userMenuButton) userMenuButton = document.getElementById('user-menu-button');
+    if (!notificationsDropdown) notificationsDropdown = document.getElementById('notifications-dropdown');
+    
+    console.log('Elementos del menú de usuario:', { userDropdown, userMenuButton, notificationsDropdown });
+    
+    if (userDropdown) {
+        const isHidden = userDropdown.classList.contains('hidden');
+        console.log('Estado actual del menú de usuario:', isHidden ? 'oculto' : 'visible');
+        
+        // Cerrar menú de notificaciones si está abierto
+        if (notificationsDropdown && !notificationsDropdown.classList.contains('hidden')) {
+            notificationsDropdown.classList.add('hidden');
+            console.log('Menú de notificaciones cerrado');
+        }
+        
+        // Alternar visibilidad del menú de usuario
+        if (isHidden) {
+            userDropdown.classList.remove('hidden');
+            console.log('Menú de usuario mostrado');
+        } else {
+            userDropdown.classList.add('hidden');
+            console.log('Menú de usuario ocultado');
+        }
+    } else {
+        console.error('Elemento userDropdown no encontrado');
+    }
+}
+
+// Función para configurar el menú de usuario
+function setupUserMenu() {
+    console.log('Configurando menú de usuario...');
+    
+    // Si los elementos no están definidos, intentar obtenerlos nuevamente
+    if (!userMenuButton) userMenuButton = document.getElementById('user-menu-button');
+    if (!userDropdown) userDropdown = document.getElementById('user-dropdown');
+    if (!userInitialsElement) userInitialsElement = document.getElementById('user-initials');
+    if (!userAvatarElement) userAvatarElement = document.getElementById('user-avatar');
+    if (!dropdownUserName) dropdownUserName = document.getElementById('dropdown-user-name');
+    if (!dropdownUserEmail) dropdownUserEmail = document.getElementById('dropdown-user-email');
+    
+    console.log('Elementos del menú de usuario:', { userMenuButton, userDropdown, userInitialsElement, userAvatarElement, dropdownUserName, dropdownUserEmail });
+    
+    if (userMenuButton && userDropdown) {
+        console.log('Añadiendo event listeners al menú de usuario');
+        // Eliminar event listeners existentes para evitar duplicados
+        const newButton = userMenuButton.cloneNode(true);
+        userMenuButton.parentNode.replaceChild(newButton, userMenuButton);
+        userMenuButton = newButton;
+        
+        // Añadir event listener para el clic
+        userMenuButton.onclick = function(e) {
+            e.stopPropagation();
+            toggleUserMenu();
+        };
+        
+        // Cerrar menú al hacer clic fuera de él
+        document.addEventListener('click', (e) => {
+            if (userDropdown && !userDropdown.contains(e.target) && 
+                userMenuButton && !userMenuButton.contains(e.target)) {
+                userDropdown.classList.add('hidden');
+            }
+        });
+    } else {
+        console.error('No se pudo configurar el menú de usuario: elementos no encontrados');
+    }
+}
+
+// Función para configurar el menú de notificaciones
+function setupNotificationsMenu() {
+    console.log('Configurando menú de notificaciones...');
+    
+    // Si los elementos no están definidos, intentar obtenerlos nuevamente
+    if (!notificationsButton) notificationsButton = document.getElementById('notifications-button');
+    if (!notificationsDropdown) notificationsDropdown = document.getElementById('notifications-dropdown');
+    
+    console.log('Elementos del menú de notificaciones:', { notificationsButton, notificationsDropdown });
+    
+    if (notificationsButton && notificationsDropdown) {
+        console.log('Añadiendo event listeners al menú de notificaciones');
+        // Eliminar event listeners existentes para evitar duplicados
+        const newButton = notificationsButton.cloneNode(true);
+        notificationsButton.parentNode.replaceChild(newButton, notificationsButton);
+        notificationsButton = newButton;
+        
+        // Añadir event listener para el clic
+        notificationsButton.onclick = function(e) {
+            e.stopPropagation();
+            toggleNotificationsMenu();
+        };
+        
+        // Cerrar menú al hacer clic fuera de él
+        document.addEventListener('click', (e) => {
+            if (notificationsDropdown && !notificationsDropdown.contains(e.target) && 
+                notificationsButton && !notificationsButton.contains(e.target)) {
+                notificationsDropdown.classList.add('hidden');
+            }
+        });
+    } else {
+        console.error('No se pudo configurar el menú de notificaciones: elementos no encontrados');
+    }
+}
+
+// Función para configurar el cierre de sesión
+function setupLogout() {
+    logoutBtn = document.getElementById('logout-btn');
+    
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            
+            try {
+                const { error } = await window.supabase.auth.signOut();
+                if (error) throw error;
+                
+                // Redirigir a la página de inicio de sesión
+                window.location.href = 'login.html';
+            } catch (error) {
+                console.error('Error al cerrar sesión:', error);
+                showError('Error al cerrar sesión. Por favor, inténtalo de nuevo.');
+            }
+        });
+    }
+}
+
 // Función para inicializar la aplicación
 async function initApp() {
     try {
@@ -633,8 +1117,13 @@ async function initApp() {
         }
         
         // Inicializar elementos del DOM
-        console.log('Inicializando elementos del DOM...');
         initElements();
+        
+        // Configurar menú de usuario y notificaciones
+        console.log('Configurando menú de usuario y notificaciones...');
+        setupUserMenu();
+        setupNotificationsMenu();
+        setupLogout();
         
         // Verificar autenticación
         console.log('Verificando autenticación...');
@@ -654,6 +1143,10 @@ async function initApp() {
         
         console.log('Usuario autenticado:', user.email);
         
+        // Cargar perfil del usuario
+        console.log('Cargando perfil del usuario...');
+        await loadUserProfile();
+        
         // Obtener el ID de la tienda del usuario
         console.log('Obteniendo ID de la tienda...');
         storeId = await getUserStoreId();
@@ -669,7 +1162,19 @@ async function initApp() {
         console.log('Cargando proveedores...');
         await loadSuppliers();
         
-        console.log('Aplicación de proveedores inicializada correctamente');
+        // Verificar estado del stock
+        await checkStockBajo();
+        
+        // Configurar actualización periódica de datos (cada minuto)
+        setInterval(loadSuppliers, 60000);
+        
+        // Configurar actualización periódica del estado del stock (cada 5 minutos)
+        setInterval(checkStockBajo, 5 * 60 * 1000);
+        
+        // Ocultar loading
+        showLoading(false);
+        
+        console.log('✅ Aplicación inicializada correctamente');
         
     } catch (error) {
         console.error('Error al inicializar la aplicación de proveedores:', error);
@@ -687,7 +1192,28 @@ async function initApp() {
     }
 }
 
+// Hacer que las funciones estén disponibles globalmente
+window.toggleUserMenu = toggleUserMenu;
+window.toggleNotificationsMenu = toggleNotificationsMenu;
+
 // Inicializar la aplicación cuando el DOM esté listo
-document.addEventListener('DOMContentLoaded', () => {
-    initApp();
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('DOM cargado, inicializando aplicación...');
+    
+    try {
+        // Inicializar la aplicación
+        await initApp();
+        console.log('✅ Aplicación inicializada correctamente');
+    } catch (error) {
+        console.error('❌ Error al inicializar la aplicación:', error);
+        
+        // Si hay un error de autenticación, redirigir a login
+        if (error.message?.includes('authentication') || error.message?.includes('No hay usuario autenticado')) {
+            console.log('Redirigiendo a login...');
+            window.location.href = 'login.html';
+        } else {
+            // Mostrar mensaje de error al usuario
+            showError('Error al cargar la aplicación. Por favor, recarga la página.');
+        }
+    }
 });

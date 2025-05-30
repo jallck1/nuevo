@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Control - Horizont</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts - Orbitron para el estilo futurista -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Orbitron', sans-serif;
+            background-color: #0a0a1a;
+            color: #00f3ff;
+            background-image: 
+                linear-gradient(rgba(0, 243, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 243, 255, 0.05) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+        
+        .neon-text {
+            text-shadow: 0 0 5px #00f3ff, 0 0 10px #00f3ff, 0 0 15px #00f3ff;
+        }
+        
+        .neon-box {
+            border: 1px solid #00f3ff;
+            box-shadow: 0 0 10px #00f3ff, 0 0 20px rgba(0, 243, 255, 0.5);
+            transition: all 0.3s ease;
+            background: rgba(10, 10, 26, 0.8);
+            backdrop-filter: blur(5px);
+        }
+        
+        .neon-box:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 0 15px #00f3ff, 0 0 30px rgba(0, 243, 255, 0.8);
+        }
+        
+        .btn-neon {
+            background: linear-gradient(45deg, #0066ff, #00f3ff);
+            border: none;
+            color: #0a0a1a;
+            font-weight: bold;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-neon::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, #00f3ff, #0066ff);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 1;
+        }
+        
+        .btn-neon:hover::after {
+            opacity: 1;
+        }
+        
+        .btn-neon span {
+            position: relative;
+            z-index: 2;
+        }
+        
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            padding: 2rem;
+        }
+        
+        .status-bar {
+            background: rgba(0, 243, 255, 0.1);
+            border-bottom: 1px solid rgba(0, 243, 255, 0.3);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid #00f3ff;
+            object-fit: cover;
+        }
+        
+        .logout-btn {
+            background: rgba(255, 0, 85, 0.2);
+            color: #ff0055;
+            border: 1px solid #ff0055;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+        }
+        
+        .logout-btn:hover {
+            background: rgba(255, 0, 85, 0.4);
+            box-shadow: 0 0 10px rgba(255, 0, 85, 0.5);
+        }
+        
+        .current-time {
+            font-size: 0.9rem;
+            letter-spacing: 2px;
+        }
+
+        /* Estilos para los modales rojos */
+        .modal-red {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .modal-content {
+            background: #1a0000;
+            margin: 2rem auto;
+            width: 90%;
+            max-width: 800px;
+            border: 2px solid #ff3333;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.5);
+            color: #fff;
+            position: relative;
+            animation: modalFadeIn 0.3s ease-out;
+        }
+
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: translateY(-50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #ff3333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 0, 0, 0.1);
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.5rem;
+            color: #ff3333;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+        }
+
+        .close-modal {
+            color: #ff6666;
+            font-size: 2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .close-modal:hover {
+            color: #ff0000;
+            text-shadow: 0 0 10px #ff3333;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .modal-footer {
+            padding: 1.5rem;
+            border-top: 1px solid #ff3333;
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            background: rgba(255, 0, 0, 0.05);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #ff6666;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .modal-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid #ff3333;
+            border-radius: 4px;
+            color: #fff;
+            font-family: 'Orbitron', sans-serif;
+            transition: all 0.3s;
+        }
+
+        .modal-input:focus {
+            outline: none;
+            border-color: #ff0000;
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+        }
+
+        .btn-cancel, .btn-confirm, .btn-export {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 4px;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-cancel {
+            background: transparent;
+            color: #ff6666;
+            border: 1px solid #ff3333;
+        }
+
+        .btn-cancel:hover {
+            background: rgba(255, 0, 0, 0.1);
+            color: #ff3333;
+            box-shadow: 0 0 15px rgba(255, 0, 0, 0.3);
+        }
+
+        .btn-confirm {
+            background: linear-gradient(45deg, #ff3333, #cc0000);
+            color: #fff;
+        }
+
+        .btn-confirm:hover {
+            background: linear-gradient(45deg, #ff0000, #990000);
+            box-shadow: 0 0 15px rgba(255, 0, 0, 0.5);
+        }
+
+        .btn-export {
+            background: linear-gradient(45deg, #ff9933, #ff6600);
+            color: #fff;
+        }
+
+        .btn-export:hover {
+            background: linear-gradient(45deg, #ff8800, #cc5500);
+            box-shadow: 0 0 15px rgba(255, 153, 51, 0.5);
+        }
+
+        /* Estilos para pestañas */
+        .tabs {
+            display: flex;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid #ff3333;
+        }
+
+        .tab-btn {
+            padding: 0.75rem 1.5rem;
+            background: none;
+            border: none;
+            color: #ff6666;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s;
+        }
+
+        .tab-btn::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: #ff3333;
+            transform: scaleX(0);
+            transition: transform 0.3s;
+        }
+
+        .tab-btn.active {
+            color: #fff;
+        }
+
+        .tab-btn.active::after {
+            transform: scaleX(1);
+        }
+
+        /* Estilos para tablas */
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+
+        .data-table th, .data-table td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid #ff3333;
+        }
+
+        .data-table th {
+            color: #ff6666;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+        }
+
+        .data-table tr:hover {
+            background: rgba(255, 0, 0, 0.1);
+        }
+
+        /* Estilos para búsqueda */
+        .search-container {
+            display: flex;
+            margin-bottom: 1.5rem;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid #ff3333;
+            border-right: none;
+            border-radius: 4px 0 0 4px;
+            color: #fff;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .search-btn {
+            background: linear-gradient(45deg, #ff3333, #cc0000);
+            color: #fff;
+            border: none;
+            border-radius: 0 4px 4px 0;
+            padding: 0 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .search-btn:hover {
+            background: linear-gradient(45deg, #ff0000, #990000);
+        }
+
+        /* Estilos para el selector de fechas */
+        .date-range {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .date-separator {
+            color: #ff6666;
+        }
+
+        /* Estilos para opciones de formato */
+        .format-options {
+            display: flex;
+            gap: 1.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+        }
+
+        .radio-option input[type="radio"] {
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border: 2px solid #ff3333;
+            border-radius: 50%;
+            position: relative;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .radio-option input[type="radio"]:checked {
+            background: #ff3333;
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+        }
+
+        .radio-option input[type="radio"]:checked::after {
+            content: '';
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: white;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        /* Estilos para la cuadrícula de tiendas */
+        .stores-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .store-card {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid #ff3333;
+            border-radius: 4px;
+            padding: 1.5rem;
+            transition: all 0.3s;
+        }
+
+        .store-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(255, 0, 0, 0.3);
+        }
+
+        .store-name {
+            color: #fff;
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .store-location {
+            color: #ff9999;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        .store-stats {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: #ff6666;
+        }
+
+        /* Estilos para el input de contraseña */
+        .password-input {
+            position: relative;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #ff6666;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <!-- Status Bar -->
+    <div class="status-bar">
+        <div class="current-time" id="currentTime">--:--:--</div>
+        <div class="user-info">
+            <button onclick="showSqlModal()" 
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-sm mr-2">
+                <i class="fas fa-terminal mr-1"></i> Consola SQL
+            </button>
+            <img src="https://ui-avatars.com/api/?name=Admin&background=0D8ABC&color=fff" 
+                 alt="Admin" 
+                 class="user-avatar"
+                 id="userAvatar">
+            <span id="userEmail">admin@ejemplo.com</span>
+            <button id="logoutBtn" class="logout-btn">
+                <i class="fas fa-power-off"></i> Salir
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-4xl font-bold text-center mb-12 neon-text">PANEL DE CONTROL</h1>
+        
+        <div class="grid-container">
+            <!-- Crear Tienda -->
+            <div class="neon-box p-8 rounded-lg text-center cursor-pointer" id="createStoreBtn" onclick="console.log('Botón crear tienda clickeado'); document.getElementById('storeModal').style.display='block';">
+                <div class="text-5xl mb-4">
+                    <i class="fas fa-store"></i>
+                </div>
+                <h2 class="text-2xl font-bold mb-2">CREAR TIENDA</h2>
+                <p class="text-sm opacity-80">Registrar una nueva tienda en la plataforma</p>
+            </div>
+            
+            <!-- Ver Compradores -->
+            <div class="neon-box p-8 rounded-lg text-center cursor-pointer" id="viewBuyersBtn">
+                <div class="text-5xl mb-4">
+                    <i class="fas fa-users"></i>
+                </div>
+                <h2 class="text-2xl font-bold mb-2">VER COMPRADORES</h2>
+                <p class="text-sm opacity-80">Administrar y visualizar compradores</p>
+            </div>
+            
+            <!-- PQRS -->
+            <div class="neon-box p-8 rounded-lg text-center cursor-pointer" id="pqrsBtn">
+                <div class="text-5xl mb-4">
+                    <i class="fas fa-headset"></i>
+                </div>
+                <h2 class="text-2xl font-bold mb-2">PQRS</h2>
+                <p class="text-sm opacity-80">Gestionar peticiones, quejas y reclamos</p>
+            </div>
+            
+            <!-- Administrar Tiendas -->
+            <div class="neon-box p-8 rounded-lg text-center cursor-pointer" id="manageStoresBtn">
+                <div class="text-5xl mb-4">
+                    <i class="fas fa-warehouse"></i>
+                </div>
+                <h2 class="text-2xl font-bold mb-2">ADMINISTRAR TIENDAS</h2>
+                <p class="text-sm opacity-80">Ver y gestionar tiendas existentes</p>
+            </div>
+            
+            <!-- Crear Administrador -->
+            <div class="neon-box p-8 rounded-lg text-center cursor-pointer" id="createAdminBtn">
+                <div class="text-5xl mb-4">
+                    <i class="fas fa-user-shield"></i>
+                </div>
+                <h2 class="text-2xl font-bold mb-2">CREAR ADMINISTRADOR</h2>
+                <p class="text-sm opacity-80">Dar de alta nuevos administradores</p>
+            </div>
+            
+            <!-- Reportes -->
+            <div class="neon-box p-8 rounded-lg text-center cursor-pointer" id="reportsBtn">
+                <div class="text-5xl mb-4">
+                    <i class="fas fa-chart-bar"></i>
+                </div>
+                <h2 class="text-2xl font-bold mb-2">REPORTES</h2>
+                <p class="text-sm opacity-80">Generar reportes y estadísticas</p>
+            </div>
+        </div>
+        
+        <!-- Modal de Creación de Tienda -->
+        <div id="storeModal" class="modal-red">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2><i class="fas fa-store mr-2"></i> NUEVA TIENDA</h2>
+                    <span class="close-modal">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <form id="createStoreForm">
+                        <div class="form-group">
+                            <label for="storeName">NOMBRE DE LA TIENDA *</label>
+                            <input type="text" id="storeName" name="name" class="modal-input" placeholder="Ingrese el nombre de la tienda" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="storeAddress">DIRECCIÓN</label>
+                            <input type="text" id="storeAddress" name="address" class="modal-input" placeholder="Ingrese la dirección de la tienda">
+                        </div>
+                        <input type="hidden" id="createdBy" name="created_by" value="">
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-cancel">CANCELAR</button>
+                    <button class="btn-confirm">CREAR TIENDA</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de Ver Compradores -->
+        <div id="buyersModal" class="modal-red">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2><i class="fas fa-users mr-2"></i> COMPRADORES</h2>
+                    <span class="close-modal">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div class="search-container">
+                        <input type="text" class="search-input" placeholder="Buscar comprador...">
+                        <button class="search-btn"><i class="fas fa-search"></i></button>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>NOMBRE</th>
+                                    <th>EMAIL</th>
+                                    <th>COMPRAS</th>
+                                    <th>ACCIONES</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Datos se cargarán dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-cancel">CERRAR</button>
+                    <button class="btn-export"><i class="fas fa-file-export"></i> EXPORTAR</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de PQRS -->
+        <div id="pqrsModal" class="modal-red">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2><i class="fas fa-headset mr-2"></i> GESTIÓN DE PQRS</h2>
+                    <span class="close-modal">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div class="tabs">
+                        <button class="tab-btn active" data-tab="pending">PENDIENTES</button>
+                        <button class="tab-btn" data-tab="in-progress">EN PROCESO</button>
+                        <button class="tab-btn" data-tab="resolved">RESUELTOS</button>
+                    </div>
+                    <div class="tab-content">
+                        <!-- Contenido de pestañas se cargará dinámicamente -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-cancel">CERRAR</button>
+                    <button class="btn-confirm">NUEVO PQRS</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de Administrar Tiendas -->
+        <div id="manageStoresModal" class="modal-red">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2><i class="fas fa-warehouse mr-2"></i> ADMINISTRAR TIENDAS</h2>
+                    <span class="close-modal">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div class="store-filters">
+                        <select class="filter-select">
+                            <option>TODAS LAS TIENDAS</option>
+                            <option>ACTIVAS</option>
+                            <option>INACTIVAS</option>
+                        </select>
+                        <input type="text" class="search-input" placeholder="Buscar tienda...">
+                    </div>
+                    <div class="stores-grid">
+                        <!-- Tiendas se cargarán dinámicamente -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-cancel">CERRAR</button>
+                    <button class="btn-confirm">NUEVA TIENDA</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de Crear Administrador -->
+        <div id="createAdminModal" class="modal-red">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2><i class="fas fa-user-shield mr-2"></i> NUEVO ADMINISTRADOR</h2>
+                    <span class="close-modal">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>NOMBRE COMPLETO</label>
+                        <input type="text" class="modal-input" placeholder="Nombre del administrador">
+                    </div>
+                    <div class="form-group">
+                        <label>CORREO ELECTRÓNICO</label>
+                        <input type="email" class="modal-input" placeholder="correo@ejemplo.com">
+                    </div>
+                    <div class="form-group">
+                        <label>CONTRASEÑA</label>
+                        <div class="password-input">
+                            <input type="password" class="modal-input" placeholder="••••••••">
+                            <button class="toggle-password"><i class="fas fa-eye"></i></button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>ROL</label>
+                        <select class="modal-input">
+                            <option>ADMINISTRADOR DE TIENDA</option>
+                            <option>SUPERVISOR</option>
+                            <option>SOPORTE</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>TIENDA ASIGNADA</label>
+                        <select class="modal-input">
+                            <option>SELECCIONE UNA TIENDA</option>
+                            <!-- Tiendas se cargarán dinámicamente -->
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-cancel">CANCELAR</button>
+                    <button class="btn-confirm">CREAR ADMINISTRADOR</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de Reportes -->
+        <div id="reportsModal" class="modal-red">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2><i class="fas fa-chart-bar mr-2"></i> GENERAR REPORTE</h2>
+                    <span class="close-modal">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>TIPO DE REPORTE</label>
+                        <select class="modal-input">
+                            <option>VENTAS POR PERIODO</option>
+                            <option>INVENTARIO</option>
+                            <option>USUARIOS ACTIVOS</option>
+                            <option>PEDIDOS PENDIENTES</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>RANGO DE FECHAS</label>
+                        <div class="date-range">
+                            <input type="date" class="modal-input">
+                            <span class="date-separator">a</span>
+                            <input type="date" class="modal-input">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>FORMATO</label>
+                        <div class="format-options">
+                            <label class="radio-option">
+                                <input type="radio" name="format" checked>
+                                <span>PDF</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="format">
+                                <span>EXCEL</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="format">
+                                <span>CSV</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-cancel">CANCELAR</button>
+                    <button class="btn-confirm"><i class="fas fa-download"></i> GENERAR REPORTE</button>
+                </div>
+            </div>
+        </div>
+        </main>
+    </div>
+
+    <!-- Scripts al final del body -->
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Script de inicialización de Supabase -->
+    <script>
+        // Configuración de Supabase
+        const SUPABASE_URL = 'https://ywmspibcnhfmqmnutpyg.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl3bXNwaWJjbmhmbXFtbnV0cHlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc2ODE0OTMsImV4cCI6MjA2MzI1NzQ5M30.HtHovCDBs11eNh_KjrqNn6BgWFYyFuFpKo5iQLFmFpU';
+        
+        // Inicializar Supabase
+        const { createClient } = supabase;
+        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            auth: {
+                persistSession: true,
+                autoRefreshToken: true,
+                detectSessionInUrl: true
+            }
+        });
+        
+        // Hacer que Supabase esté disponible globalmente
+        window.supabase = supabaseClient;
+        
+        // Función para verificar la sesión
+        async function checkSession() {
+            try {
+                const { data: { session }, error } = await supabaseClient.auth.getSession();
+                if (error || !session) {
+                    console.error('No hay sesión activa:', error);
+                    return false;
+                }
+                return true;
+            } catch (error) {
+                console.error('Error al verificar la sesión:', error);
+                return false;
+            }
+        }
+        
+        // Inicializar la aplicación cuando el DOM esté listo
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('Inicializando aplicación...');
+            
+            // Verificar sesión
+            const isAuthenticated = await checkSession();
+            if (!isAuthenticated) {
+                console.log('No autenticado, redirigiendo a login...');
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            console.log('Usuario autenticado, continuando...');
+            
+            // Configurar botón de cerrar sesión
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    const { error } = await supabaseClient.auth.signOut();
+                    if (!error) {
+                        window.location.href = 'login.html';
+                    }
+                });
+            }
+            
+                // Inicializar la aplicación
+            if (typeof initApp === 'function') {
+                initApp();
+            }
+            
+            // Toggle sidebar en móviles
+            const menuBtn = document.getElementById('menuBtn');
+            const sidebar = document.querySelector('.sidebar');
+            if (menuBtn && sidebar) {
+                menuBtn.addEventListener('click', () => {
+                    sidebar.classList.toggle('hidden');
+                });
+            }
+        });
+        
+        // Función para inicializar la aplicación
+        function initApp() {
+            console.log('Aplicación inicializada correctamente');
+            // Aquí puedes inicializar otros componentes de la aplicación
+        }
+    </script>
+    
+    <!-- Modal SQL -->
+    <div id="sqlModal" class="modal-red" style="display: none;">
+        <div class="modal-content" style="max-width: 800px; width: 90%;">
+            <div class="modal-header">
+                <h2><i class="fas fa-database mr-2"></i> CONSOLA SQL</h2>
+                <span class="close-modal" onclick="closeSqlModal()">&times;</span>
+            </div>
+            <div class="p-4">
+                <div class="mb-4">
+                    <textarea id="sqlQuery" rows="10" class="w-full p-3 bg-gray-900 text-green-400 font-mono rounded border border-gray-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500" 
+                             placeholder="Escribe tu consulta SQL aquí...
+Ejemplo: INSERT INTO stores (name, address, admin_owner_id, created_by) 
+         VALUES ('Mi Tienda', 'Dirección de prueba', 'tu_user_id', 'tu_user_id')"></textarea>
+                </div>
+                <div class="flex justify-between items-center">
+                    <div>
+                        <button onclick="executeSql()" 
+                                class="btn-neon px-4 py-2 rounded-md mr-2">
+                            <i class="fas fa-play mr-2"></i>Ejecutar (F5)
+                        </button>
+                        <button onclick="copyToClipboard()" 
+                                class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-md mr-2">
+                            <i class="far fa-copy mr-2"></i>Copiar
+                        </button>
+                    </div>
+                    <button onclick="closeSqlModal()" 
+                            class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md">
+                        <i class="fas fa-times mr-2"></i>Cerrar
+                    </button>
+                </div>
+                <div id="sqlResult" class="mt-4 p-3 bg-gray-900 text-green-400 rounded-md border border-gray-700 font-mono text-sm overflow-auto max-h-60 hidden">
+                    <pre id="sqlResultContent" class="whitespace-pre-wrap"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts de la aplicación -->
+    <script src="js/admincecepsiesa.js" defer></script>
+    
+    <script>
+        // Función para abrir el modal SQL
+        function showSqlModal() {
+            document.getElementById('sqlModal').style.display = 'flex';
+            document.getElementById('sqlQuery').focus();
+        }
+
+        // Función para cerrar el modal SQL
+        function closeSqlModal() {
+            document.getElementById('sqlModal').style.display = 'none';
+        }
+
+        // Función para copiar al portapapeles
+        function copyToClipboard() {
+            const sqlQuery = document.getElementById('sqlQuery');
+            sqlQuery.select();
+            document.execCommand('copy');
+            
+            // Mostrar notificación
+            const notification = document.createElement('div');
+            notification.className = 'fixed bottom-4 right-4 bg-green-600 text-white px-4 py-2 rounded-md shadow-lg';
+            notification.textContent = '¡Consulta copiada al portapapeles!';
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 2000);
+        }
+
+        // Ejecutar con F5
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'F5' && document.getElementById('sqlModal').style.display === 'flex') {
+                e.preventDefault();
+                executeSql();
+            }
+        });
+
+        // Función para insertar datos en una tabla
+        async function insertData(tableName, data) {
+            try {
+                const { data: result, error } = await supabase
+                    .from(tableName)
+                    .insert([data])
+                    .select();
+                
+                if (error) throw error;
+                return { success: true, data: result };
+            } catch (error) {
+                console.error('Error al insertar datos:', error);
+                return { success: false, error };
+            }
+        }
+
+        // Función para ejecutar consultas SQL
+        async function executeSql() {
+            const query = document.getElementById('sqlQuery').value.trim();
+            const resultDiv = document.getElementById('sqlResult');
+            const resultContent = document.getElementById('sqlResultContent');
+            
+            if (!query) {
+                resultDiv.classList.remove('hidden');
+                resultContent.textContent = 'Por favor, escribe una consulta SQL.';
+                resultContent.className = 'text-yellow-400';
+                return;
+            }
+
+            resultContent.textContent = 'Ejecutando consulta...';
+            resultContent.className = 'text-yellow-400';
+            resultDiv.classList.remove('hidden');
+            
+            try {
+                // Obtener la sesión actual
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session) throw new Error('No hay sesión activa');
+                
+                // Determinar si es una consulta SELECT
+                const isSelect = query.trim().toLowerCase().startsWith('select');
+                
+                // Crear una función SQL temporal para ejecutar la consulta
+                const tempFunctionName = `temp_execute_${Date.now()}`;
+                const createFunctionSQL = `
+                    CREATE OR REPLACE FUNCTION ${tempFunctionName}()
+                    RETURNS JSON LANGUAGE plpgsql SECURITY DEFINER
+                    AS $$
+                    DECLARE
+                        result JSON;
+                    BEGIN
+                        ${isSelect ? 'EXECUTE ' + query + ' INTO result; RETURN result;' 
+                                  : 'EXECUTE ' + query + '; RETURN json_build_object(\'status\', \'success\');'}
+                    EXCEPTION WHEN OTHERS THEN
+                        RAISE EXCEPTION '%', SQLERRM;
+                    END;
+                    $$;
+                `;
+                
+                // 1. Crear la función temporal
+                const { error: createError } = await supabase.rpc('rpc', {
+                    query: createFunctionSQL
+                });
+                
+                if (createError) throw createError;
+                
+                // 2. Ejecutar la función
+                const { data, error: execError } = await supabase.rpc(tempFunctionName);
+                
+                // 3. Eliminar la función temporal (en segundo plano, no esperamos a que termine)
+                supabase.rpc('rpc', {
+                    query: `DROP FUNCTION IF EXISTS ${tempFunctionName}()`
+                }).catch(console.error);
+                
+                if (execError) throw execError;
+                
+                // Mostrar resultados
+                if (isSelect) {
+                    if (data && data.length > 0) {
+                        resultContent.textContent = JSON.stringify(data, null, 2);
+                        resultContent.className = 'text-green-400';
+                    } else {
+                        resultContent.textContent = 'La consulta se ejecutó correctamente, pero no se devolvieron resultados.';
+                        resultContent.className = 'text-yellow-400';
+                    }
+                } else {
+                    resultContent.textContent = 'Consulta ejecutada con éxito. ' + 
+                        (data ? `\n${JSON.stringify(data, null, 2)}` : '');
+                    resultContent.className = 'text-green-400';
+                }
+            } catch (error) {
+                console.error('Error al ejecutar SQL:', error);
+                resultContent.textContent = `Error: ${error.message || 'Error desconocido al ejecutar la consulta'}`;
+                resultContent.className = 'text-red-400';
+            }
+            
+            // Desplazarse al resultado
+            resultDiv.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        }
+    </script>
+</body>
+</html>

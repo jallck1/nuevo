@@ -16,7 +16,7 @@ const closeModalBtn = document.getElementById('close-modal');
 const cancelEditBtn = document.getElementById('cancel-edit');
 const productForm = document.getElementById('product-form');
 const searchInput = document.getElementById('search');
-const categoryFilter = document.getElementById('category');
+const categoryFilter = document.getElementById('category-filter');
 const statusFilter = document.getElementById('status');
 
 // Elementos de paginación
@@ -27,6 +27,48 @@ const showingFromSpan = document.getElementById('showing-from');
 const showingToSpan = document.getElementById('showing-to');
 const prevPageBtn = document.getElementById('prev-page');
 const nextPageBtn = document.getElementById('next-page');
+
+// Elementos del menú y perfil
+const mobileMenuButton = document.getElementById('mobile-menu-button');
+const desktopSidebar = document.getElementById('desktop-sidebar');
+const mobileMenu = document.getElementById('mobile-menu');
+const closeMobileMenu = document.getElementById('close-mobile-menu');
+const mobileMenuOverlay = document.getElementById('mobile-menu-overlay');
+const toggleSidebar = document.getElementById('toggle-sidebar');
+const notificationsButton = document.getElementById('notifications-button');
+const notificationsDropdown = document.getElementById('notifications-dropdown');
+const userMenuButton = document.getElementById('user-menu-button');
+const userDropdown = document.getElementById('user-dropdown');
+const logoutBtn = document.getElementById('logout-btn');
+const mobileLogoutBtn = document.getElementById('logout-btn-mobile');
+const userNameElement = document.getElementById('user-name');
+const userInitialsElement = document.getElementById('user-initials');
+const userAvatarElement = document.getElementById('user-avatar');
+const dropdownUserName = document.getElementById('dropdown-user-name');
+const dropdownUserEmail = document.getElementById('dropdown-user-email');
+
+// Estado del menú
+let isMobileMenuOpen = false;
+let isDesktopSidebarCollapsed = false;
+
+// Función para verificar autenticación
+async function checkAuth() {
+    try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) throw error;
+        if (!session) {
+            window.location.href = 'login.html';
+            return false;
+        }
+        
+        return true;
+    } catch (error) {
+        console.error('Error al verificar autenticación:', error);
+        window.location.href = 'login.html';
+        return false;
+    }
+}
 
 // Cargar proveedores desde Supabase
 async function loadSuppliers() {
@@ -146,18 +188,29 @@ async function loadCategories() {
 
 // Actualizar los selects de categorías en el formulario y en el filtro
 function updateCategorySelects(categories) {
+    console.log('Actualizando selects de categorías con:', categories);
+    
     // Actualizar el select del filtro de categorías
-    const categoryFilter = document.getElementById('categories');
-    const categorySelect = document.getElementById('categories');
+    const categoryFilter = document.getElementById('category-filter');
+    const categorySelect = document.getElementById('categories'); // Cambiado de 'category' a 'categories'
     
     // Actualizar el select del filtro
     if (categoryFilter) {
+        console.log('Actualizando filtro de categorías');
         // Guardar la selección actual
         const currentValue = categoryFilter.value;
         
         // Limpiar opciones excepto la primera
         while (categoryFilter.options.length > 1) {
             categoryFilter.remove(1);
+        }
+        
+        // Agregar la opción por defecto si no existe
+        if (!categoryFilter.querySelector('option[value=""]')) {
+            const defaultOption = document.createElement('option');
+            defaultOption.value = '';
+            defaultOption.textContent = 'Todas las categorías';
+            categoryFilter.appendChild(defaultOption);
         }
         
         // Agregar las categorías
@@ -174,17 +227,26 @@ function updateCategorySelects(categories) {
                 categoryFilter.value = currentValue;
             }
         }
+        
+        console.log('Filtro de categorías actualizado:', categoryFilter.innerHTML);
     }
     
     // Actualizar el select del formulario de producto
     if (categorySelect) {
+        console.log('Actualizando select de categorías en el formulario');
         // Guardar la selección actual
         const currentValue = categorySelect.value;
         
-        // Limpiar opciones excepto la primera
-        while (categorySelect.options.length > 1) {
-            categorySelect.remove(1);
-        }
+        // Limpiar opciones
+        categorySelect.innerHTML = '';
+        
+        // Agregar la opción por defecto
+        const defaultOption = document.createElement('option');
+        defaultOption.value = '';
+        defaultOption.textContent = 'Selecciona una categoría';
+        defaultOption.disabled = true;
+        defaultOption.selected = true;
+        categorySelect.appendChild(defaultOption);
         
         // Agregar las categorías
         if (categories && categories.length > 0) {
@@ -201,6 +263,189 @@ function updateCategorySelects(categories) {
             }
         }
     }
+    
+    // Actualizar el select del modal de producto si existe
+    const productCategorySelect = document.getElementById('category');
+    if (productCategorySelect) {
+        // Guardar la selección actual
+        const currentValue = productCategorySelect.value;
+        
+        // Limpiar opciones excepto la primera
+        while (productCategorySelect.options.length > 1) {
+            productCategorySelect.remove(1);
+        }
+        
+        // Agregar las categorías
+        if (categories && categories.length > 0) {
+            categories.forEach((category) => {
+                const option = document.createElement('option');
+                option.value = category.id;
+                option.textContent = category.name;
+                productCategorySelect.appendChild(option);
+            });
+            
+            // Restaurar la selección anterior si existe
+            if (currentValue) {
+                productCategorySelect.value = currentValue;
+            }
+        }
+    }
+}
+
+// Función para configurar el menú móvil
+function setupMobileMenu() {
+    if (mobileMenuButton) {
+        mobileMenuButton.addEventListener('click', () => {
+            isMobileMenuOpen = !isMobileMenuOpen;
+            if (mobileMenu) mobileMenu.classList.toggle('open', isMobileMenuOpen);
+            if (mobileMenuOverlay) mobileMenuOverlay.classList.toggle('open', isMobileMenuOpen);
+        });
+    }
+
+    if (closeMobileMenu) {
+        closeMobileMenu.addEventListener('click', () => {
+            isMobileMenuOpen = false;
+            if (mobileMenu) mobileMenu.classList.remove('open');
+            if (mobileMenuOverlay) mobileMenuOverlay.classList.remove('open');
+        });
+    }
+
+    if (mobileMenuOverlay) {
+        mobileMenuOverlay.addEventListener('click', () => {
+            isMobileMenuOpen = false;
+            if (mobileMenu) mobileMenu.classList.remove('open');
+            mobileMenuOverlay.classList.remove('open');
+        });
+    }
+}
+
+// Función para configurar el menú de escritorio
+function setupDesktopMenu() {
+    if (toggleSidebar) {
+        toggleSidebar.addEventListener('click', () => {
+            isDesktopSidebarCollapsed = !isDesktopSidebarCollapsed;
+            if (desktopSidebar) {
+                desktopSidebar.classList.toggle('collapsed', isDesktopSidebarCollapsed);
+            }
+            updateMainContent();
+        });
+    }
+}
+
+// Función para actualizar el contenido principal cuando se alterna el sidebar
+function updateMainContent() {
+    const mainContent = document.getElementById('main-content');
+    if (!mainContent) return;
+
+    if (window.innerWidth >= 768) {
+        if (isDesktopSidebarCollapsed) {
+            mainContent.style.marginLeft = '4rem';
+            mainContent.style.width = 'calc(100% - 4rem)';
+        } else {
+            mainContent.style.marginLeft = '16rem';
+            mainContent.style.width = 'calc(100% - 16rem)';
+        }
+    } else {
+        mainContent.style.marginLeft = '0';
+        mainContent.style.width = '100%';
+    }
+}
+
+// Función para configurar el menú de notificaciones
+function setupNotificationsMenu() {
+    if (!notificationsButton || !notificationsDropdown) return;
+
+    notificationsButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        notificationsDropdown.classList.toggle('hidden');
+    });
+
+    // Cerrar al hacer clic fuera
+    document.addEventListener('click', (e) => {
+        if (!notificationsButton.contains(e.target) && !notificationsDropdown.contains(e.target)) {
+            notificationsDropdown.classList.add('hidden');
+        }
+    });
+}
+
+// Función para cargar el perfil del usuario
+async function loadUserProfile() {
+    try {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        
+        if (error) throw error;
+        if (!user) return;
+
+        // Obtener el perfil completo del usuario
+        const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+
+        if (profileError) throw profileError;
+
+        // Mostrar información del usuario
+        const displayName = profile.full_name || user.email.split('@')[0];
+        const initials = displayName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+        
+        // Actualizar la interfaz de usuario
+        if (userNameElement) userNameElement.textContent = displayName;
+        if (userInitialsElement) userInitialsElement.textContent = initials;
+        if (dropdownUserName) dropdownUserName.textContent = displayName;
+        if (dropdownUserEmail) dropdownUserEmail.textContent = user.email;
+        
+        // Si el usuario tiene una imagen de perfil, mostrarla
+        if (userAvatarElement && profile.avatar_url) {
+            userAvatarElement.src = profile.avatar_url;
+            userAvatarElement.classList.remove('hidden');
+            userInitialsElement.classList.add('hidden');
+        }
+
+    } catch (error) {
+        console.error('Error al cargar el perfil del usuario:', error);
+    }
+}
+
+// Función para configurar el menú de usuario
+function setupUserMenu() {
+    if (!userMenuButton || !userDropdown) return;
+
+    userMenuButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        userDropdown.classList.toggle('hidden');
+    });
+
+    // Cerrar al hacer clic fuera
+    document.addEventListener('click', (e) => {
+        if (!userMenuButton.contains(e.target) && !userDropdown.contains(e.target)) {
+            userDropdown.classList.add('hidden');
+        }
+    });
+}
+
+// Función para manejar el cierre de sesión
+function setupLogout() {
+    const logout = async () => {
+        try {
+            const { error } = await supabase.auth.signOut();
+            if (error) throw error;
+            window.location.href = 'login.html';
+        } catch (error) {
+            console.error('Error al cerrar sesión:', error);
+            showError('Error al cerrar sesión. Por favor, intente de nuevo.');
+        }
+    };
+
+    if (logoutBtn) logoutBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        logout();
+    });
+
+    if (mobileLogoutBtn) mobileLogoutBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        logout();
+    });
 }
 
 // Inicializar la aplicación
@@ -217,6 +462,16 @@ async function initApp() {
         
         console.log('Usuario autenticado, configurando UI...');
         
+        // Configurar menús
+        setupMobileMenu();
+        setupDesktopMenu();
+        setupUserMenu();
+        setupNotificationsMenu();
+        setupLogout();
+        
+        // Cargar perfil del usuario
+        await loadUserProfile();
+        
         // Configurar eventos
         setupEventListeners();
         
@@ -232,6 +487,12 @@ async function initApp() {
         console.log('Cargando productos...');
         await loadProducts();
         
+        // Actualizar el contenido principal
+        updateMainContent();
+        
+        // Manejar cambios de tamaño de ventana
+        window.addEventListener('resize', updateMainContent);
+        
         console.log('Aplicación iniciada correctamente');
     } catch (error) {
         console.error('Error en initApp:', error);
@@ -241,53 +502,68 @@ async function initApp() {
 
 // Configurar event listeners
 function setupEventListeners() {
-    // Menú móvil
-    const mobileMenuBtn = document.getElementById('mobile-menu-button');
-    const sidebar = document.getElementById('sidebar');
-    
-    if (mobileMenuBtn && sidebar) {
-        mobileMenuBtn.addEventListener('click', () => {
-            sidebar.classList.toggle('active');
-        });
-    }
-    
-    // Modal de producto
+    // Botón de agregar producto
     if (addProductBtn) {
-        addProductBtn.addEventListener('click', async () => {
-            try {
-                await loadCategories();
-                openProductModal();
-            } catch (error) {
-                console.error('Error al cargar categorías:', error);
-                showError('Error al cargar las categorías. Por favor, intenta de nuevo.');
-            }
-        });
+        addProductBtn.addEventListener('click', () => openProductModal());
     }
     
+    // Cerrar modal
     if (closeModalBtn) {
-        closeModalBtn.addEventListener('click', () => closeProductModal());
+        closeModalBtn.addEventListener('click', closeProductModal);
     }
     
+    // Cancelar edición
     if (cancelEditBtn) {
-        cancelEditBtn.addEventListener('click', () => closeProductModal());
+        cancelEditBtn.addEventListener('click', closeProductModal);
     }
     
-    // Formulario de producto
+    // Enviar formulario de producto
     if (productForm) {
         productForm.addEventListener('submit', handleProductSubmit);
     }
     
-    // Filtros
+    // Búsqueda
     if (searchInput) {
         searchInput.addEventListener('input', debounce(handleSearch, 300));
     }
     
+    // Filtros
     if (categoryFilter) {
-        categoryFilter.addEventListener('change', handleFilterChange);
+        categoryFilter.addEventListener('change', () => {
+            console.log('Filtro de categoría cambiado a:', categoryFilter.value);
+            currentPage = 1; // Reiniciar a la primera página
+            loadProducts();
+        });
     }
     
     if (statusFilter) {
-        statusFilter.addEventListener('change', handleFilterChange);
+        statusFilter.addEventListener('change', () => {
+            console.log('Filtro de estado cambiado a:', statusFilter.value);
+            currentPage = 1; // Reiniciar a la primera página
+            loadProducts();
+        });
+    }
+    
+    // Paginación
+    if (prevPageBtn) {
+        prevPageBtn.addEventListener('click', () => changePage(currentPage - 1));
+    }
+    
+    if (nextPageBtn) {
+        nextPageBtn.addEventListener('click', () => changePage(currentPage + 1));
+    }
+    
+    if (currentPageInput) {
+        currentPageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const page = parseInt(e.target.value);
+                if (page >= 1 && page <= totalPages) {
+                    changePage(page);
+                } else {
+                    e.target.value = currentPage;
+                }
+            }
+        });
     }
     
     // Delegación de eventos para los botones de editar y eliminar
@@ -395,10 +671,9 @@ async function loadProducts() {
         
         // Aplicar filtros
         const searchTerm = searchInput ? searchInput.value.trim() : '';
-        const category = categoryFilter ? categoryFilter.value : '';
-        const status = statusFilter ? statusFilter.value : '';
+        const category = categoryFilter && categoryFilter.value ? categoryFilter.value : '';
         
-        console.log('Filtros aplicados:', { searchTerm, category, status });
+        console.log('Filtros aplicados (filtro de estado desactivado temporalmente):', { searchTerm, category });
         
         if (searchTerm) {
             query = query.or(`name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`);
@@ -408,13 +683,16 @@ async function loadProducts() {
             query = query.eq('category_id', category);
         }
         
-        if (status) {
-            if (status === 'out-of-stock') {
-                query = query.eq('stock', 0);
-            } else {
-                query = query.eq('status', status === 'active' ? 'active' : 'inactive');
-            }
-        }
+        // Filtro de estado desactivado temporalmente
+        // if (status) {
+        //     if (status.toLowerCase() === 'out-of-stock') {
+        //         query = query.eq('stock', 0);
+        //     } else if (status.toLowerCase() === 'activo') {
+        //         query = query.eq('status', 'active');
+        //     } else if (status.toLowerCase() === 'inactivo') {
+        //         query = query.eq('status', 'inactive');
+        //     }
+        // }
         
         // Aplicar paginación
         const from = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -447,11 +725,17 @@ async function loadProducts() {
             return;
         }
         
-        // Añadir información de categorías a los productos
-        const productsWithCategories = data.map(product => ({
-            ...product,
-            category: product.category_id ? categoriesMap[product.category_id] : null
-        }));
+        // Añadir información de categorías a los productos y asegurar que tengan un estado válido
+        const productsWithCategories = data.map(product => {
+            // Asegurar que el producto tenga un estado válido
+            const status = product.status || 'active'; // Valor por defecto si no tiene estado
+            
+            return {
+                ...product,
+                status: status, // Asegurar que siempre tenga un estado
+                category: product.category_id ? categoriesMap[product.category_id] : null
+            };
+        });
         
         console.log('Productos encontrados con categorías:', productsWithCategories);
         renderProducts(productsWithCategories);
@@ -515,6 +799,8 @@ function renderProducts(products) {
                 const imageUrl = product.image_url || '/images/placeholder-product.png';
                 const productName = product.name || 'Sin nombre';
                 const productSku = product.sku || 'N/A';
+                const discountPercentage = parseFloat(product.discount_percentage) || 0;
+                const hasDiscount = discountPercentage > 0;
                 
                 // Crear la fila para el producto
                 const row = document.createElement('tr');
@@ -530,7 +816,14 @@ function renderProducts(products) {
                                 >
                             </div>
                             <div class="ml-4">
-                                <div class="text-sm font-medium text-gray-900">${productName}</div>
+                                <div class="flex items-center">
+                                    <div class="text-sm font-medium text-gray-900">${productName}</div>
+                                    ${hasDiscount ? `
+                                        <span class="ml-2 px-2 py-0.5 text-xs font-semibold bg-green-100 text-green-800 rounded-full">
+                                            ${discountPercentage}% OFF
+                                        </span>
+                                    ` : ''}
+                                </div>
                                 <div class="text-sm text-gray-500">${productSku}</div>
                             </div>
                         </div>
@@ -605,10 +898,13 @@ async function openProductModal(product = null) {
         const productIdInput = document.getElementById('product-id');
         const productNameInput = document.getElementById('name');
         const productCategoryInput = document.getElementById('categories');
-        const productPriceInput = document.getElementById('price');
+        const productBasePriceInput = document.getElementById('base_price');
         const productStockInput = document.getElementById('stock');
+        const productTaxRateInput = document.getElementById('tax_rate');
+        const productDiscountInput = document.getElementById('discount_percentage');
         const productStatusInput = document.getElementById('status');
         const productDescriptionInput = document.getElementById('description');
+        const productPriceInput = document.getElementById('price');
         
         // Guardar el ID de la categoría antes de cargar las categorías
         const categoryId = product ? (product.categories_id || '') : '';
@@ -629,8 +925,63 @@ async function openProductModal(product = null) {
                     productCategoryInput.value = categoryId;
                 }, 100);
             }
-            productPriceInput.value = product.price || '';
-            productStockInput.value = product.stock || '';
+            // Función para limpiar el formato numérico
+            const cleanNumber = (value) => {
+                if (typeof value === 'string') {
+                    // Eliminar puntos de miles y reemplazar coma decimal por punto
+                    return parseFloat(value.replace(/\./g, '').replace(',', '.'));
+                }
+                return parseFloat(value) || 0;
+            };
+            
+            // Obtener y limpiar los valores numéricos
+            const taxRate = cleanNumber(product.tax_rate || '19.00');
+            const discountPercentage = cleanNumber(product.discount_percentage || '0.00');
+            const finalPrice = cleanNumber(product.price || '0');
+            
+            console.log('Valores originales:', { 
+                taxRate, 
+                discountPercentage, 
+                finalPrice,
+                rawTaxRate: product.tax_rate,
+                rawDiscount: product.discount_percentage,
+                rawPrice: product.price
+            });
+            
+            // Calcular el precio base a partir del precio final, el descuento y el IVA
+            // Fórmula: precio_base = precio_final / (1 + (tasa_iva / 100)) / (1 - (descuento / 100))
+            let basePrice = finalPrice;
+            
+            // Si hay IVA, dividir por (1 + tasa_iva/100)
+            if (taxRate > 0) {
+                basePrice = basePrice / (1 + (taxRate / 100));
+            }
+            
+            // Si hay descuento, dividir por (1 - descuento/100)
+            if (discountPercentage > 0) {
+                basePrice = basePrice / (1 - (discountPercentage / 100));
+            }
+            
+            console.log('Valores calculados:', { basePrice, taxRate, discountPercentage });
+            
+            // Función para formatear números sin ceros adicionales
+            const formatNumber = (num, decimals = 2) => {
+                // Redondear a 2 decimales
+                const rounded = Math.round(num * Math.pow(10, decimals)) / Math.pow(10, decimals);
+                // Convertir a string y eliminar ceros innecesarios
+                return rounded.toString().replace(/(\.\d*?[1-9])0+$|(\.)0+$/, '$1$2').replace(/\.$/, '');
+            };
+            
+            // Establecer los valores en el formulario
+            productBasePriceInput.value = formatNumber(basePrice, 2);
+            productTaxRateInput.value = formatNumber(taxRate, 2);
+            productDiscountInput.value = formatNumber(discountPercentage, 2);
+            productStockInput.value = product.stock ? formatNumber(parseInt(product.stock), 0) : '';
+            
+            // Calcular automáticamente el precio final
+            setTimeout(() => {
+                calculateFinalPrice();
+            }, 100);
             
             // Establecer el proveedor si existe
             if (product.supplier_id) {
@@ -772,12 +1123,19 @@ async function handleProductSubmit(e) {
         submitButton.disabled = true;
         submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
         
+        // Calcular el precio final antes de obtener los valores
+        const finalPrice = calculateFinalPrice();
+        
         // Obtener los valores directamente de los elementos
         const name = document.getElementById('name')?.value?.trim();
         const category = document.getElementById('categories')?.value?.trim();
-        const price = document.getElementById('price')?.value?.trim();
+        const price = finalPrice; // Usar el precio final calculado
         const stock = document.getElementById('stock')?.value?.trim();
         const imageInput = document.getElementById('image');
+        const discountPercentage = document.getElementById('discount_percentage')?.value?.trim() || '0';
+        const taxRate = document.getElementById('tax_rate')?.value?.trim() || '19.00';
+        
+        console.log('Precio final a guardar:', price);
         
         // Validar campos requeridos
         if (!name) {
@@ -839,14 +1197,14 @@ async function handleProductSubmit(e) {
             store_id: profile.store_id,
             name: name,
             description: document.getElementById('description')?.value,
-            price: parseFloat(price),
+            price: parseFloat(price), // Precio final ya con descuento e IVA aplicados
             stock: parseInt(stock),
             sku: document.getElementById('sku')?.value,
             category_id: category,
             supplier_id: supplierId, // Incluir el ID del proveedor
             status: 'Activo',
-            tax_rate: parseFloat(document.getElementById('tax_rate')?.value || 0),
-            discount_percentage: parseFloat(document.getElementById('discount_percentage')?.value || 0)
+            tax_rate: parseFloat(taxRate),
+            discount_percentage: parseFloat(discountPercentage)
         };
 
         // Si estamos editando un producto existente, obtener los datos actuales
@@ -1276,3 +1634,4 @@ document.addEventListener('DOMContentLoaded', async () => {
 window.editProduct = editProduct;
 window.deleteProduct = deleteProduct;
 window.changePage = changePage;
+window.toggleNotificationsMenu = setupNotificationsMenu;

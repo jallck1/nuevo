@@ -1,6 +1,10 @@
 // Estado de la aplicación
 console.log('Cargando reportes.js...');
 
+// Elementos del DOM para el menú de usuario y notificaciones
+let userMenuButton, userDropdown, notificationsButton, notificationsDropdown, notificationBadge;
+let userNameElement, userInitials, userAvatar, dropdownUserName, dropdownUserEmail, logoutBtn;
+
 // Constantes para la gestión de créditos
 const CREDIT_STATUS = {
     AL_DIA: 'al_dia',
@@ -2723,6 +2727,66 @@ async function switchTab(tabId) {
     }
 }
 
+// Función para manejar el menú desplegable en móvil
+function setupMobileMenu() {
+    const menuToggle = document.getElementById('menu-toggle');
+    const closeSidebar = document.getElementById('close-sidebar');
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    const mainContent = document.querySelector('.main-content');
+
+    function openSidebar() {
+        sidebar.classList.add('active');
+        overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeSidebarHandler() {
+        sidebar.classList.remove('active');
+        overlay.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    // Abrir menú
+    if (menuToggle) {
+        menuToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            openSidebar();
+        });
+    }
+
+    // Cerrar menú con el botón
+    if (closeSidebar) {
+        closeSidebar.addEventListener('click', closeSidebarHandler);
+    }
+
+    // Cerrar menú haciendo clic fuera
+    if (overlay) {
+        overlay.addEventListener('click', closeSidebarHandler);
+    }
+
+    // Cerrar menú al hacer clic en un enlace del menú
+    const menuLinks = document.querySelectorAll('.sidebar a');
+    menuLinks.forEach(link => {
+        link.addEventListener('click', () => {
+            if (window.innerWidth < 768) {
+                closeSidebarHandler();
+            }
+        });
+    });
+
+    // Ajustar el menú al cambiar el tamaño de la ventana
+    function handleResize() {
+        if (window.innerWidth >= 768) {
+            sidebar.classList.remove('active');
+            overlay.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+    }
+
+    window.addEventListener('resize', handleResize);
+}
+
 // Función para inicializar la aplicación
 async function initApp() {
     try {
@@ -2735,11 +2799,14 @@ async function initApp() {
         console.log('Inicializando elementos del DOM...');
         initElements();
         
+        // Configurar menú móvil
+        setupMobileMenu();
+        
         // Verificar autenticación
         const { data: { session } } = await window.supabase.auth.getSession();
         if (!session) {
             console.log('No hay sesión activa, redirigiendo a login...');
-            window.location.href = '/login.html';
+            window.location.href = 'login.html';
             return;
         }
         
@@ -3361,9 +3428,149 @@ async function cargarPagos() {
     }
 }
 
+// Función para cargar el perfil del usuario
+async function loadUserProfile() {
+    try {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        
+        if (error) throw error;
+        if (!user) return;
+
+        // Obtener el perfil completo del usuario
+        const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+
+        if (profileError) throw profileError;
+
+        // Mostrar información del usuario
+        const displayName = profile.full_name || user.email.split('@')[0];
+        const initials = displayName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+        
+        // Actualizar la interfaz de usuario
+        if (userNameElement) userNameElement.textContent = displayName;
+        if (userInitials) userInitials.textContent = initials;
+        if (dropdownUserName) dropdownUserName.textContent = displayName;
+        if (dropdownUserEmail) dropdownUserEmail.textContent = user.email;
+        
+        // Si el usuario tiene una imagen de perfil, mostrarla
+        if (userAvatar && profile.avatar_url) {
+            userAvatar.src = profile.avatar_url;
+            userAvatar.classList.remove('hidden');
+            userInitials.classList.add('hidden');
+        }
+
+    } catch (error) {
+        console.error('Error al cargar el perfil del usuario:', error);
+    }
+}
+
+// Función para alternar el menú de usuario
+function toggleUserMenu() {
+    if (userDropdown) {
+        userDropdown.classList.toggle('hidden');
+        // Cerrar menú de notificaciones si está abierto
+        if (notificationsDropdown && !notificationsDropdown.classList.contains('hidden')) {
+            notificationsDropdown.classList.add('hidden');
+        }
+    }
+}
+
+// Función para alternar el menú de notificaciones
+function toggleNotificationsMenu() {
+    if (notificationsDropdown) {
+        notificationsDropdown.classList.toggle('hidden');
+        // Cerrar menú de usuario si está abierto
+        if (userDropdown && !userDropdown.classList.contains('hidden')) {
+            userDropdown.classList.add('hidden');
+        }
+    }
+}
+
+// Función para configurar el menú de notificaciones
+function setupNotificationsMenu() {
+    if (!notificationsButton || !notificationsDropdown) return;
+
+    notificationsButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleNotificationsMenu();
+    });
+
+    // Cerrar al hacer clic fuera
+    document.addEventListener('click', (e) => {
+        if (!notificationsButton.contains(e.target) && !notificationsDropdown.contains(e.target)) {
+            notificationsDropdown.classList.add('hidden');
+        }
+    });
+}
+
+// Función para configurar el menú de usuario
+function setupUserMenu() {
+    if (!userMenuButton || !userDropdown) return;
+
+    userMenuButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleUserMenu();
+    });
+
+    // Cerrar al hacer clic fuera
+    document.addEventListener('click', (e) => {
+        if (!userMenuButton.contains(e.target) && !userDropdown.contains(e.target)) {
+            userDropdown.classList.add('hidden');
+        }
+    });
+}
+
+// Función para configurar el cierre de sesión
+function setupLogout() {
+    if (!logoutBtn) return;
+    
+    logoutBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        try {
+            const { error } = await supabase.auth.signOut();
+            if (error) throw error;
+            window.location.href = 'login.html';
+        } catch (error) {
+            console.error('Error al cerrar sesión:', error);
+            showError('Error al cerrar sesión. Por favor, intente de nuevo.');
+        }
+    });
+}
+
+// Inicializar elementos del menú de usuario y notificaciones
+function initUserElements() {
+    // Obtener referencias a los elementos del DOM
+    userMenuButton = document.getElementById('user-menu-button');
+    userDropdown = document.getElementById('user-dropdown');
+    notificationsButton = document.getElementById('notifications-button');
+    notificationsDropdown = document.getElementById('notifications-dropdown');
+    notificationBadge = document.getElementById('notification-badge');
+    
+    // Elementos del perfil de usuario
+    userNameElement = document.getElementById('user-name');
+    userInitials = document.getElementById('user-initials');
+    userAvatar = document.getElementById('user-avatar');
+    dropdownUserName = document.getElementById('dropdown-user-name');
+    dropdownUserEmail = document.getElementById('dropdown-user-email');
+    logoutBtn = document.getElementById('logout-btn');
+    
+    // Configurar menús
+    setupUserMenu();
+    setupNotificationsMenu();
+    setupLogout();
+    
+    // Cargar perfil del usuario
+    loadUserProfile();
+}
+
 // Inicializar la aplicación cuando el DOM esté completamente cargado
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function() {
+        // Inicializar elementos del menú de usuario
+        initUserElements();
         // Configurar evento de exportación de deudores
         const exportBtn = document.getElementById('export-deudores');
         if (exportBtn) {

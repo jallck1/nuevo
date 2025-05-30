@@ -351,6 +351,20 @@
 </script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="js/carrito.js"></script>
+<script>
+  // Inicializar el carrito cuando el DOM esté listo
+  document.addEventListener('DOMContentLoaded', function() {
+    if (window.cartModule && typeof window.cartModule.init === 'function') {
+      window.cartModule.init();
+      // Forzar actualización del contador del carrito
+      setTimeout(() => {
+        if (window.cartModule && typeof window.cartModule.updateCartDisplay === 'function') {
+          window.cartModule.updateCartDisplay();
+        }
+      }, 500);
+    }
+  });
+</script>
 <script src="js/catalogo_fix.js"></script>
 </body>
 </html>

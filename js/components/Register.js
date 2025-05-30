@@ -1,6 +1,7 @@
 import { ROUTES } from '../config/routes.js';
 import { AuthService } from '../services/auth.service.js';
 import { showNotification } from '../utils/notifications.js';
+import { supabase } from '../config/supabase.js';
 
 export async function renderRegister() {
   const app = document.getElementById('app');
@@ -14,10 +15,24 @@ export async function renderRegister() {
     return;
   }
 
+  // Cargar tiendas disponibles
+  const { data: stores, error } = await supabase
+    .from('stores')
+    .select('id, name')
+    .order('name', { ascending: true });
+
+  if (error) {
+    console.error('Error cargando tiendas:', error);
+    showNotification({
+      type: 'error',
+      message: 'Error al cargar las tiendas disponibles. Por favor, recarga la página.'
+    });
+  }
+
   app.innerHTML = `
     <div class="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div class="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">Crear una cuenta</h2>
+        <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">Registro de Comprador</h2>
         <p class="mt-2 text-center text-sm text-gray-600">
           ¿Ya tienes una cuenta? 
           <a href="${ROUTES.LOGIN}" data-route class="font-medium text-blue-600 hover:text-blue-500">
@@ -30,52 +45,79 @@ export async function renderRegister() {
         <div class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
           <form id="registerForm" class="space-y-6">
             <div>
-              <label for="name" class="block text-sm font-medium text-gray-700">Nombre completo</label>
+              <label for="name" class="block text-sm font-medium text-gray-700">Nombre completo <span class="text-red-500">*</span></label>
               <div class="mt-1">
                 <input id="name" name="name" type="text" required 
-                  class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                  class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  placeholder="Ingresa tu nombre completo">
               </div>
             </div>
 
             <div>
-              <label for="email" class="block text-sm font-medium text-gray-700">Correo electrónico</label>
+              <label for="email" class="block text-sm font-medium text-gray-700">Correo electrónico <span class="text-red-500">*</span></label>
               <div class="mt-1">
                 <input id="email" name="email" type="email" autocomplete="email" required
-                  class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                  class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  placeholder="correo@ejemplo.com">
               </div>
             </div>
 
             <div>
-              <label for="password" class="block text-sm font-medium text-gray-700">Contraseña</label>
+              <label for="password" class="block text-sm font-medium text-gray-700">Contraseña <span class="text-red-500">*</span></label>
               <div class="mt-1">
                 <input id="password" name="password" type="password" autocomplete="new-password" required
-                  class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                  class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  placeholder="••••••••">
                 <p class="mt-2 text-sm text-gray-500">
-                  Mínimo 8 caracteres, incluyendo mayúsculas, minúsculas y números.
+                  Mínimo 6 caracteres
                 </p>
               </div>
             </div>
 
             <div>
-              <label for="confirmPassword" class="block text-sm font-medium text-gray-700">Confirmar contraseña</label>
+              <label for="confirmPassword" class="block text-sm font-medium text-gray-700">Confirmar contraseña <span class="text-red-500">*</span></label>
               <div class="mt-1">
                 <input id="confirmPassword" name="confirmPassword" type="password" autocomplete="new-password" required
-                  class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                  class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  placeholder="••••••••">
               </div>
             </div>
 
-            <div class="flex items-center">
-              <input id="terms" name="terms" type="checkbox" required
-                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-              <label for="terms" class="ml-2 block text-sm text-gray-900">
-                Acepto los <a href="${ROUTES.TERMS}" data-route class="text-blue-600 hover:text-blue-500">Términos de servicio</a> y la <a href="${ROUTES.PRIVACY}" data-route class="text-blue-600 hover:text-blue-500">Política de privacidad</a>
-              </label>
+            <div>
+              <label for="store_id" class="block text-sm font-medium text-gray-700">Selecciona tu tienda <span class="text-red-500">*</span></label>
+              <div class="mt-1">
+                <select id="store_id" name="store_id" required
+                  class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                  <option value="">Selecciona una tienda</option>
+                  ${stores ? stores.map(store => 
+                    `<option value="${store.id}">${store.name}</option>`
+                  ).join('') : ''}
+                </select>
+              </div>
+            </div>
+
+            <div class="flex items-start">
+              <div class="flex items-center h-5">
+                <input id="terms" name="terms" type="checkbox" required
+                  class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+              </div>
+              <div class="ml-3 text-sm">
+                <label for="terms" class="text-gray-700">
+                  Acepto los <a href="${ROUTES.TERMS}" data-route class="font-medium text-blue-600 hover:text-blue-500">Términos de servicio</a> y la <a href="${ROUTES.PRIVACY}" data-route class="font-medium text-blue-600 hover:text-blue-500">Política de privacidad</a> <span class="text-red-500">*</span>
+                </label>
+              </div>
             </div>
 
             <div>
-              <button type="submit"
-                class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                Crear cuenta
+              <button type="submit" id="submitBtn"
+                class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
+                <span class="flex items-center">
+                  <span id="btnText">Crear cuenta</span>
+                  <svg id="spinner" class="hidden ml-2 h-4 w-4 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                </span>
               </button>
             </div>
           </form>
@@ -122,12 +164,45 @@ export async function renderRegister() {
 async function handleRegister(e) {
   e.preventDefault();
   
-  const name = document.getElementById('name').value;
-  const email = document.getElementById('email').value;
+  const submitBtn = document.getElementById('submitBtn');
+  const btnText = document.getElementById('btnText');
+  const spinner = document.getElementById('spinner');
+  
+  // Obtener valores del formulario
+  const name = document.getElementById('name').value.trim();
+  const email = document.getElementById('email').value.trim().toLowerCase();
   const password = document.getElementById('password').value;
   const confirmPassword = document.getElementById('confirmPassword').value;
+  const storeId = document.getElementById('store_id').value;
   
-  // Validaciones
+  // Validaciones del frontend
+  if (!name || !email || !password || !confirmPassword || !storeId) {
+    showNotification({
+      type: 'error',
+      message: 'Todos los campos son obligatorios.'
+    });
+    return;
+  }
+  
+  // Validar formato de correo
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    showNotification({
+      type: 'error',
+      message: 'Por favor, ingresa un correo electrónico válido.'
+    });
+    return;
+  }
+  
+  // Validar contraseña
+  if (password.length < 6) {
+    showNotification({
+      type: 'error',
+      message: 'La contraseña debe tener al menos 6 caracteres.'
+    });
+    return;
+  }
+  
   if (password !== confirmPassword) {
     showNotification({
       type: 'error',
@@ -136,37 +211,88 @@ async function handleRegister(e) {
     return;
   }
   
-  if (password.length < 8) {
-    showNotification({
-      type: 'error',
-      message: 'La contraseña debe tener al menos 8 caracteres.'
-    });
-    return;
-  }
+  // Mostrar loading
+  submitBtn.disabled = true;
+  btnText.textContent = 'Creando cuenta...';
+  spinner.classList.remove('hidden');
   
   try {
-    const { user, error } = await AuthService.register({
-      name,
+    // 1. Registrar al usuario en Auth
+    const { data: authData, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
-      role: 'buyer' // Por defecto, los nuevos usuarios son compradores
+      options: {
+        data: {
+          name,
+          role: 'buyer',
+          store_id: storeId
+        },
+        emailRedirectTo: window.location.origin + ROUTES.LOGIN
+      }
     });
     
-    if (error) throw error;
+    if (signUpError) throw signUpError;
     
-    showNotification({
-      type: 'success',
-      message: '¡Cuenta creada con éxito! Por favor verifica tu correo electrónico.'
-    });
+    // 2. Crear perfil en la tabla profiles
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .insert([{
+        id: authData.user.id,
+        email,
+        name,
+        role: 'buyer',
+        store_id: storeId,
+        status: 'Activo',
+        credit_assigned: 0.00,
+        credit_used: 0.00,
+        join_date: new Date().toISOString(),
+        last_sign_in_at: new Date().toISOString()
+      }]);
+      
+    if (profileError) throw profileError;
     
-    // Redirigir a la página de verificación
-    window.navigateTo(ROUTES.LOGIN);
+    // 3. Cerrar sesión automáticamente después del registro exitoso
+    try {
+      await supabase.auth.signOut();
+      
+      // Mostrar mensaje de éxito
+      showNotification({
+        type: 'success',
+        message: '¡Cuenta creada con éxito! Por favor verifica tu correo electrónico para activar tu cuenta e inicia sesión.'
+      });
+      
+      // Redirigir a la página de login
+      window.navigateTo(ROUTES.LOGIN);
+      
+    } catch (signOutError) {
+      console.error('Error al cerrar sesión después del registro:', signOutError);
+      // Aún así redirigir al login aunque falle el cierre de sesión
+      window.location.href = ROUTES.LOGIN;
+    }
     
   } catch (error) {
+    console.error('Error en el registro:', error);
+    
+    let errorMessage = 'Error al crear la cuenta. Por favor, inténtalo de nuevo.';
+    
+    if (error.message.includes('already registered')) {
+      errorMessage = 'Este correo electrónico ya está registrado. Por favor, inicia sesión o utiliza otro correo.';
+    } else if (error.message.includes('password')) {
+      errorMessage = 'La contraseña no cumple con los requisitos mínimos.';
+    } else if (error.message.includes('email')) {
+      errorMessage = 'El formato del correo electrónico no es válido.';
+    }
+    
     showNotification({
       type: 'error',
-      message: error.message || 'Error al crear la cuenta. Por favor, inténtalo de nuevo.'
+      message: errorMessage
     });
+    
+  } finally {
+    // Restaurar el botón
+    submitBtn.disabled = false;
+    btnText.textContent = 'Crear cuenta';
+    spinner.classList.add('hidden');
   }
 }
 
