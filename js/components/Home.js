@@ -1,6 +1,5 @@
-import { ROUTES } from '../config/routes.js';
+import { ROUTES, getDefaultRoute } from '../config/routes.js';
 import { AuthService } from '../services/auth.service.js';
-import { getDefaultRoute } from '../config/routes.js';
 
 // Smooth scroll function
 function smoothScroll(target) {
@@ -207,191 +206,50 @@ export async function renderHome() {
           </div>
         </div>
       </div>
-
-      <!-- Contact Section -->
-      <div id="contact" class="bg-white py-20">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="text-center mb-16">
-            <h2 class="text-3xl font-extrabold text-gray-900 sm:text-4xl">Contáctanos</h2>
-            <p class="mt-4 text-xl text-gray-600 max-w-2xl mx-auto">
-              ¿Tienes alguna pregunta? Estamos aquí para ayudarte. Completa el formulario y nos pondremos en contacto contigo lo antes posible.
-            </p>
-          </div>
-          
-          <div class="mt-10">
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
-              <!-- Contact Information -->
-              <div class="space-y-8">
-                <div>
-                  <h3 class="text-lg font-medium text-gray-900">Ubicación</h3>
-                  <p class="mt-2 text-gray-600">Av. Principal 1234, Ciudad, País</p>
-                </div>
-                
-                <div>
-                  <h3 class="text-lg font-medium text-gray-900">Teléfono</h3>
-                  <p class="mt-2 text-gray-600">+1 234 567 890</p>
-                  <p class="text-sm text-gray-500">Lun-Vie: 9:00 - 18:00</p>
-                </div>
-                
-                <div>
-                  <h3 class="text-lg font-medium text-gray-900">Correo Electrónico</h3>
-                  <p class="mt-2 text-gray-600">soporte@creditofacil.com</p>
-                  <p class="text-sm text-gray-500">Respuesta en menos de 24 horas</p>
-                </div>
-                
-                <div class="pt-4
-                border-t border-gray-200">
-                  <h3 class="text-lg font-medium text-gray-900">Síguenos</h3>
-                  <div class="flex space-x-6 mt-4">
-                    <a href="#" class="text-gray-400 hover:text-blue-600">
-                      <span class="sr-only">Facebook</span>
-                      <i class="fab fa-facebook-f text-xl"></i>
-                    </a>
-                    <a href="#" class="text-gray-400 hover:text-blue-400">
-                      <span class="sr-only">Twitter</span>
-                      <i class="fab fa-twitter text-xl"></i>
-                    </a>
-                    <a href="#" class="text-gray-400 hover:text-pink-500">
-                      <span class="sr-only">Instagram</span>
-                      <i class="fab fa-instagram text-xl"></i>
-                    </a>
-                    <a href="#" class="text-gray-400 hover:text-blue-700">
-                      <span class="sr-only">LinkedIn</span>
-                      <i class="fab fa-linkedin-in text-xl"></i>
-                    </a>
-                  </div>
-                </div>
-              </div>
-              
-              <!-- Contact Form -->
-              <div class="bg-gray-50 p-8 rounded-lg shadow-sm">
-                <form class="space-y-6">
-                  <div>
-                    <label for="full-name" class="block text-sm font-medium text-gray-700">Nombre completo</label>
-                    <div class="mt-1">
-                      <input type="text" name="full-name" id="full-name" autocomplete="name" class="py-3 px-4 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Tu nombre">
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <label for="email" class="block text-sm font-medium text-gray-700">Correo electrónico</label>
-                    <div class="mt-1">
-                      <input id="email" name="email" type="email" autocomplete="email" class="py-3 px-4 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="tucorreo@ejemplo.com">
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <label for="subject" class="block text-sm font-medium text-gray-700">Asunto</label>
-                    <div class="mt-1">
-                      <input type="text" name="subject" id="subject" class="py-3 px-4 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="¿Cómo podemos ayudarte?">
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <label for="message" class="block text-sm font-medium text-gray-700">Mensaje</label>
-                    <div class="mt-1">
-                      <textarea id="message" name="message" rows="4" class="py-3 px-4 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Escribe tu mensaje aquí..."></textarea>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                      Enviar mensaje
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- CTA Section -->
-      <div class="bg-blue-600 text-white py-16">
-        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 class="text-3xl font-bold mb-6">¿Listo para comenzar?</h2>
-          <p class="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-            Únete a miles de negocios que ya están simplificando su gestión de créditos con nuestra plataforma.
-          </p>
-          <div class="flex flex-col sm:flex-row justify-center gap-4">
-            <a href="${ROUTES.REGISTER}" data-route 
-               class="px-8 py-4 bg-white text-blue-700 rounded-xl font-semibold text-lg hover:bg-blue-50 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg">
-              Crear cuenta gratis
-            </a>
-            <a href="#contact" 
-               class="px-8 py-4 border-2 border-white text-white rounded-xl font-semibold text-lg hover:bg-white hover:bg-opacity-10 transition-all duration-300">
-              Hablar con ventas
-            </a>
-          </div>
-        </div>
-      </div>
-
-      <!-- Footer -->
-      <footer class="bg-gray-900 text-white pt-16 pb-8">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <!-- Company Info -->
-            <div class="space-y-4">
-              <h3 class="text-xl font-bold">CréditoFácil</h3>
-              <p class="text-gray-400">
-                La mejor solución para la gestión de créditos de tu negocio. Simple, segura y eficiente.
-              </p>
-            </div>
-            
-            <!-- Quick Links -->
-            <div>
-              <h4 class="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-4">Enlaces Rápidos</h4>
-              <ul class="space-y-2">
-                <li><a href="${ROUTES.HOME}" data-route class="text-gray-400 hover:text-white transition-colors">Inicio</a></li>
-                <li><a href="#features" class="text-gray-400 hover:text-white transition-colors">Características</a></li>
-                <li><a href="#how-it-works" class="text-gray-400 hover:text-white transition-colors">¿Cómo funciona?</a></li>
-                <li><a href="#testimonials" class="text-gray-400 hover:text-white transition-colors">Testimonios</a></li>
-                <li><a href="#contact" class="text-gray-400 hover:text-white transition-colors">Contacto</a></li>
-              </ul>
-            </div>
-            
-            <!-- Resources -->
-            <div>
-              <h4 class="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-4">Recursos</h4>
-              <ul class="space-y-2">
-                <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Blog</a></li>
-                <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Centro de ayuda</a></li>
-                <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Tutoriales</a></li>
-                <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Preguntas frecuentes</a></li>
-                <li><a href="#" class="text-gray-400 hover:text-white transition-colors">API para desarrolladores</a></li>
-              </ul>
-            </div>
-            
-            <!-- Newsletter -->
-            <div>
-              <h4 class="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-4">Boletín informativo</h4>
-              <p class="text-gray-400 mb-4">Suscríbete para recibir las últimas noticias y actualizaciones.</p>
-              <form class="space-y-3">
-                <div>
-                  <label for="email-newsletter" class="sr-only">Tu correo electrónico</label>
-                  <input type="email" id="email-newsletter" class="py-2 px-3 w-full rounded-md text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Tu correo electrónico">
-                </div>
-                <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">
-                  Suscribirse
-                </button>
-              </form>
-            </div>
-          </div>
-          
-          <div class="mt-12 pt-8 border-t border-gray-800">
-            <p class="text-center text-gray-400 text-sm">
-              &copy; ${new Date().getFullYear()} CréditoFácil. Todos los derechos reservados.
-            </p>
-          </div>
-        </div>
-      </footer>
     </div>
   `;
+  
+  // Agregar eventos después de renderizar
+  document.querySelectorAll('a[data-route]').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const path = link.getAttribute('href');
+      window.navigateTo(path);
+    });
+  });
 
-  // Add event listeners for mobile menu
+  // Get mobile menu elements
   const mobileMenuButton = document.getElementById('mobile-menu-button');
   const mobileMenu = document.getElementById('mobile-menu');
   const navLinks = document.querySelectorAll('a[href^="#"]');
+  
+  // CTA Section HTML
+  const ctaSection = `
+    <div class="bg-blue-600 text-white py-16">
+      <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <h2 class="text-3xl font-bold mb-6">¿Listo para comenzar?</h2>
+        <p class="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
+          Únete a miles de negocios que ya están simplificando su gestión de créditos con nuestra plataforma.
+        </p>
+        <div class="flex flex-col sm:flex-row justify-center gap-4">
+          <a href="${ROUTES.REGISTER}" data-route 
+             class="px-8 py-4 bg-white text-blue-700 rounded-xl font-semibold text-lg hover:bg-blue-50 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg">
+            Crear cuenta gratis
+          </a>
+          <a href="#contact" 
+             class="px-8 py-4 border-2 border-white text-white rounded-xl font-semibold text-lg hover:bg-white hover:bg-opacity-10 transition-all duration-300">
+            Hablar con ventas
+          </a>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  // Add CTA section to the app
+  const appElement = document.getElementById('app');
+  if (appElement) {
+    appElement.insertAdjacentHTML('beforeend', ctaSection);
+  }
 
   // Mobile menu toggle
   if (mobileMenuButton && mobileMenu) {

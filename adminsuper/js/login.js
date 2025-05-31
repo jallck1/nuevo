@@ -23,6 +23,16 @@ const loginForm = document.getElementById('loginForm');
 const errorMessage = document.getElementById('errorMessage');
 const loginButton = document.querySelector('button[type="submit"]');
 
+// Variables para control de intentos
+let failedAttempts = 0;
+const MAX_ATTEMPTS = 3;
+const BLOCK_TIME_MS = 30000; // 30 segundos
+let blockUntil = 0;
+let blockTimer = null;
+let securityModalTimer = null;
+let securityModalTimeLeft = 0;
+let isSecurityModalActive = false;
+
 // Función para actualizar la hora (solo si el elemento existe)
 function updateTime() {
     const timeElement = document.getElementById('currentTime');
@@ -525,6 +535,135 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
+// Función para verificar si la cuenta está bloqueada
+function isAccountBlocked() {
+    const now = Date.now();
+    if (now < blockUntil) {
+        return true;
+    }
+    // Si el tiempo de bloqueo ya pasó, reiniciar contador
+    if (failedAttempts >= MAX_ATTEMPTS) {
+        failedAttempts = 0;
+    }
+    return false;
+}
+
+// Función para bloquear temporalmente el inicio de sesión
+function blockLogin() {
+    const now = Date.now();
+    blockUntil = now + BLOCK_TIME_MS;
+    
+    // Actualizar la interfaz
+    updateLoginButtonState();
+    
+    // Configurar temporizador para actualizar la interfaz
+    if (blockTimer) clearInterval(blockTimer);
+    blockTimer = setInterval(updateLoginButtonState, 1000);
+    
+    // Limpiar el temporizador después del tiempo de bloqueo
+    setTimeout(() => {
+        clearInterval(blockTimer);
+        blockTimer = null;
+        
+        // No reiniciar el contador si el modal de seguridad está activo
+        if (!isSecurityModalActive) {
+            failedAttempts = 0;
+        }
+        
+        updateLoginButtonState();
+    }, BLOCK_TIME_MS);
+}
+
+// Función para mostrar el modal de seguridad
+function showSecurityModal() {
+    const modal = document.getElementById('securityAlertModal');
+    const timerElement = document.getElementById('securityTimer');
+    const timerBar = document.getElementById('securityTimerBar');
+    const closeButton = document.getElementById('closeSecurityModal');
+    
+    if (!modal || !timerElement || !timerBar || !closeButton) return;
+    
+    // Inicializar el temporizador
+    securityModalTimeLeft = 30;
+    isSecurityModalActive = true;
+    
+    // Mostrar el modal
+    modal.classList.remove('hidden');
+    
+    // Configurar el botón de cierre
+    closeButton.disabled = true;
+    closeButton.style.opacity = '0.5';
+    closeButton.style.cursor = 'not-allowed';
+    
+    // Iniciar el temporizador
+    if (securityModalTimer) clearInterval(securityModalTimer);
+    
+    securityModalTimer = setInterval(() => {
+        securityModalTimeLeft--;
+        
+        // Actualizar la interfaz
+        if (timerElement) timerElement.textContent = securityModalTimeLeft;
+        if (timerBar) {
+            const percentage = (securityModalTimeLeft / 30) * 100;
+            timerBar.style.width = `${percentage}%`;
+        }
+        
+        // Cuando termina el tiempo
+        if (securityModalTimeLeft <= 0) {
+            clearInterval(securityModalTimer);
+            isSecurityModalActive = false;
+            modal.classList.add('hidden');
+            closeButton.disabled = false;
+            closeButton.style.opacity = '1';
+            closeButton.style.cursor = 'pointer';
+            
+            // Reiniciar el contador de intentos a 2 para permitir 2 intentos más
+            failedAttempts = 1;
+            
+            // Cerrar el modal después de 1 segundo
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 1000);
+        }
+    }, 1000);
+    
+    // Configurar el evento de cierre del modal
+    closeButton.onclick = function() {
+        if (securityModalTimeLeft <= 0) {
+            clearInterval(securityModalTimer);
+            modal.classList.add('hidden');
+        }
+    };
+}
+
+// Función para actualizar el estado del botón de inicio de sesión
+function updateLoginButtonState() {
+    if (!loginButton) return;
+    
+    const now = Date.now();
+    if (now < blockUntil) {
+        // Mostrar tiempo restante
+        const remainingSeconds = Math.ceil((blockUntil - now) / 1000);
+        loginButton.disabled = true;
+        loginButton.innerHTML = `Intenta de nuevo en ${remainingSeconds}s`;
+        
+        // Actualizar mensaje de error
+        if (errorMessage) {
+            errorMessage.textContent = `Demasiados intentos fallidos. Intenta de nuevo en ${remainingSeconds} segundos.`;
+            errorMessage.classList.remove('hidden');
+        }
+    } else {
+        // Restaurar botón
+        loginButton.disabled = false;
+        loginButton.innerHTML = 'Iniciar Sesión';
+        
+        // Limpiar mensaje de error si no hay otros errores
+        if (errorMessage && failedAttempts === 0) {
+            errorMessage.classList.add('hidden');
+        }
+    }
+}
+
 // Función para manejar el envío del formulario de inicio de sesión
 async function handleLogin(e) {
     e.preventDefault();
@@ -532,6 +671,12 @@ async function handleLogin(e) {
     const email = document.getElementById('username').value.trim();
     const password = document.getElementById('password').value;
     const rememberMe = document.getElementById('remember-me').checked;
+    
+    // Verificar si la cuenta está bloqueada
+    if (isAccountBlocked()) {
+        updateLoginButtonState();
+        return;
+    }
     
     // Mostrar carga
     const originalButtonText = loginButton.innerHTML;
@@ -626,13 +771,35 @@ async function handleLogin(e) {
         let errorMessageText = 'Error al iniciar sesión. Verifica tus credenciales.';
         
         if (error.message.includes('Invalid login credentials')) {
-            errorMessageText = 'Credenciales incorrectas. Por favor, verifica tu correo y contraseña.';
+            // Incrementar contador de intentos fallidos
+            failedAttempts++;
+            const remainingAttempts = MAX_ATTEMPTS - failedAttempts;
+            
+            if (remainingAttempts > 0) {
+                errorMessageText = `Credenciales incorrectas. Te quedan ${remainingAttempts} intentos.`;
+            } else {
+                // Bloquear el inicio de sesión
+                blockLogin();
+                
+                // Si es el primer bloqueo, mostrar el modal de seguridad
+                if (failedAttempts === MAX_ATTEMPTS) {
+                    setTimeout(() => {
+                        showSecurityModal();
+                    }, 1000);
+                } else if (failedAttempts > MAX_ATTEMPTS) {
+                    // Si es un intento después del primer bloqueo, forzar el modal de seguridad
+                    showSecurityModal();
+                }
+                
+                return; // Salir temprano ya que blockLogin maneja la UI
+            }
         } else if (error.message.includes('Email not confirmed')) {
             errorMessageText = 'Por favor, verifica tu correo electrónico antes de iniciar sesión.';
         } else if (error.message) {
             errorMessageText = error.message;
         }
         
+        // Mostrar mensaje de error
         errorMessage.textContent = errorMessageText;
         errorMessage.classList.remove('hidden');
         
@@ -642,9 +809,11 @@ async function handleLogin(e) {
             loginForm.classList.remove('animate-shake');
         }, 500);
     } finally {
-        // Restaurar el botón
-        loginButton.disabled = false;
-        loginButton.innerHTML = originalButtonText;
+        // Si no estamos en modo bloqueado, restaurar el botón
+        if (!isAccountBlocked()) {
+            loginButton.disabled = false;
+            loginButton.innerHTML = originalButtonText;
+        }
     }
 }
 

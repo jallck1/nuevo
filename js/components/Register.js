@@ -217,7 +217,18 @@ async function handleRegister(e) {
   spinner.classList.remove('hidden');
   
   try {
-    // 1. Registrar al usuario en Auth
+    // 1. Verificar si el usuario ya existe
+    const { data: existingUser } = await supabase
+      .from('profiles')
+      .select('email')
+      .eq('email', email)
+      .single();
+
+    if (existingUser) {
+      throw new Error('already registered');
+    }
+
+    // 2. Registrar al usuario en Auth
     const { data: authData, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
@@ -233,23 +244,35 @@ async function handleRegister(e) {
     
     if (signUpError) throw signUpError;
     
-    // 2. Crear perfil en la tabla profiles
+    // 3. Crear perfil en la tabla profiles
+    const profileData = {
+      id: authData.user.id,
+      email,
+      name,
+      role: 'buyer',
+      store_id: storeId,
+      status: 'Activo',
+      credit_assigned: 0.00,
+      credit_used: 0.00,
+      join_date: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    
     const { error: profileError } = await supabase
       .from('profiles')
-      .insert([{
-        id: authData.user.id,
-        email,
-        name,
-        role: 'buyer',
-        store_id: storeId,
-        status: 'Activo',
-        credit_assigned: 0.00,
-        credit_used: 0.00,
-        join_date: new Date().toISOString(),
-        last_sign_in_at: new Date().toISOString()
-      }]);
+      .upsert(profileData, { onConflict: 'id' });
       
-    if (profileError) throw profileError;
+    if (profileError) {
+      console.error('Error al crear perfil:', profileError);
+      // Intentar eliminar el usuario de Auth si falla la creación del perfil
+      try {
+        await supabase.auth.admin.deleteUser(authData.user.id);
+      } catch (deleteError) {
+        console.error('Error al limpiar usuario después de fallo en perfil:', deleteError);
+      }
+      throw new Error('Error al crear el perfil del usuario');
+    }
     
     // 3. Cerrar sesión automáticamente después del registro exitoso
     try {

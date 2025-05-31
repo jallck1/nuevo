@@ -88,6 +88,31 @@
         </div>
     </div>
 
+    <!-- Modal de Alerta de Seguridad -->
+    <div id="securityAlertModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-gray-900 rounded-lg p-6 max-w-md w-full mx-4 border-2 border-red-600">
+            <div class="text-center">
+                <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-4">
+                    <i class="fas fa-shield-alt text-red-600 text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-white mb-2">Actividad Sospechosa Detectada</h3>
+                <p class="text-gray-300 mb-4">Hemos detectado múltiples intentos fallidos de inicio de sesión.</p>
+                <p class="text-gray-300 mb-6">Por seguridad, nos estamos comunicando con los administradores.</p>
+                
+                <div class="mb-6">
+                    <div class="w-full bg-gray-700 rounded-full h-4 mb-2">
+                        <div id="securityTimerBar" class="bg-red-600 h-4 rounded-full transition-all duration-1000 ease-linear" style="width: 100%"></div>
+                    </div>
+                    <p class="text-gray-400 text-sm">Tiempo restante: <span id="securityTimer">30</span> segundos</p>
+                </div>
+                
+                <button id="closeSecurityModal" class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                    Entendido
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Supabase JS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/login.js" type="module"></script>

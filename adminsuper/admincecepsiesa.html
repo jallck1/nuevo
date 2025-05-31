@@ -11,14 +11,29 @@
     <!-- Google Fonts - Orbitron para el estilo futurista -->
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&display=swap" rel="stylesheet">
     <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        
         body {
             font-family: 'Orbitron', sans-serif;
             background-color: #0a0a1a;
             color: #00f3ff;
-            background-image: 
-                linear-gradient(rgba(0, 243, 255, 0.05) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 243, 255, 0.05) 1px, transparent 1px);
-            background-size: 40px 40px;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            overflow-y: auto;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem;
+            flex: 1;
+            overflow-y: visible;
         }
         
         .neon-text {
@@ -190,8 +205,82 @@
 
         .modal-body {
             padding: 1.5rem;
-            max-height: 70vh;
             overflow-y: auto;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            min-height: 300px;
+        }
+        
+        /* Estilos para las tarjetas de reportes */
+        .report-card {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .report-card h3 {
+            color: #00f3ff;
+            margin-top: 0;
+            margin-bottom: 1.5rem;
+            font-size: 1.25rem;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 0.5rem;
+        }
+        
+        .chart-container {
+            position: relative;
+            width: 100%;
+            min-height: 300px;
+        }
+        
+        /* Estilos para el modal */
+        .modal-red {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.95);
+            z-index: 1000;
+            overflow-y: auto;
+            padding: 20px 0;
+        }
+
+        .modal-content {
+            background-color: #0f172a;
+            border: 1px solid #ff3333;
+            border-radius: 8px;
+            width: 95%;
+            max-width: 1200px;
+            min-height: 200px;
+            max-height: 90vh;
+            margin: 20px auto;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.5);
+            overflow: hidden;
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #ff3333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        
+        .modal-header h2 {
+            margin: 0;
+            color: #00f3ff;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
         }
 
         .modal-footer {
@@ -570,6 +659,15 @@
                 <h2 class="text-2xl font-bold mb-2">REPORTES</h2>
                 <p class="text-sm opacity-80">Generar reportes y estadísticas</p>
             </div>
+            
+            <!-- Mapa -->
+            <div class="neon-box p-8 rounded-lg text-center cursor-pointer" id="mapBtn">
+                <div class="text-5xl mb-4">
+                    <i class="fas fa-map-marked-alt"></i>
+                </div>
+                <h2 class="text-2xl font-bold mb-2">MAPA</h2>
+                <p class="text-sm opacity-80">Buscar direcciones y ubicaciones</p>
+            </div>
         </div>
         
         <!-- Modal de Creación de Tienda -->
@@ -659,70 +757,85 @@
         </div>
 
         <!-- Modal de Administrar Tiendas -->
-        <div id="manageStoresModal" class="modal-red">
-            <div class="modal-content">
+        <div id="manageStoresModal" class="modal-red" style="display: none;">
+            <div class="modal-content" style="max-width: 1000px; width: 90%;">
                 <div class="modal-header">
                     <h2><i class="fas fa-warehouse mr-2"></i> ADMINISTRAR TIENDAS</h2>
                     <span class="close-modal">&times;</span>
                 </div>
                 <div class="modal-body">
-                    <div class="store-filters">
-                        <select class="filter-select">
-                            <option>TODAS LAS TIENDAS</option>
-                            <option>ACTIVAS</option>
-                            <option>INACTIVAS</option>
-                        </select>
-                        <input type="text" class="search-input" placeholder="Buscar tienda...">
+                    <div class="mb-6 flex flex-col md:flex-row gap-4">
+                        <div class="flex-1 relative">
+                            <div class="relative">
+                                <input type="text" 
+                                       class="modal-input pl-10 pr-4 py-2 w-full" 
+                                       id="storeSearch"
+                                       placeholder="Buscar por nombre, dirección o administrador...">
+                                <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                                <button id="searchButton" class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-1 rounded-md text-sm">
+                                    Buscar
+                                </button>
+                            </div>
+                        </div>
+                        <div class="w-full md:w-64">
+                            <select id="storeFilter" class="modal-input w-full py-2 pl-3 pr-8">
+                                <option value="">Todas las tiendas</option>
+                                <!-- Las opciones se cargarán dinámicamente -->
+                            </select>
+                        </div>
                     </div>
-                    <div class="stores-grid">
-                        <!-- Tiendas se cargarán dinámicamente -->
+                    
+                    <div id="storesLoading" class="text-center py-8 hidden">
+                        <i class="fas fa-spinner fa-spin text-2xl text-blue-400 mb-2"></i>
+                        <p class="text-gray-400">Cargando tiendas...</p>
+                    </div>
+                    
+                    <div id="storesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- Las tarjetas de tiendas se cargarán dinámicamente aquí -->
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button class="btn-cancel">CERRAR</button>
-                    <button class="btn-confirm">NUEVA TIENDA</button>
+                    <button class="btn-confirm" id="newStoreBtn">
+                        <i class="fas fa-plus mr-1"></i> NUEVA TIENDA
+                    </button>
                 </div>
             </div>
         </div>
 
         <!-- Modal de Crear Administrador -->
-        <div id="createAdminModal" class="modal-red">
+        <div id="createAdminModal" class="modal-red" style="display: none;">
             <div class="modal-content">
                 <div class="modal-header">
                     <h2><i class="fas fa-user-shield mr-2"></i> NUEVO ADMINISTRADOR</h2>
                     <span class="close-modal">&times;</span>
                 </div>
                 <div class="modal-body">
-                    <div class="form-group">
-                        <label>NOMBRE COMPLETO</label>
-                        <input type="text" class="modal-input" placeholder="Nombre del administrador">
-                    </div>
-                    <div class="form-group">
-                        <label>CORREO ELECTRÓNICO</label>
-                        <input type="email" class="modal-input" placeholder="correo@ejemplo.com">
-                    </div>
-                    <div class="form-group">
-                        <label>CONTRASEÑA</label>
-                        <div class="password-input">
-                            <input type="password" class="modal-input" placeholder="••••••••">
-                            <button class="toggle-password"><i class="fas fa-eye"></i></button>
+                    <form id="adminForm">
+                        <div class="form-group">
+                            <label for="adminName">NOMBRE COMPLETO</label>
+                            <input type="text" id="adminName" name="name" class="modal-input" placeholder="Nombre del administrador" required>
                         </div>
-                    </div>
-                    <div class="form-group">
-                        <label>ROL</label>
-                        <select class="modal-input">
-                            <option>ADMINISTRADOR DE TIENDA</option>
-                            <option>SUPERVISOR</option>
-                            <option>SOPORTE</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>TIENDA ASIGNADA</label>
-                        <select class="modal-input">
-                            <option>SELECCIONE UNA TIENDA</option>
-                            <!-- Tiendas se cargarán dinámicamente -->
-                        </select>
-                    </div>
+                        <div class="form-group">
+                            <label for="adminEmail">CORREO ELECTRÓNICO</label>
+                            <input type="email" id="adminEmail" name="email" class="modal-input" placeholder="correo@ejemplo.com" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="adminPassword">CONTRASEÑA</label>
+                            <div class="password-input">
+                                <input type="password" id="adminPassword" name="password" class="modal-input" placeholder="••••••••" required minlength="8">
+                                <button type="button" class="toggle-password"><i class="fas fa-eye"></i></button>
+                            </div>
+                            <small class="text-gray-400 text-xs">Mínimo 8 caracteres</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="adminStore">TIENDA ASIGNADA</label>
+                            <select id="adminStore" name="storeId" class="modal-input">
+                                <option value="">SELECCIONE UNA TIENDA</option>
+                                <!-- Tiendas se cargarán dinámicamente -->
+                            </select>
+                        </div>
+                    </form>
                 </div>
                 <div class="modal-footer">
                     <button class="btn-cancel">CANCELAR</button>
@@ -732,55 +845,122 @@
         </div>
 
         <!-- Modal de Reportes -->
-        <div id="reportsModal" class="modal-red">
+        <div id="reportsModal" class="modal">
+            <div class="modal-content max-w-5xl">
+                <div class="modal-header">
+                    <h2 class="text-xl font-bold text-white">
+                        <i class="fas fa-chart-bar mr-2"></i> Reportes y Estadísticas
+                    </h2>
+                    <span class="close-modal">&times;</span>
+                </div>
+                <div class="modal-body p-6">
+                    <!-- Indicador de carga -->
+                    <div class="loading-indicator hidden items-center justify-center py-12">
+                        <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                        <span class="ml-3 text-gray-300">Cargando reportes...</span>
+                    </div>
+                    
+                    <!-- Contenedor de reportes -->
+                    <div id="reportsContainer" class="space-y-6">
+                        <!-- Los reportes se cargarán aquí dinámicamente -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-cancel">Cerrar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de Ver Compradores -->
+        <div id="viewBuyersModal" class="modal-red" style="display: none;">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h2><i class="fas fa-chart-bar mr-2"></i> GENERAR REPORTE</h2>
+                    <h2><i class="fas fa-user-shield mr-2"></i> LISTA DE ADMINISTRADORES</h2>
                     <span class="close-modal">&times;</span>
                 </div>
                 <div class="modal-body">
-                    <div class="form-group">
-                        <label>TIPO DE REPORTE</label>
-                        <select class="modal-input">
-                            <option>VENTAS POR PERIODO</option>
-                            <option>INVENTARIO</option>
-                            <option>USUARIOS ACTIVOS</option>
-                            <option>PEDIDOS PENDIENTES</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>RANGO DE FECHAS</label>
-                        <div class="date-range">
-                            <input type="date" class="modal-input">
-                            <span class="date-separator">a</span>
-                            <input type="date" class="modal-input">
+                    <div class="mb-4 flex justify-between items-center">
+                        <div class="relative w-64">
+                            <input type="text" id="buyerSearch" class="modal-input" placeholder="Buscar comprador...">
+                            <i class="fas fa-search absolute right-3 top-3 text-gray-400"></i>
                         </div>
                     </div>
-                    <div class="form-group">
-                        <label>FORMATO</label>
-                        <div class="format-options">
-                            <label class="radio-option">
-                                <input type="radio" name="format" checked>
-                                <span>PDF</span>
-                            </label>
-                            <label class="radio-option">
-                                <input type="radio" name="format">
-                                <span>EXCEL</span>
-                            </label>
-                            <label class="radio-option">
-                                <input type="radio" name="format">
-                                <span>CSV</span>
-                            </label>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead>
+                                <tr class="border-b border-gray-700">
+                                    <th class="pb-2">Nombre</th>
+                                    <th class="pb-2">Email</th>
+                                    <th class="pb-2">Tienda</th>
+                                    <th class="pb-2">Estado</th>
+                                    <th class="pb-2">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="buyersList">
+                                <!-- Los compradores se cargarán aquí dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="mt-4 flex justify-between items-center">
+                        <div class="text-sm text-gray-400">
+                            Mostrando <span id="showingBuyers">0</span> de <span id="totalBuyers">0</span> compradores
+                        </div>
+                        <div class="flex space-x-2">
+                            <button id="prevPage" class="px-3 py-1 bg-gray-700 rounded-md hover:bg-gray-600">Anterior</button>
+                            <span id="currentPage" class="px-3 py-1">1</span>
+                            <button id="nextPage" class="px-3 py-1 bg-gray-700 rounded-md hover:bg-gray-600">Siguiente</button>
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button class="btn-cancel">CANCELAR</button>
-                    <button class="btn-confirm"><i class="fas fa-download"></i> GENERAR REPORTE</button>
+                    <button class="btn-cancel">CERRAR</button>
                 </div>
             </div>
         </div>
         </main>
+    </div>
+
+    <!-- Modal de Editar Administrador -->
+    <div id="editAdminModal" class="modal-red" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-user-edit mr-2"></i> EDITAR ADMINISTRADOR</h2>
+                <span class="close-edit-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="editAdminForm">
+                    <input type="hidden" id="editAdminId">
+                    <div class="form-group">
+                        <label for="editAdminName">NOMBRE COMPLETO</label>
+                        <input type="text" id="editAdminName" name="name" class="modal-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editAdminEmail">CORREO ELECTRÓNICO</label>
+                        <input type="email" id="editAdminEmail" name="email" class="modal-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editAdminStore">TIENDA ASIGNADA</label>
+                        <select id="editAdminStore" name="storeId" class="modal-input">
+                            <option value="">SELECCIONE UNA TIENDA</option>
+                            <!-- Tiendas se cargarán dinámicamente -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="editAdminStatus">ESTADO</label>
+                        <select id="editAdminStatus" name="status" class="modal-input" required>
+                            <option value="Activo">Activo</option>
+                            <option value="Inactivo">Inactivo</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-cancel">CANCELAR</button>
+                <button type="button" class="btn-confirm">GUARDAR CAMBIOS</button>
+            </div>
+        </div>
     </div>
 
     <!-- Scripts al final del body -->
@@ -791,20 +971,38 @@
     <script>
         // Configuración de Supabase
         const SUPABASE_URL = 'https://ywmspibcnhfmqmnutpyg.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl3bXNwaWJjbmhmbXFtbnV0cHlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc2ODE0OTMsImV4cCI6MjA2MzI1NzQ5M30.HtHovCDBs11eNh_KjrqNn6BgWFYyFuFpKo5iQLFmFpU';
+        // Usar la clave de servicio (service_role) en lugar de la clave anónima
+        const SUPABASE_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl3bXNwaWJjbmhmbXFtbnV0cHlnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NzY4MTQ5MywiZXhwIjoyMDYzMjU3NDkzfQ.Pgu07EHCkkvnFvgZV262Etm5z-iCZ2D24s4KAnCZjOo';
         
-        // Inicializar Supabase
+        // Inicializar Supabase con la clave de servicio
         const { createClient } = supabase;
-        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
             auth: {
-                persistSession: true,
-                autoRefreshToken: true,
-                detectSessionInUrl: true
+                autoRefreshToken: false,
+                persistSession: false
             }
         });
         
+        // Inicializar también el cliente normal para otras operaciones
+        const supabaseClient = createClient(
+            SUPABASE_URL, 
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl3bXNwaWJjbmhmbXFtbnV0cHlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc2ODE0OTMsImV4cCI6MjA2MzI1NzQ5M30.HtHovCDBs11eNh_KjrqNn6BgWFYyFuFpKo5iQLFmFpU',
+            {
+                auth: {
+                    persistSession: true,
+                    autoRefreshToken: true,
+                    detectSessionInUrl: true
+                }
+            }
+        );
+        
         // Hacer que Supabase esté disponible globalmente
         window.supabase = supabaseClient;
+        window.supabaseAdmin = supabaseAdmin;
+        
+        // Incluir scripts adicionales
+        document.write('<script src="js/adminUsers.js"><\/script>');
+        document.write('<script src="js/buyers.js"><\/script>');
         
         // Función para verificar la sesión
         async function checkSession() {
@@ -1044,6 +1242,437 @@ Ejemplo: INSERT INTO stores (name, address, admin_owner_id, created_by)
             // Desplazarse al resultado
             resultDiv.scrollIntoView({ behavior: 'smooth', block: 'end' });
         }
+    </script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Script de gestión de tiendas -->
+    <script src="js/storeManagement.js"></script>
+    
+    <!-- Script de reportes -->
+    <script src="js/reports.js"></script>
+
+    <!-- Modal de Reportes -->
+    <div id="reportsModal" class="modal-red" style="display: none;">
+        <div class="modal-content" style="max-width: 1200px; width: 95%;">
+            <div class="modal-header">
+                <h2><i class="fas fa-chart-bar mr-2"></i> REPORTES Y ESTADÍSTICAS</h2>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <!-- Contenedor de carga -->
+                <div id="reportsLoading" class="text-center py-8">
+                    <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+                    <p class="text-gray-400 mt-2">Cargando reportes...</p>
+                </div>
+                
+                <!-- Contenedor de reportes -->
+                <div id="reportsContainer" class="hidden">
+                    <!-- Los reportes se cargarán aquí -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel">CERRAR</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de PQRS -->
+    <div id="pqrsModal" class="modal-red" style="display: none;">
+        <div class="modal-content" style="max-width: 1000px; width: 90%;">
+            <div class="modal-header">
+                <h2><i class="fas fa-headset mr-2"></i> GESTIÓN DE PQRS</h2>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body p-6 overflow-y-auto" style="max-height: 70vh;">
+                <div class="mb-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-bold">Listado de PQRS</h3>
+                        <div class="relative">
+                            <input type="text" id="pqrsSearch" placeholder="Buscar PQRS..." 
+                                   class="bg-gray-800 text-white px-4 py-2 rounded-lg border border-gray-700 focus:outline-none focus:ring-2 focus:ring-red-500">
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-900 rounded-lg overflow-hidden border border-gray-800">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="bg-gray-800 text-left">
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">ID</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Tipo</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Asunto</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Estado</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Fecha</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pqrsList" class="divide-y divide-gray-800">
+                                <!-- PQRS de prueba 1 -->
+                                <tr class="hover:bg-gray-800">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">#PRUEBA-001</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                            Petición
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">Solicitud de información general</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                            Abierto
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">30/05/2025</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        <button class="text-blue-500 hover:text-blue-400 mr-3" onclick="viewPqrsDetail('PRUEBA-001')">
+                                            <i class="fas fa-eye"></i> Ver
+                                        </button>
+                                    </td>
+                                </tr>
+                                
+                                <!-- PQRS de prueba 2 -->
+                                <tr class="hover:bg-gray-800">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">#PRUEBA-002</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                            Queja
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">Problema con servicio al cliente</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                            En Proceso
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">29/05/2025</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        <button class="text-blue-500 hover:text-blue-400 mr-3" onclick="viewPqrsDetail('PRUEBA-002')">
+                                            <i class="fas fa-eye"></i> Ver
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer flex justify-end p-4 border-t border-gray-800">
+                <button class="btn-cancel px-4 py-2 rounded-lg mr-2">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Inicializar tooltips
+        document.addEventListener('DOMContentLoaded', function() {
+            const tooltipTriggers = document.querySelectorAll('[data-tooltip]');
+            
+            tooltipTriggers.forEach(trigger => {
+                const tooltip = document.createElement('div');
+                tooltip.className = 'tooltip';
+                tooltip.textContent = trigger.getAttribute('data-tooltip');
+                
+                trigger.appendChild(tooltip);
+                
+                trigger.addEventListener('mouseenter', () => {
+                    tooltip.classList.add('visible');
+                });
+                
+                trigger.addEventListener('mouseleave', () => {
+                    tooltip.classList.remove('visible');
+                });
+            });
+
+            // Inicializar funcionalidad del modal de PQRS
+            initPqrsModal();
+        });
+
+        // Función para inicializar el modal de PQRS
+        function initPqrsModal() {
+            const pqrsBtn = document.getElementById('pqrsBtn');
+            const pqrsModal = document.getElementById('pqrsModal');
+            const closeModalBtn = pqrsModal?.querySelector('.close-modal');
+            const cancelBtn = pqrsModal?.querySelector('.btn-cancel');
+
+            // Función para abrir el modal
+            const openModal = (e) => {
+                if (e) e.preventDefault();
+                pqrsModal.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+            };
+
+            // Función para cerrar el modal
+            const closeModal = (e) => {
+                if (e) e.preventDefault();
+                pqrsModal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            };
+
+            // Event listeners
+            if (pqrsBtn) pqrsBtn.addEventListener('click', openModal);
+            if (closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
+            if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+
+            // Cerrar al hacer clic fuera del modal
+            window.addEventListener('click', (e) => {
+                if (e.target === pqrsModal) {
+                    closeModal(e);
+                }
+            });
+        }
+
+
+        // Función para ver el detalle de un PQRS
+        function viewPqrsDetail(pqrsId) {
+            // Aquí podrías abrir otro modal con los detalles completos del PQRS
+            alert(`Mostrando detalles del PQRS: ${pqrsId}`);
+        }
+    </script>
+
+    <!-- Modal de Mapa -->
+    <div id="mapModal" class="modal-red" style="display: none;">
+        <div class="modal-content" style="max-width: 1000px; width: 90%; height: 80vh;">
+            <div class="modal-header">
+                <h2><i class="fas fa-map-marked-alt mr-2"></i> BUSCADOR DE DIRECCIONES</h2>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body p-0 flex flex-col" style="height: calc(100% - 70px);">
+                <!-- Barra de búsqueda y API Key -->
+                <div class="p-4 border-b border-gray-800 bg-gray-900 space-y-3">
+                    <!-- API Key (opcional) -->
+                    <div class="flex items-center bg-gray-800 p-2 rounded-lg">
+                        <span class="text-xs text-gray-400 mr-2 whitespace-nowrap">API Key (opcional):</span>
+                        <input 
+                            type="password" 
+                            id="apiKeyInput" 
+                            class="flex-grow bg-gray-700 text-white px-3 py-1 text-sm rounded border border-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            placeholder="Ingresa tu API Key de Google Maps"
+                            title="La API Key se usa solo para esta sesión y no se guarda"
+                        >
+                        <button 
+                            id="toggleApiKey" 
+                            class="ml-2 text-gray-400 hover:text-white"
+                            title="Mostrar/ocultar API Key"
+                        >
+                            <i class="far fa-eye"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Barra de búsqueda -->
+                    <div class="flex">
+                        <input 
+                            type="text" 
+                            id="mapSearchInput" 
+                            class="flex-grow bg-gray-800 text-white px-4 py-2 rounded-l-lg border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Buscar dirección..."
+                        >
+                        <button 
+                            id="searchMapBtn" 
+                            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-r-lg flex items-center"
+                        >
+                            <i class="fas fa-search mr-2"></i> Buscar
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Mapa embebido de Google Maps -->
+                <div style="height: 100%; width: 100%;">
+                    <iframe 
+                        id="mapFrame"
+                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3976.539119123917!2d-74.0720726846748!3d4.71091934569198!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8e3f9a3e6aa1eae9%3A0x47a4e8c3d5c7a8f2!2sBogot%C3%A1%2C%20Colombia!5e0!3m2!1ses-419!2sco!4v1620000000000!5m2!1ses-419!2sco" 
+                        width="100%" 
+                        height="100%" 
+                        style="border:0;" 
+                        allowfullscreen="" 
+                        loading="lazy"
+                        class="min-h-[400px]"
+                    ></iframe>
+                </div>
+                
+                <!-- Información adicional -->
+                <div class="p-4 border-t border-gray-800 bg-gray-900">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <h3 class="font-semibold text-white mb-2">Ubicación actual</h3>
+                            <p id="currentAddress" class="text-sm text-gray-300">Bogotá, Colombia</p>
+                            <p class="text-xs text-gray-500 mt-1">Busca una dirección para actualizar el mapa</p>
+                        </div>
+                        <div class="flex items-center justify-end">
+                            <a id="openInMaps" 
+                               href="https://www.google.com/maps?q=Bogotá+Colombia" 
+                               target="_blank" 
+                               class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center">
+                                <i class="fas fa-external-link-alt mr-2"></i> Abrir en Google Maps
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer flex justify-end p-4 border-t border-gray-800">
+                <button class="btn-cancel px-4 py-2 rounded-lg mr-2">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Inicializar el modal del mapa
+        document.addEventListener('DOMContentLoaded', function() {
+            initMapModal();
+        });
+
+        function initMapModal() {
+            const mapBtn = document.getElementById('mapBtn');
+            const mapModal = document.getElementById('mapModal');
+            const closeModalBtn = mapModal?.querySelector('.close-modal');
+            const cancelBtn = mapModal?.querySelector('.btn-cancel');
+
+            // Función para abrir el modal
+            const openModal = (e) => {
+                if (e) e.preventDefault();
+                mapModal.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+            };
+
+            // Función para cerrar el modal
+            const closeModal = (e) => {
+                if (e) e.preventDefault();
+                mapModal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            };
+            
+            // Función para alternar visibilidad de la API key
+            function toggleApiKeyVisibility() {
+                const apiKeyInput = document.getElementById('apiKeyInput');
+                const toggleBtn = document.getElementById('toggleApiKey');
+                
+                if (apiKeyInput.type === 'password') {
+                    apiKeyInput.type = 'text';
+                    toggleBtn.innerHTML = '<i class="far fa-eye-slash"></i>';
+                } else {
+                    apiKeyInput.type = 'password';
+                    toggleBtn.innerHTML = '<i class="far fa-eye"></i>';
+                }
+            }
+            
+            // Función para obtener la URL del mapa con o sin API key
+            function getMapUrl(query) {
+                const apiKeyInput = document.getElementById('apiKeyInput').value.trim();
+                const encodedQuery = encodeURIComponent(query);
+                
+                if (apiKeyInput) {
+                    // Usar API key personalizada si se proporciona
+                    return `https://www.google.com/maps/embed/v1/place?key=${apiKeyInput}&q=${encodedQuery}`;
+                } else {
+                    // Usar la API key por defecto (puede tener limitaciones)
+                    return `https://www.google.com/maps/embed/v1/place?key=AIzaSyD-9tSrke72PouQMnMX-a7eZSW0jkFMBWY&q=${encodedQuery}`;
+                }
+            }
+            
+            // Función para buscar una dirección
+            function searchAddress() {
+                const searchInput = document.getElementById('mapSearchInput');
+                const address = searchInput.value.trim();
+                
+                if (address) {
+                    const mapFrame = document.getElementById('mapFrame');
+                    
+                    try {
+                        // Actualizar el iframe con la nueva dirección
+                        mapFrame.src = getMapUrl(address);
+                        
+                        // Actualizar el enlace "Abrir en Google Maps"
+                        const openInMapsLink = document.getElementById('openInMaps');
+                        openInMapsLink.href = `https://www.google.com/maps?q=${encodeURIComponent(address)}`;
+                        
+                        // Actualizar la dirección mostrada
+                        const addressDisplay = document.getElementById('currentAddress');
+                        addressDisplay.textContent = address;
+                        
+                        // Mostrar notificación de éxito
+                        showNotification('Mapa actualizado correctamente', 'success');
+                    } catch (error) {
+                        console.error('Error al actualizar el mapa:', error);
+                        showNotification('Error al cargar el mapa. Verifica tu conexión o la API Key.', 'error');
+                    }
+                } else {
+                    showNotification('Por favor ingresa una dirección para buscar', 'warning');
+                }
+            }
+            
+            // Función para mostrar notificaciones
+            function showNotification(message, type = 'info') {
+                // Puedes implementar notificaciones bonitas aquí
+                console.log(`[${type.toUpperCase()}] ${message}`);
+                // Ejemplo con alerta simple
+                // alert(message);
+            }
+            
+            // Event listeners
+            if (mapBtn) mapBtn.addEventListener('click', openModal);
+            if (closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
+            if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+            
+            // Mostrar/ocultar API key
+            const toggleApiKeyBtn = document.getElementById('toggleApiKey');
+            if (toggleApiKeyBtn) {
+                toggleApiKeyBtn.addEventListener('click', toggleApiKeyVisibility);
+            }
+            
+            // Buscar al hacer clic en el botón
+            const searchBtn = document.getElementById('searchMapBtn');
+            if (searchBtn) {
+                searchBtn.addEventListener('click', searchAddress);
+            }
+            
+            // Buscar al presionar Enter en el campo de búsqueda
+            const searchInput = document.getElementById('mapSearchInput');
+            if (searchInput) {
+                searchInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        searchAddress();
+                    }
+                });
+            }
+            
+            // Enfocar el campo de búsqueda al abrir el modal
+            if (mapBtn) {
+                mapBtn.addEventListener('click', function() {
+                    setTimeout(() => {
+                        const searchInput = document.getElementById('mapSearchInput');
+                        if (searchInput) searchInput.focus();
+                    }, 100);
+                });
+            }
+            
+            // Cerrar al hacer clic fuera del modal
+            window.addEventListener('click', (e) => {
+                if (e.target === mapModal) {
+                    closeModal(e);
+                }
+            });
+        }
+    </script>
+
+    <!-- Script para actualizar la hora -->
+    <script>
+        // Función para actualizar la hora
+        function updateTime() {
+            const timeElement = document.getElementById('currentTime');
+            if (timeElement) {
+                const now = new Date();
+                const timeString = now.toLocaleTimeString('es-CO', { 
+                    hour: '2-digit', 
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: true 
+                });
+                timeElement.textContent = timeString;
+            }
+        }
+
+        // Actualizar la hora cada segundo
+        updateTime();
+        setInterval(updateTime, 1000);
     </script>
 </body>
 </html>

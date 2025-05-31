@@ -1,215 +1,33 @@
-// Función para crear una nueva tienda
-async function createStore(storeData) {
-    try {
-        console.log('Iniciando creación de tienda...');
-        
-        // Obtener el usuario actual
-        const { data: { user } } = await supabase.auth.getUser();
-        
-        if (!user) {
-            throw new Error('No se pudo verificar tu identidad. Por favor, recarga la página.');
-        }
-        
-        console.log('Usuario autenticado:', user.id);
-        
-        if (!storeData.name) {
-            throw new Error('El nombre de la tienda es requerido');
-        }
-        
-        // Insertar directamente sin RPC
-        const { data, error } = await supabase
-            .from('stores')
-            .insert({
-                name: storeData.name,
-                address: storeData.address || '',
-                admin_owner_id: user.id,
-                created_by: user.id
-            })
-            .select()
-            .single();
-        
-        if (error) throw error;
-        
-        console.log('Tienda creada exitosamente:', data);
-        
-        return { 
-            success: true, 
-            storeId: data.id, 
-            userId: user.id 
-        };
-        
-    } catch (error) {
-        console.error('Error en createStore:', error);
-        throw new Error('No se pudo crear la tienda: ' + (error.message || 'Error desconocido'));
-    }
-}async function createStore(storeData) {
-    try {
-        console.log('Iniciando creación de tienda...');
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) throw new Error('Usuario no autenticado');
-
-        const { data, error } = await supabase
-            .from('temp_stores')
-            .insert({
-                name: storeData.name,
-                address: storeData.address || '',
-                admin_owner_id: user.id,
-                created_by: user.id
-            })
-            .select()
-            .single();
-
-        if (error) throw error;
-        
-        return { 
-            success: true, 
-            storeId: data.id, 
-            userId: user.id 
-        };
-        
-    } catch (error) {
-        console.error('Error:', error);
-        throw error;
-    }
-}// Función para crear una nueva tienda
-async function createStore(storeData) {
-    try {
-        console.log('Iniciando creación de tienda...');
-        
-        // Obtener el usuario actual
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-        if (userError || !user) throw new Error('No autenticado');
-        
-        console.log('Usuario:', user.id);
-        
-        // Validar
-        if (!storeData.name) throw new Error('Nombre requerido');
-        
-        // Insertar directamente
-        const { data, error } = await supabase
-            .from('stores')
-            .insert({
-                name: storeData.name,
-                address: storeData.address || '',
-                admin_owner_id: user.id,
-                created_by: user.id
-            })
-            .select()
-            .single();
-        
-        if (error) {
-            console.error('Error de Supabase:', error);
-            throw new Error('Error al crear la tienda');
-        }
-        
-        console.log('Tienda creada:', data);
-        return { success: true, storeId: data.id };
-        
-    } catch (error) {
-        console.error('Error en createStore:', error);
-        throw error;
-    }
-}// Función para crear una nueva tienda
-async function createStore(storeData) {
-    try {
-        console.log('Iniciando creación de tienda...');
-        
-        // Obtener el usuario actual
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-        if (userError || !user) throw new Error('No autenticado');
-        
-        console.log('Usuario:', user.id);
-        
-        // Validar
-        if (!storeData.name) throw new Error('Nombre requerido');
-        
-        // Insertar directamente
-        const { data, error } = await supabase
-            .from('stores')
-            .insert({
-                name: storeData.name,
-                address: storeData.address || '',
-                admin_owner_id: user.id,
-                created_by: user.id
-            })
-            .select()
-            .single();
-        
-        if (error) {
-            console.error('Error de Supabase:', error);
-            throw new Error('Error al crear la tienda');
-        }
-        
-        console.log('Tienda creada:', data);
-        return { success: true, storeId: data.id };
-        
-    } catch (error) {
-        console.error('Error en createStore:', error);
-        throw error;
-    }
-}// Función para crear una nueva tienda
-async function createStore(storeData) {
-    try {
-        console.log('Iniciando creación de tienda...');
-        
-        // Obtener el usuario actual
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-        if (userError || !user) throw new Error('No autenticado');
-        
-        console.log('Usuario:', user.id);
-        
-        // Validar
-        if (!storeData.name) throw new Error('Nombre requerido');
-        
-        // Insertar directamente
-        const { data, error } = await supabase
-            .from('stores')
-            .insert({
-                name: storeData.name,
-                address: storeData.address || '',
-                admin_owner_id: user.id,
-                created_by: user.id
-            })
-            .select()
-            .single();
-        
-        if (error) {
-            console.error('Error de Supabase:', error);
-            throw new Error('Error al crear la tienda');
-        }
-        
-        console.log('Tienda creada:', data);
-        return { success: true, storeId: data.id };
-        
-    } catch (error) {
-        console.error('Error en createStore:', error);
-        throw error;
-    }
-}async function createStore(storeData) {
-    try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) throw new Error('No autenticado');
-        
-        const { data, error } = await supabase
-            .from('temp_stores')
-            .insert({
-                name: storeData.name,
-                address: storeData.address || '',
-                admin_owner_id: user.id,
-                created_by: user.id
-            })
-            .select()
-            .single();
-        
-        if (error) throw error;
-        return { success: true, storeId: data.id };
-        
-    } catch (error) {
-        console.error('Error:', error);
-        throw error;
-    }
-}// Obtener la instancia de Supabase desde login.js
+// Obtener la instancia de Supabase desde login.js
 const supabase = window.supabase;
+
+// Función para cerrar modales
+function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+// Función para ejecutar consultas SQL de manera segura
+async function executeSafeQuery(query) {
+    try {
+        const { data, error } = await supabase
+            .rpc('execute_sql_dynamic', { query_text: query });
+            
+        if (error) throw error;
+        
+        if (data && data.error) {
+            console.error('Error en la consulta:', data.message);
+            return { success: false, error: data.message };
+        }
+        
+        return { success: true, data: data };
+    } catch (error) {
+        console.error('Error al ejecutar la consulta:', error);
+        return { success: false, error: error.message };
+    }
+}
 
 // Función para mostrar notificaciones
 function showNotification(message, type = 'info') {
@@ -345,47 +163,22 @@ async function createStore(storeData) {
             throw new Error('El nombre de la tienda es requerido');
         }
         
-        // Crear objeto con los campos requeridos
-        const storeToCreate = {
-            name: storeData.name,
-            address: storeData.address || '',
-            admin_owner_id: user.id,
-            created_by: user.id
-            // created_at y updated_at se generan automáticamente
-        };
-        
-        console.log('Datos a enviar:', storeToCreate);
-        
-        // Insertar en la tabla stores
+        // Intentar insertar la tienda directamente
+        console.log('Creando tienda con inserción directa...');
         const { data, error } = await supabase
             .from('stores')
-            .insert(storeToCreate)
+            .insert({
+                name: storeData.name,
+                address: storeData.address || '',
+                admin_owner_id: user.id,
+                created_by: user.id
+            })
             .select()
             .single();
         
         if (error) {
             console.error('Error al crear la tienda:', error);
-            // Si falla, intentar con una inserción directa usando RPC
-            try {
-                console.log('Intentando con inserción directa...');
-                const { data: rpcData, error: rpcError } = await supabase.rpc('create_store_simple', {
-                    p_name: storeData.name,
-                    p_address: storeData.address || '',
-                    p_user_id: user.id
-                });
-                
-                if (rpcError) throw rpcError;
-                
-                console.log('Tienda creada exitosamente con RPC:', rpcData);
-                return { 
-                    success: true, 
-                    storeId: rpcData, 
-                    userId: user.id 
-                };
-            } catch (rpcError) {
-                console.error('Error en inserción RPC:', rpcError);
-                throw new Error('No se pudo crear la tienda. ' + (rpcError.message || ''));
-            }
+            throw new Error('No se pudo crear la tienda. ' + (error.message || ''));
         }
         
         console.log('Tienda creada exitosamente:', data);
@@ -480,3 +273,4 @@ function setupStoreForm() {
 // Hacer que las funciones estén disponibles globalmente
 window.createStore = createStore;
 window.setupStoreForm = setupStoreForm;
+window.closeModal = closeModal;

@@ -106,5 +106,136 @@
 
     <!-- Scripts de la aplicación -->
     <script type="module" src="/js/main.js"></script>
+    
+    <!-- EmailJS -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    
+    <!-- Script de contacto -->
+    <script src="/js/contact-form.js"></script>
+    
+    <!-- Sección de Contacto -->
+    <section id="contact" class="py-16 bg-white">
+        <div class="container mx-auto px-4 max-w-6xl">
+            <h2 class="text-3xl font-bold text-center mb-4">Contáctanos</h2>
+            <p class="text-gray-600 text-center mb-12 max-w-2xl mx-auto">
+                ¿Tienes alguna pregunta? Estamos aquí para ayudarte. Completa el formulario y nos pondremos en contacto contigo lo antes posible.
+            </p>
+            
+            <div class="grid md:grid-cols-2 gap-12">
+                <!-- Información de contacto -->
+                <div class="space-y-8">
+                    <div>
+                        <h3 class="text-xl font-semibold mb-2">Ubicación</h3>
+                        <p class="text-gray-600">Av. Principal 1234, Ciudad, País</p>
+                    </div>
+                    
+                    <div>
+                        <h3 class="text-xl font-semibold mb-2">Teléfono</h3>
+                        <p class="text-gray-600">+1 234 567 890</p>
+                        <p class="text-sm text-gray-500 mt-1">Lun-Vie: 9:00 - 18:00</p>
+                    </div>
+                    
+                    <div>
+                        <h3 class="text-xl font-semibold mb-2">Correo Electrónico</h3>
+                        <p class="text-gray-600">soporte@creditofacil.com</p>
+                        <p class="text-sm text-gray-500 mt-1">Respuesta en menos de 24 horas</p>
+                    </div>
+                    
+                    <div>
+                        <h3 class="text-xl font-semibold mb-4">Síguenos</h3>
+                        <div class="flex space-x-4">
+                            <a href="#" class="text-gray-600 hover:text-blue-600 transition-colors">
+                                <span class="sr-only">Facebook</span>
+                                <i class="fab fa-facebook-f text-2xl"></i>
+                            </a>
+                            <a href="#" class="text-gray-600 hover:text-blue-400 transition-colors">
+                                <span class="sr-only">Twitter</span>
+                                <i class="fab fa-twitter text-2xl"></i>
+                            </a>
+                            <a href="#" class="text-gray-600 hover:text-pink-600 transition-colors">
+                                <span class="sr-only">Instagram</span>
+                                <i class="fab fa-instagram text-2xl"></i>
+                            </a>
+                            <a href="#" class="text-gray-600 hover:text-blue-700 transition-colors">
+                                <span class="sr-only">LinkedIn</span>
+                                <i class="fab fa-linkedin-in text-2xl"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Formulario de contacto -->
+                <div class="bg-gray-50 p-8 rounded-lg shadow-sm">
+                    <form id="contact-form" class="space-y-6">
+                        <div>
+                            <label for="full-name" class="block text-sm font-medium text-gray-700">Nombre completo</label>
+                            <div class="mt-1">
+                                <input type="text" name="full-name" id="full-name" autocomplete="name" required
+                                    class="py-3 px-4 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" 
+                                    placeholder="Tu nombre">
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label for="email" class="block text-sm font-medium text-gray-700">Correo electrónico</label>
+                            <div class="mt-1">
+                                <input id="email" name="email" type="email" autocomplete="email" required
+                                    class="py-3 px-4 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" 
+                                    placeholder="tucorreo@ejemplo.com">
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label for="subject" class="block text-sm font-medium text-gray-700">Asunto</label>
+                            <div class="mt-1">
+                                <input type="text" name="subject" id="subject" required
+                                    class="py-3 px-4 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" 
+                                    placeholder="¿Cómo podemos ayudarte?">
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label for="message" class="block text-sm font-medium text-gray-700">Mensaje</label>
+                            <div class="mt-1">
+                                <textarea id="message" name="message" rows="4" required
+                                    class="py-3 px-4 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" 
+                                    placeholder="Escribe tu mensaje aquí..."></textarea>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                Enviar mensaje
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Pie de página -->
+    <footer class="bg-gray-900 text-white py-8 mt-12">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col items-center justify-center text-center">
+                <h3 class="text-xl font-bold mb-6">Horizont</h3>
+                <p class="text-gray-400 text-sm mb-6 max-w-2xl">Sistema integral de gestión de créditos para tu negocio.</p>
+                
+                <!-- Enlaces solicitados -->
+                <div class="flex flex-wrap justify-center gap-6 mb-6">
+                    <a href="/adminsuper/polyticadatos.html" class="text-gray-400 hover:text-white transition-colors text-sm">Política de Datos</a>
+                    <a href="/adminsuper/quienes-somos.html" class="text-gray-400 hover:text-white transition-colors text-sm">Quiénes Somos</a>
+                    <a href="/adminsuper/terminos-condiciones.html" class="text-gray-400 hover:text-white transition-colors text-sm">Términos y Condiciones</a>
+                    <a href="/adminsuper/ubicacion.html" class="text-gray-400 hover:text-white transition-colors text-sm">Ubicación</a>
+                    <a href="/adminsuper/planes.html" class="text-gray-400 hover:text-white transition-colors text-sm">Planes</a>
+                </div>
+                
+                <!-- Línea divisoria -->
+                <div class="border-t border-gray-800 w-full pt-6">
+                    <p class="text-gray-500 text-sm">© 2024 Horizont. Todos los derechos reservados.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
 </body>
 </html>
