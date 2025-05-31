@@ -599,10 +599,328 @@ function getStatusClass(status) {
     }
 }
 
+
+
+// Función para exportar las devoluciones a Excel
+async function exportToExcel() {
+    try {
+        showLoading(true, 'Preparando datos para exportar...');
+        
+        // Obtener las devoluciones actuales
+        const { data: returns, error } = await loadReturnsData();
+        
+        if (error) {
+            throw new Error(error.message || 'Error al cargar los datos de devoluciones');
+        }
+        
+        if (!returns || returns.length === 0) {
+            showError('No hay devoluciones para exportar');
+            return;
+        }
+        
+        // Función auxiliar para obtener valores anidados de forma segura
+        const getNestedValue = (obj, path, defaultValue = 'N/A') => {
+            try {
+                const value = path.split('.').reduce((o, p) => (o && o[p] !== undefined) ? o[p] : null, obj);
+                return value !== null && value !== undefined ? value : defaultValue;
+            } catch (e) {
+                return defaultValue;
+            }
+        };
+        
+        // Formatear los datos para Excel
+        const dataToExport = returns.map(ret => {
+            const orderId = ret.order_id || 'N/A';
+            const order = ret.order || {};
+            const buyer = order.buyer || {};
+            
+            return {
+                'ID': ret.id || 'N/A',
+                'N° Orden': orderId,
+                'Fecha': ret.created_at ? new Date(ret.created_at).toLocaleDateString() : 'N/A',
+                'Hora': ret.created_at ? new Date(ret.created_at).toLocaleTimeString() : 'N/A',
+                'Motivo': ret.reason || 'No especificado',
+                'Descripción': ret.description || 'Sin descripción',
+                'Estado': ret.status || 'Pendiente',
+                'Tienda': getNestedValue(ret, 'store.name'),
+                'Cliente': buyer.name || 'Cliente no disponible',
+                'Email': buyer.email || 'N/A',
+                'Teléfono': getNestedValue(order, 'shipping_info.phone', 'N/A'),
+                'Dirección': getNestedValue(order, 'shipping_info.address', 'N/A')
+            };
+        });
+        
+        // Crear un libro de trabajo y una hoja de cálculo
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet(dataToExport);
+        
+        // Ajustar el ancho de las columnas
+        const wscols = [
+            {wch: 10},  // ID
+            {wch: 15},  // N° Orden
+            {wch: 12},  // Fecha
+            {wch: 10},  // Hora
+            {wch: 25},  // Motivo
+            {wch: 30},  // Descripción
+            {wch: 15},  // Estado
+            {wch: 20},  // Tienda
+            {wch: 25},  // Cliente
+            {wch: 25},  // Email
+            {wch: 15},  // Teléfono
+            {wch: 40}   // Dirección
+        ];
+        ws['!cols'] = wscols;
+        
+        // Estilo para la cabecera
+        const headerStyle = {
+            font: { bold: true, color: { rgb: 'FFFFFF' } },
+            fill: { fgColor: { rgb: '2C3E50' } },
+            alignment: { horizontal: 'center' }
+        };
+        
+        // Aplicar estilo a la cabecera
+        if (!ws['!rows']) ws['!rows'] = {};
+        ws['!rows'][0] = { s: headerStyle };
+        
+        // Agregar la hoja al libro
+        XLSX.utils.book_append_sheet(wb, ws, 'Devoluciones');
+        
+        // Generar el archivo Excel
+        const date = new Date();
+        const formattedDate = date.toISOString().split('T')[0];
+        const formattedTime = date.getHours() + '-' + date.getMinutes();
+        const fileName = `devoluciones_${formattedDate}_${formattedTime}.xlsx`;
+        
+        XLSX.writeFile(wb, fileName);
+        
+        showSuccess('Exportación completada con éxito');
+        
+    } catch (error) {
+        console.error('Error al exportar a Excel:', error);
+        showError(`Error al exportar: ${error.message || 'Intente nuevamente'}`);
+    } finally {
+        showLoading(false);
+    }
+}
+
+// Función para cargar los datos de devoluciones (sin renderizar)
+async function loadReturnsData() {
+    try {
+        const storeId = await getUserStoreId();
+        if (!storeId) {
+            return { data: null, error: 'No se pudo obtener la tienda del usuario' };
+        }
+        
+        // Primero obtenemos las devoluciones con la información básica
+        const { data: returns, error } = await supabase
+            .from('returns')
+            .select('*')
+            .eq('store_id', storeId)
+            .order('created_at', { ascending: false });
+            
+        if (error) {
+            console.error('Error al cargar devoluciones:', error);
+            return { data: null, error };
+        }
+        
+        // Si no hay devoluciones, retornar array vacío
+        if (!returns || returns.length === 0) {
+            return { data: [], error: null };
+        }
+        
+        // Obtener los IDs de órdenes únicos
+        const orderIds = [...new Set(returns.map(r => r.order_id))];
+        
+        // Obtener información de las órdenes
+        const { data: orders, error: ordersError } = await supabase
+            .from('orders')
+            .select('*, buyer:buyer_id(id, name, email)')
+            .in('id', orderIds);
+            
+        if (ordersError) {
+            console.error('Error al cargar órdenes:', ordersError);
+            // Continuamos sin la información de las órdenes
+        }
+        
+        // Crear un mapa de órdenes por ID para búsqueda rápida
+        const ordersMap = {};
+        if (orders) {
+            orders.forEach(order => {
+                ordersMap[order.id] = order;
+            });
+        }
+        
+        // Obtener información de las tiendas
+        const { data: store, error: storeError } = await supabase
+            .from('stores')
+            .select('id, name')
+            .eq('id', storeId)
+            .single();
+            
+        if (storeError) {
+            console.error('Error al cargar tienda:', storeError);
+            // Continuamos sin la información de la tienda
+        }
+        
+        // Combinar la información
+        const returnsWithRelations = returns.map(ret => ({
+            ...ret,
+            order: ordersMap[ret.order_id] || null,
+            store: store || null
+        }));
+        
+        return { data: returnsWithRelations, error: null };
+        
+    } catch (error) {
+        console.error('Error en loadReturnsData:', error);
+        return { data: null, error: error.message || 'Error al cargar las devoluciones' };
+    }
+}
+
+// Función para limpiar el formulario de devolución
+function resetReturnForm() {
+    const form = document.querySelector('#newReturnModal form');
+    if (form) {
+        form.reset();
+    }
+    
+    // Limpiar selects dinámicos
+    const orderSelect = document.getElementById('return-order');
+    if (orderSelect) {
+        orderSelect.innerHTML = '<option value="">Seleccionar orden</option>';
+    }
+    
+    // Ocultar información bancaria
+    const bankInfo = document.getElementById('bank-info');
+    if (bankInfo) {
+        bankInfo.classList.add('hidden');
+    }
+}
+
 // Función para mostrar el modal de nueva devolución
-function showNewReturnModal() {
-    // Implementar lógica para mostrar el modal de nueva devolución
-    console.log('Mostrar modal de nueva devolución');
+async function showNewReturnModal() {
+    try {
+        showLoading(true);
+        
+        // Limpiar el formulario
+        resetReturnForm();
+        
+        // Obtener el store_id del usuario
+        const storeId = await getUserStoreId();
+        if (!storeId) {
+            showError('No se pudo obtener la tienda del usuario');
+            return;
+        }
+        
+        // Cargar órdenes recientes del store con información del comprador
+        const { data: orders, error: ordersError } = await supabase
+            .from('orders')
+            .select(`
+                id,
+                created_at,
+                buyer:buyer_id (id, name, email)
+            `)
+            .eq('store_id', storeId)
+            .order('created_at', { ascending: false })
+            .limit(50); // Últimas 50 órdenes
+            
+        if (ordersError) throw ordersError;
+        
+        // Limpiar y llenar el select de órdenes
+        const orderSelect = document.getElementById('return-order');
+        orderSelect.innerHTML = '<option value="">Seleccionar orden</option>';
+        
+        orders.forEach(order => {
+            const option = document.createElement('option');
+            option.value = order.id;
+            const orderDate = order.created_at ? new Date(order.created_at).toLocaleDateString() : 'Fecha no disponible';
+            const buyerName = order.buyer?.name || 'Cliente';
+            const shortId = order.id.split('-')[0]; // Tomar solo la primera parte del UUID
+            option.textContent = `#${shortId} - ${buyerName} - ${orderDate}`;
+            orderSelect.appendChild(option);
+        });
+        
+        // Inicializar el modal
+        const newReturnModal = new bootstrap.Modal(document.getElementById('newReturnModal'));
+        newReturnModal.show();
+        
+    } catch (error) {
+        console.error('Error al cargar datos para nueva devolución:', error);
+        showError('No se pudieron cargar los datos necesarios');
+    } finally {
+        showLoading(false);
+    }
+}
+
+// Función para crear una nueva devolución
+async function createReturn() {
+    try {
+        showLoading(true);
+        
+        // Obtener datos del formulario
+        const orderId = document.getElementById('return-order').value;
+        const reason = document.getElementById('return-reason').value.trim();
+        const description = document.getElementById('return-description').value.trim();
+        
+        // Validaciones
+        if (!orderId || !reason || !description) {
+            showError('Por favor complete todos los campos obligatorios');
+            return;
+        }
+        
+        // Obtener el store_id del usuario
+        const storeId = await getUserStoreId();
+        if (!storeId) {
+            showError('No se pudo obtener la tienda del usuario');
+            return;
+        }
+        
+        // Obtener el ID del usuario actual
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            showError('No se pudo obtener la información del usuario');
+            return;
+        }
+        
+        // Preparar datos de la devolución
+        const returnData = {
+            order_id: orderId,
+            store_id: storeId,
+            user_id: user.id,
+            reason: reason,
+            description: description,
+            status: 'Pendiente',
+            created_at: new Date().toISOString()
+        };
+        
+        // Crear el registro de devolución
+        const { data: returnResult, error: returnError } = await supabase
+            .from('returns')
+            .insert([returnData])
+            .select()
+            .single();
+            
+        if (returnError) {
+            console.error('Error en la inserción:', returnError);
+            throw returnError;
+        }
+        
+        // Cerrar el modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('newReturnModal'));
+        if (modal) modal.hide();
+        
+        // Mostrar mensaje de éxito
+        showSuccess('Solicitud de devolución creada exitosamente');
+        
+        // Recargar la lista de devoluciones
+        loadReturns();
+        
+    } catch (error) {
+        console.error('Error al crear la devolución:', error);
+        showError('Ocurrió un error al crear la devolución: ' + (error.message || 'Error desconocido'));
+    } finally {
+        showLoading(false);
+    }
 }
 
 // Función para mostrar los detalles de una devolución

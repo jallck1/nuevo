@@ -330,6 +330,24 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Inicializar el modal
     initStoresModal();
+    
+    // Manejar clic en el botón de Nueva Tienda
+    if (newStoreBtn) {
+        newStoreBtn.addEventListener('click', () => {
+            // Cerrar el modal actual
+            if (manageStoresModal) {
+                manageStoresModal.style.display = 'none';
+            }
+            // Abrir el modal de creación de tienda
+            const storeModal = document.getElementById('storeModal');
+            if (storeModal) {
+                storeModal.style.display = 'block';
+                // Limpiar el formulario
+                const form = document.getElementById('createStoreForm');
+                if (form) form.reset();
+            }
+        });
+    }
 });
 
 // Función para abrir el modal de agregar administrador (se llama desde el HTML)

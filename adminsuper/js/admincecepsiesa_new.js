@@ -56,39 +56,49 @@ async function createStore(storeData) {
         console.log('Iniciando creación de tienda...');
         
         // Obtener el usuario actual
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
         
-        if (!user) {
+        if (userError || !user) {
+            console.error('Error al obtener el usuario:', userError);
             throw new Error('No se pudo verificar tu identidad. Por favor, recarga la página.');
         }
         
         console.log('Usuario autenticado:', user.id);
         
-        if (!storeData.name) {
+        // Validar datos requeridos
+        if (!storeData || !storeData.name) {
             throw new Error('El nombre de la tienda es requerido');
         }
         
-        // Usar executeSafeQuery para insertar la tienda
-        const query = `
-            INSERT INTO stores (name, address, admin_owner_id, created_by)
-            VALUES ('${storeData.name.replace(/'/g, "''")}', 
-                   '${(storeData.address || '').replace(/'/g, "''")}', 
-                   '${user.id}', 
-                   '${user.id}')
-            RETURNING *
-        `;
+        // Crear el objeto de tienda con solo los campos necesarios
+        const newStore = {
+            name: storeData.name,
+            address: storeData.address || null,
+            admin_owner_id: user.id,
+            created_by: user.id,
+            status: 'active',  // Asegurarse de incluir el estado
+            created_at: new Date().toISOString()
+        };
         
-        const result = await executeSafeQuery(query);
+        console.log('Intentando crear tienda con datos:', newStore);
         
-        if (!result.success) {
-            throw new Error(result.error || 'Error al crear la tienda');
+        // Insertar usando el método de Supabase directamente
+        const { data, error } = await supabase
+            .from('stores')
+            .insert([newStore])
+            .select()
+            .single();
+        
+        if (error) {
+            console.error('Error al crear la tienda:', error);
+            throw new Error(`Error al crear la tienda: ${error.message}`);
         }
         
-        console.log('Tienda creada exitosamente:', result.data);
+        console.log('Tienda creada exitosamente:', data);
         
         return { 
             success: true, 
-            storeId: result.data[0].id, 
+            storeId: data.id, 
             userId: user.id 
         };
         

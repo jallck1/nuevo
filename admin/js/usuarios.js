@@ -748,8 +748,8 @@ async function loadStores(selectElement = null, selectedStoreId = null) {
             .from('stores')
             .select('*');
             
-        // Si no es admin, cargar solo su tienda
-        if (userProfile.role !== 'admin' && userProfile.store_id) {
+        // Si no es admin o es el formulario de nuevo usuario, cargar solo su tienda
+        if ((userProfile.role !== 'admin' || selectElement?.id === 'user-store') && userProfile.store_id) {
             storeQuery = storeQuery.eq('id', userProfile.store_id);
         }
         
@@ -1056,6 +1056,11 @@ function renderUsers(users) {
                     ${lastLogin}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <button onclick="openPagoModal('${user.id}', '${user.name || 'Usuario'}', ${parseFloat(availableCredit)})" 
+                            class="mr-3 text-green-600 hover:text-green-800 transition-colors duration-200"
+                            data-bs-toggle="tooltip" data-bs-placement="top" title="Registrar pago">
+                        <i class="fas fa-wallet"></i>
+                    </button>
                     <button onclick="editUser('${user.id}')" 
                             class="mr-3 text-blue-600 hover:text-blue-900 transition-colors duration-200"
                             data-bs-toggle="tooltip" data-bs-placement="top" title="Editar usuario">
@@ -1186,9 +1191,7 @@ async function createUser(event) {
         }
         
         // Obtener valores del formulario
-        const name = document.getElementById('user-name')?.value.trim() || '';
-        const lastname = document.getElementById('user-lastname')?.value.trim() || '';
-        const fullName = `${name} ${lastname}`.trim();
+        const fullName = document.getElementById('user-fullname')?.value.trim() || '';
         const email = document.getElementById('user-email')?.value.trim() || '';
         const password = document.getElementById('user-password')?.value || '';
         const role = 'buyer'; // Forzar rol 'buyer' para nuevos usuarios
@@ -1196,56 +1199,33 @@ async function createUser(event) {
         const phone = document.getElementById('user-phone')?.value.trim() || null;
         const creditAssigned = parseFloat(document.getElementById('user-credit-assigned')?.value) || 0;
         
-        console.log('Datos del formulario:', { name, lastname, email, storeId, phone });
+        console.log('Datos del formulario:', { fullName, email, storeId, phone });
         
         // Validar campos requeridos
-        let hasError = false;
-        
-        // Validar nombre
-        if (!name) {
-            showError('Por favor ingrese el nombre');
-            document.getElementById('user-name')?.focus();
-            hasError = true;
+        if (!fullName || !email || !password || !storeId) {
+            showError('Todos los campos son obligatorios');
+            return;
         }
         
-        // Validar correo electrónico
-        if (!email) {
-            showError('Por favor ingrese el correo electrónico');
-            document.getElementById('user-email')?.focus();
-            hasError = true;
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        // Validar formato de correo
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
             showError('Por favor ingrese un correo electrónico válido');
             document.getElementById('user-email')?.focus();
-            hasError = true;
+            return;
         }
         
-        // Validar contraseña
-        if (!password) {
-            showError('Por favor ingrese una contraseña');
+        // Validar contraseña (mínimo 6 caracteres como en register.js)
+        if (password.length < 6) {
+            showError('La contraseña debe tener al menos 6 caracteres');
             document.getElementById('user-password')?.focus();
-            hasError = true;
-        } else if (password.length < 8) {
-            showError('La contraseña debe tener al menos 8 caracteres');
-            document.getElementById('user-password')?.focus();
-            hasError = true;
-        }
-        
-        // Validar tienda
-        if (!storeId) {
-            showError('Por favor seleccione una tienda');
-            document.getElementById('user-store')?.focus();
-            hasError = true;
+            return;
         }
         
         // Validar cupo de crédito
         if (isNaN(creditAssigned) || creditAssigned < 0) {
             showError('Por favor ingrese un monto de crédito válido');
             document.getElementById('user-credit-assigned')?.focus();
-            hasError = true;
-        }
-        
-        if (hasError) {
-            console.log('Validación fallida');
             return;
         }
         
@@ -1319,49 +1299,96 @@ async function createUser(event) {
             store_id: storeId,
             phone: phone,
             credit_assigned: creditAssigned,
-            credit_used: 0, // Inicializar crédito usado en 0
+            credit_used: 0.00, // Inicializar crédito usado en 0 con 2 decimales
             status: 'Activo', // Usar 'Activo' con A mayúscula para coincidir con la restricción de la base de datos
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
         };
         
-        console.log('Creando perfil con datos:', profileData);
+        console.log('Verificando si el perfil ya existe...');
         
-        const { data: createdProfile, error: profileError } = await supabase
+        // Primero verificar si el perfil ya existe
+        const { data: existingProfile, error: fetchError } = await supabase
             .from('profiles')
-            .insert([profileData])
-            .select()
+            .select('id, email')
+            .eq('id', userId)
             .single();
             
-        if (profileError) {
-            console.error('Error al crear perfil:', profileError);
-            // Intentar eliminar el usuario de Auth si falla la creación del perfil
-            await supabase.auth.admin.deleteUser(userId);
-            throw new Error(profileError.message || 'Error al crear el perfil del usuario');
+        if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 = No rows returned
+            console.error('Error al verificar perfil existente:', fetchError);
+            throw new Error('Error al verificar si el usuario ya existe');
         }
         
-        console.log('Perfil creado exitosamente:', profileData);
+        let result;
         
-        // Cerrar el modal y limpiar el formulario
-        const modal = document.getElementById('newUserModal');
-        if (modal) {
-            modal.classList.add('hidden');
-            document.body.classList.remove('overflow-hidden');
+        if (existingProfile) {
+            console.log('El perfil ya existe, actualizando...');
+            // Si el perfil ya existe, actualizarlo en lugar de insertar
+            const { data: updatedProfile, error: updateError } = await supabase
+                .from('profiles')
+                .update(profileData)
+                .eq('id', userId)
+                .select()
+                .single();
+                
+            if (updateError) {
+                console.error('Error al actualizar perfil existente:', updateError);
+                throw new Error('Error al actualizar el perfil del usuario');
+            }
+            result = updatedProfile;
+        } else {
+            console.log('Creando nuevo perfil con datos:', profileData);
+            // Si el perfil no existe, crearlo
+            const { data: createdProfile, error: profileError } = await supabase
+                .from('profiles')
+                .insert([profileData])
+                .select()
+                .single();
+                
+            if (profileError) {
+                console.error('Error al crear perfil:', profileError);
+                throw new Error(profileError.message || 'Error al crear el perfil del usuario. Verifica que los datos sean correctos.');
+            }
+            result = createdProfile;
         }
+        
+        console.log('Perfil creado/actualizado exitosamente:', result);
+        
+        // Cerrar el modal
+        closeModal('newUserModal');
+        
+        // Mostrar notificación de éxito
+        Swal.fire({
+            title: '¡Éxito!',
+            text: 'Usuario creado exitosamente',
+            icon: 'success',
+            confirmButtonText: 'Aceptar',
+            confirmButtonColor: '#3b82f6',
+            timer: 3000,
+            timerProgressBar: true
+        });
+        
+        // Recargar la lista de usuarios
+        await loadUsers();
         
         // Limpiar el formulario
         const form = document.getElementById('new-user-form');
         if (form) form.reset();
         
-        // Mostrar mensaje de éxito
-        showSuccess('Usuario creado exitosamente');
-        
-        // Recargar la lista de usuarios
-        await loadUsers();
-        
+        return result;
     } catch (error) {
         console.error('Error en createUser:', error);
-        showError(error.message || 'Error al crear el usuario');
+        
+        // Mostrar notificación de error
+        Swal.fire({
+            title: 'Error',
+            text: error.message || 'Error al crear el usuario',
+            icon: 'error',
+            confirmButtonText: 'Aceptar',
+            confirmButtonColor: '#ef4444'
+        });
+        
+        throw error;
     } finally {
         // Restaurar el botón
         const submitButton = document.getElementById('submit-button');
@@ -1699,10 +1726,10 @@ async function updateUser() {
     }
 }
 
-// Eliminar usuario
+// Eliminar usuario (quitar tienda asignada)
 async function deleteUser(userId) {
     try {
-        if (!confirm('¿Está seguro de que desea eliminar este usuario? Esta acción no se puede deshacer.')) {
+        if (!confirm('¿Está seguro de que desea quitar la tienda asignada a este usuario? El usuario ya no aparecerá en esta lista.')) {
             return;
         }
         
@@ -1713,28 +1740,33 @@ async function deleteUser(userId) {
             return;
         }
         
-        // 1. Eliminar el perfil de la base de datos
-        const { error: deleteError } = await supabase
+        // 1. Actualizar el perfil para quitar la tienda asignada
+        const { error: updateError } = await supabase
             .from('profiles')
-            .delete()
+            .update({ 
+                store_id: null,
+                updated_at: new Date().toISOString()
+            })
             .eq('id', userId);
             
-        if (deleteError) throw deleteError;
-        
-        // 2. Desactivar el usuario en Auth (no lo eliminamos para evitar problemas con referencias)
-        const { error: authError } = await supabase.auth.admin.updateUserById(userId, {
-            user_metadata: { status: 'deleted' }
-        });
-        
-        if (authError) throw authError;
+        if (updateError) throw updateError;
         
         // Éxito
-        showSuccess('Usuario eliminado exitosamente');
+        showSuccess('Se ha quitado la tienda asignada al usuario');
         loadUsers();
         
     } catch (error) {
-        console.error('Error al eliminar usuario:', error);
-        showError('Error al eliminar el usuario: ' + (error.message || 'Error desconocido'));
+        console.error('Error al actualizar usuario:', error);
+        
+        // Mostrar mensaje de error más amigable
+        let errorMessage = 'Error al actualizar el usuario';
+        if (error.message && error.message.includes('permission denied')) {
+            errorMessage = 'No tiene permisos para realizar esta acción';
+        } else if (error.message) {
+            errorMessage += ': ' + error.message;
+        }
+        
+        showError(errorMessage);
     } finally {
         showLoading(false);
     }
@@ -1812,6 +1844,148 @@ function showSuccess(message) {
 // Mostrar mensaje de error
 function showError(message) {
     showToast(message, 'error');
+}
+
+// Función para exportar usuarios a Excel
+async function exportToExcel() {
+    try {
+        showLoading(true, 'Preparando datos para exportar...');
+        
+        // Obtener el ID de la tienda del administrador actual
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError) throw userError;
+        
+        // Obtener el perfil del administrador para conseguir el store_id
+        const { data: adminProfile, error: profileError } = await supabase
+            .from('profiles')
+            .select('store_id')
+            .eq('id', user.id)
+            .single();
+            
+        if (profileError) throw new Error(profileError.message || 'Error al cargar el perfil del administrador');
+        if (!adminProfile.store_id) throw new Error('No se pudo determinar la tienda del administrador');
+        
+        // Obtener solo los usuarios de la tienda actual con rol 'buyer'
+        const { data: users, error: usersError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('store_id', adminProfile.store_id)
+            .eq('role', 'buyer')
+            .order('created_at', { ascending: false });
+            
+        if (usersError) {
+            throw new Error(usersError.message || 'Error al cargar los usuarios de la tienda');
+        }
+        
+        if (!users || users.length === 0) {
+            showError('No hay usuarios para exportar');
+            return;
+        }
+        
+        // Obtener las tiendas
+        let storesMap = {};
+        try {
+            const { data: stores, error: storesError } = await supabase
+                .from('stores')
+                .select('id, name');
+                
+            if (!storesError && stores) {
+                // Crear un mapa de tiendas por ID para búsqueda rápida
+                stores.forEach(store => {
+                    storesMap[store.id] = store;
+                });
+            } else if (storesError) {
+                console.error('Error al cargar tiendas:', storesError);
+            }
+        } catch (error) {
+            console.error('Error al obtener tiendas:', error);
+        }
+        
+        // El mapa de tiendas ya se creó en el bloque try-catch anterior
+        
+        // Función auxiliar para obtener valores anidados de forma segura
+        const getNestedValue = (obj, path, defaultValue = 'N/A') => {
+            try {
+                const value = path.split('.').reduce((o, p) => (o && o[p] !== undefined) ? o[p] : null, obj);
+                return value !== null && value !== undefined ? value : defaultValue;
+            } catch (e) {
+                return defaultValue;
+            }
+        };
+        
+        // Formatear los datos para Excel
+        const dataToExport = users.map(user => {
+            const role = ROLES.find(r => r.value === user.role)?.label || user.role;
+            const status = STATUSES.find(s => s.value === user.status)?.label || user.status;
+            const store = user.store_id ? storesMap[user.store_id] : null;
+            
+            return {
+                'ID': user.id || 'N/A',
+                'Nombre': user.name || 'Sin nombre',
+                'Email': user.email || 'Sin email',
+                'Teléfono': user.phone || 'N/A',
+                'Rol': role,
+                'Estado': status,
+                'Tienda': store ? store.name : (user.store_id ? `ID: ${user.store_id}` : 'Sin tienda asignada'),
+                'Cupo de Crédito (S/.)': user.credit_limit?.toFixed(2) || '0.00',
+                'Crédito Usado (S/.)': user.credit_used?.toFixed(2) || '0.00',
+                'Crédito Disponible (S/.)': ((user.credit_limit || 0) - (user.credit_used || 0)).toFixed(2),
+                'Fecha de Creación': user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A',
+                'Última Actualización': user.updated_at ? new Date(user.updated_at).toLocaleDateString() : 'N/A'
+            };
+        });
+        
+        // Crear un libro de trabajo y una hoja de cálculo
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet(dataToExport);
+        
+        // Ajustar el ancho de las columnas
+        const wscols = [
+            {wch: 10},  // ID
+            {wch: 25},  // Nombre
+            {wch: 30},  // Email
+            {wch: 15},  // Teléfono
+            {wch: 15},  // Rol
+            {wch: 12},  // Estado
+            {wch: 20},  // Tienda
+            {wch: 18},  // Cupo de Crédito
+            {wch: 18},  // Crédito Usado
+            {wch: 22},  // Crédito Disponible
+            {wch: 15},  // Fecha de Creación
+            {wch: 20}   // Última Actualización
+        ];
+        ws['!cols'] = wscols;
+        
+        // Estilo para la cabecera
+        const headerStyle = {
+            font: { bold: true, color: { rgb: 'FFFFFF' } },
+            fill: { fgColor: { rgb: '2C3E50' } },
+            alignment: { horizontal: 'center' }
+        };
+        
+        // Aplicar estilo a la cabecera
+        if (!ws['!rows']) ws['!rows'] = {};
+        ws['!rows'][0] = { s: headerStyle };
+        
+        // Agregar la hoja al libro
+        XLSX.utils.book_append_sheet(wb, ws, 'Usuarios');
+        
+        // Generar el archivo Excel
+        const date = new Date();
+        const formattedDate = date.toISOString().split('T')[0];
+        const formattedTime = date.getHours() + '-' + date.getMinutes();
+        const fileName = `usuarios_${formattedDate}_${formattedTime}.xlsx`;
+        
+        XLSX.writeFile(wb, fileName);
+        
+        showSuccess('Exportación completada con éxito');
+        
+    } catch (error) {
+        console.error('Error al exportar a Excel:', error);
+        showError(`Error al exportar: ${error.message || 'Intente nuevamente'}`);
+    } finally {
+        showLoading(false);
+    }
 }
 
 // Mostrar notificación toast

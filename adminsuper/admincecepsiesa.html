@@ -1178,60 +1178,51 @@ Ejemplo: INSERT INTO stores (name, address, admin_owner_id, created_by)
             resultDiv.classList.remove('hidden');
             
             try {
-                // Obtener la sesión actual
-                const { data: { session } } = await supabase.auth.getSession();
-                if (!session) throw new Error('No hay sesión activa');
-                
-                // Determinar si es una consulta SELECT
-                const isSelect = query.trim().toLowerCase().startsWith('select');
-                
-                // Crear una función SQL temporal para ejecutar la consulta
-                const tempFunctionName = `temp_execute_${Date.now()}`;
-                const createFunctionSQL = `
-                    CREATE OR REPLACE FUNCTION ${tempFunctionName}()
-                    RETURNS JSON LANGUAGE plpgsql SECURITY DEFINER
-                    AS $$
-                    DECLARE
-                        result JSON;
-                    BEGIN
-                        ${isSelect ? 'EXECUTE ' + query + ' INTO result; RETURN result;' 
-                                  : 'EXECUTE ' + query + '; RETURN json_build_object(\'status\', \'success\');'}
-                    EXCEPTION WHEN OTHERS THEN
-                        RAISE EXCEPTION '%', SQLERRM;
-                    END;
-                    $$;
-                `;
-                
-                // 1. Crear la función temporal
-                const { error: createError } = await supabase.rpc('rpc', {
-                    query: createFunctionSQL
+                // Usar el cliente de Supabase existente para llamar a la función RPC
+                const { data, error } = await supabase.rpc('execute_sql', {
+                    query_text: query  // Asegurarse de que el nombre del parámetro coincida
                 });
-                
-                if (createError) throw createError;
-                
-                // 2. Ejecutar la función
-                const { data, error: execError } = await supabase.rpc(tempFunctionName);
-                
-                // 3. Eliminar la función temporal (en segundo plano, no esperamos a que termine)
-                supabase.rpc('rpc', {
-                    query: `DROP FUNCTION IF EXISTS ${tempFunctionName}()`
-                }).catch(console.error);
-                
-                if (execError) throw execError;
-                
-                // Mostrar resultados
+
+                if (error) {
+                    throw new Error(error.message || 'Error al ejecutar la consulta');
+                }
+
+                // Determinar el tipo de consulta para formatear la salida
+                const queryLower = query.trim().toLowerCase();
+                const isSelect = queryLower.startsWith('select') || queryLower.startsWith('with');
+                const isModification = queryLower.startsWith('insert') || 
+                                     queryLower.startsWith('update') || 
+                                     queryLower.startsWith('delete');
+
+                // Formatear la salida según el tipo de consulta
                 if (isSelect) {
-                    if (data && data.length > 0) {
-                        resultContent.textContent = JSON.stringify(data, null, 2);
+                    result = data || [];
+                } else if (isModification) {
+                    result = { 
+                        message: queryLower.split(' ')[0].toUpperCase() + ' ejecutado con éxito',
+                        affected_rows: data?.row_count || 0,
+                        data: data
+                    };
+                } else {
+                    result = data || { message: 'Consulta ejecutada correctamente' };
+                }
+
+                // Mostrar resultados
+                if (result) {
+                    if (Array.isArray(result) && result.length > 0) {
+                        resultContent.textContent = JSON.stringify(result, null, 2);
+                        resultContent.className = 'text-green-400';
+                    } else if (typeof result === 'object') {
+                        resultContent.textContent = JSON.stringify(result, null, 2);
                         resultContent.className = 'text-green-400';
                     } else {
-                        resultContent.textContent = 'La consulta se ejecutó correctamente, pero no se devolvieron resultados.';
-                        resultContent.className = 'text-yellow-400';
+                        resultContent.textContent = 'Consulta ejecutada con éxito. ' + 
+                            (result ? `\n${JSON.stringify(result, null, 2)}` : '');
+                        resultContent.className = 'text-green-400';
                     }
                 } else {
-                    resultContent.textContent = 'Consulta ejecutada con éxito. ' + 
-                        (data ? `\n${JSON.stringify(data, null, 2)}` : '');
-                    resultContent.className = 'text-green-400';
+                    resultContent.textContent = 'La consulta se ejecutó correctamente, pero no se devolvieron resultados.';
+                    resultContent.className = 'text-yellow-400';
                 }
             } catch (error) {
                 console.error('Error al ejecutar SQL:', error);

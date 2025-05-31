@@ -14,6 +14,15 @@
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Scripts de Bootstrap y dependencias -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- SheetJS para exportar a Excel -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+    
     <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
@@ -558,9 +567,13 @@
                         <p class="text-sm text-gray-600 mt-1">Gestiona las devoluciones de productos</p>
                     </div>
                     <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
-                        <button id="new-return-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center" data-bs-toggle="modal" data-bs-target="#newReturnModal">
+                        <button id="new-return-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center" onclick="showNewReturnModal()">
                             <i class="fas fa-plus mr-2"></i>
                             <span>Nueva Devolución</span>
+                        </button>
+                        <button id="export-returns-btn" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center" onclick="exportToExcel()">
+                            <i class="fas fa-file-excel mr-2"></i>
+                            <span>Exportar a Excel</span>
                         </button>
                     </div>
                 </div>
@@ -675,26 +688,19 @@
                             </select>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Producto</label>
-                            <select class="form-select" id="return-product" required>
-                                <option value="">Seleccionar producto</option>
-                                <!-- Los productos se cargarán dinámicamente -->
+                            <label class="form-label">Motivo de la devolución</label>
+                            <select class="form-select" id="return-reason" required>
+                                <option value="">Seleccionar motivo</option>
+                                <option value="Producto defectuoso">Producto defectuoso</option>
+                                <option value="No es lo que esperaba">No es lo que esperaba</option>
+                                <option value="Recibí el producto equivocado">Recibí el producto equivocado</option>
+                                <option value="El producto llegó dañado">El producto llegó dañado</option>
+                                <option value="Otro">Otro</option>
                             </select>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Tipo de devolución</label>
-                            <select class="form-select" id="return-type" required>
-                                <option value="devolucion">Devolución</option>
-                                <option value="cambio">Cambio</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Motivo</label>
-                            <textarea class="form-control" id="return-reason" rows="3" required></textarea>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Evidencia</label>
-                            <input type="file" class="form-control" id="return-evidence" accept="image/*">
+                            <label class="form-label">Descripción detallada</label>
+                            <textarea class="form-control" id="return-description" rows="3" required></textarea>
                         </div>
                     </form>
                 </div>

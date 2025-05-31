@@ -738,7 +738,12 @@ async function loadProducts() {
         });
         
         console.log('Productos encontrados con categorías:', productsWithCategories);
-        renderProducts(productsWithCategories);
+        
+        // Actualizar la variable global de productos
+        products = productsWithCategories;
+        
+        // Renderizar los productos en la interfaz
+        renderProducts(products);
         
     } catch (error) {
         console.error('Error en loadProducts:', error);
@@ -1482,6 +1487,127 @@ function changePage(page) {
         table.scrollIntoView({ behavior: 'smooth' });
     }
 }
+
+// Función para exportar productos a Excel
+function exportToExcel() {
+    try {
+        // Crear un nuevo libro de trabajo
+        const wb = XLSX.utils.book_new();
+        
+        // Preparar los datos para la exportación
+        const data = [
+            [
+                'Código',
+                'Nombre',
+                'Categoría',
+                'Precio de Compra',
+                'Precio de Venta',
+                'Stock',
+                'Estado',
+                'Proveedor',
+                'SKU',
+                'Código de Barras',
+                'IVA',
+                'Descuento',
+                'Precio Final',
+                'Fecha de Creación',
+                'Última Actualización'
+            ],
+            ...products.map(product => [
+                product.id,
+                product.name,
+                getCategoryName(product.category_id) || 'Sin categoría',
+                `S/. ${parseFloat(product.cost_price || 0).toFixed(2)}`,
+                `S/. ${parseFloat(product.sale_price || 0).toFixed(2)}`,
+                product.stock,
+                getStatusText(product.status),
+                product.supplier_name || 'Sin proveedor',
+                product.sku || 'N/A',
+                product.barcode || 'N/A',
+                `${product.iva || 0}%`,
+                product.discount ? `${product.discount}%` : '0%',
+                `S/. ${calculateFinalPriceForExport(product).toFixed(2)}`,
+                new Date(product.created_at).toLocaleDateString('es-PE'),
+                new Date(product.updated_at).toLocaleDateString('es-PE')
+            ])
+        ];
+        
+        // Crear una hoja de cálculo con los datos
+        const ws = XLSX.utils.aoa_to_sheet(data);
+        
+        // Ajustar el ancho de las columnas
+        const columnWidths = [
+            { wch: 10 }, // Código
+            { wch: 30 }, // Nombre
+            { wch: 20 }, // Categoría
+            { wch: 15 }, // Precio Compra
+            { wch: 15 }, // Precio Venta
+            { wch: 10 }, // Stock
+            { wch: 15 }, // Estado
+            { wch: 25 }, // Proveedor
+            { wch: 15 }, // SKU
+            { wch: 20 }, // Código Barras
+            { wch: 10 }, // IVA
+            { wch: 12 }, // Descuento
+            { wch: 15 }, // Precio Final
+            { wch: 15 }, // Fecha Creación
+            { wch: 20 }  // Última Actualización
+        ];
+        
+        ws['!cols'] = columnWidths;
+        
+        // Agregar la hoja al libro de trabajo
+        XLSX.utils.book_append_sheet(wb, ws, 'Productos');
+        
+        // Generar el archivo Excel
+        const fileName = `Productos_${new Date().toISOString().split('T')[0]}.xlsx`;
+        XLSX.writeFile(wb, fileName);
+        
+        showSuccess('Exportación a Excel completada correctamente');
+    } catch (error) {
+        console.error('Error al exportar a Excel:', error);
+        showError('Ocurrió un error al exportar a Excel');
+    }
+}
+
+// Función auxiliar para calcular el precio final para la exportación
+function calculateFinalPriceForExport(product) {
+    const price = parseFloat(product.sale_price) || 0;
+    const discount = (parseFloat(product.discount) || 0) / 100;
+    const iva = (parseFloat(product.iva) || 0) / 100;
+    
+    let finalPrice = price * (1 - discount);
+    if (product.iva_included !== true) {
+        finalPrice *= (1 + iva);
+    }
+    
+    return finalPrice;
+}
+
+// Manejador de eventos para el botón de exportar a Excel
+document.getElementById('export-btn')?.addEventListener('click', async () => {
+    try {
+        showLoading(true);
+        // Asegurarnos de que los productos estén cargados
+        if (!products || products.length === 0) {
+            console.log('Cargando productos antes de exportar...');
+            await loadProducts();
+        }
+        
+        if (products && products.length > 0) {
+            console.log(`Exportando ${products.length} productos a Excel...`);
+            exportToExcel();
+        } else {
+            console.warn('No se encontraron productos para exportar después de cargar');
+            showError('No se encontraron productos para exportar. Verifica que haya productos en el catálogo.');
+        }
+    } catch (error) {
+        console.error('Error al preparar la exportación:', error);
+        showError('Error al cargar los productos para exportar');
+    } finally {
+        showLoading(false);
+    }
+});
 
 // Manejadores de eventos para los botones de navegación
 document.addEventListener('DOMContentLoaded', () => {

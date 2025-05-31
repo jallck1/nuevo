@@ -146,48 +146,46 @@ document.addEventListener('DOMContentLoaded', (async () => {
 // Función para crear una nueva tienda
 async function createStore(storeData) {
     try {
-        console.log('Iniciando creación de tienda...');
-        
-        // Obtener el usuario actual
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-        
-        if (userError || !user) {
-            console.error('Error al obtener el usuario:', userError);
-            throw new Error('No se pudo verificar tu identidad. Por favor, recarga la página.');
-        }
-        
-        console.log('Usuario autenticado:', user.id);
-        
-        // Validar datos mínimos
-        if (!storeData.name) {
+        // Validación básica
+        if (!storeData?.name?.trim()) {
             throw new Error('El nombre de la tienda es requerido');
         }
         
-        // Intentar insertar la tienda directamente
-        console.log('Creando tienda con inserción directa...');
+        // Obtener el usuario actual
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            throw new Error('No se pudo verificar tu sesión. Por favor, inicia sesión nuevamente.');
+        }
+        
+        // Crear el objeto de tienda con solo los campos necesarios
+        const newStore = {
+            name: storeData.name.trim(),
+            address: (storeData.address || '').trim(),
+            admin_owner_id: user.id,
+            created_by: user.id
+            // Nota: Se eliminó el campo 'status' ya que no existe en la tabla
+        };
+        
+        console.log('Datos a enviar a la API:', newStore);
+        
+        // Insertar la tienda usando el cliente de Supabase
         const { data, error } = await supabase
             .from('stores')
-            .insert({
-                name: storeData.name,
-                address: storeData.address || '',
-                admin_owner_id: user.id,
-                created_by: user.id
-            })
+            .insert(newStore)
             .select()
             .single();
         
         if (error) {
-            console.error('Error al crear la tienda:', error);
-            throw new Error('No se pudo crear la tienda. ' + (error.message || ''));
+            console.error('Error de Supabase:', error);
+            throw new Error(error.message || 'Error al crear la tienda');
         }
         
-        console.log('Tienda creada exitosamente:', data);
+        if (!data || data.length === 0) {
+            throw new Error('No se recibieron datos de la tienda creada');
+        }
         
-        return { 
-            success: true, 
-            storeId: data.id, 
-            userId: user.id 
-        };
+        console.log('Tienda creada exitosamente:', data[0]);
+        return { success: true, storeId: data[0].id };
         
     } catch (error) {
         console.error('Error en createStore:', error);

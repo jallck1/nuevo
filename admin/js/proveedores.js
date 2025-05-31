@@ -492,15 +492,134 @@ async function editSupplier(supplierId) {
     }
 }
 
+// Función para generar PDF de entrada de almacén
+function generarEntradaAlmacenPDF(datos) {
+    try {
+        // Usar jsPDF desde el objeto global
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        // Configuración del documento
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const margin = 15;
+        let y = 20;
+        
+        // Logo y encabezado
+        doc.setFontSize(20);
+        doc.setFont('helvetica', 'bold');
+        doc.text('ENTRADA DE ALMACÉN', pageWidth - margin - 80, y);
+        
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        y += 5;
+        doc.text(`N° ${datos.numeroEntrada}`, pageWidth - margin - 80, y);
+        
+        // Información de la empresa
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text('HORIZONT', margin, y);
+        doc.setFont('helvetica', 'normal');
+        y += 5;
+        doc.setFontSize(10);
+        doc.text('RUC: 20605929281', margin, y);
+        y += 5;
+        doc.text('Av. Los Girasoles 123', margin, y);
+        y += 5;
+        doc.text('Lima, Perú', margin, y);
+        y += 5;
+        doc.text('Tel: (01) 123-4567', margin, y);
+        y += 10;
+        
+        // Línea separadora
+        doc.setDrawColor(200, 200, 200);
+        doc.line(margin, y, pageWidth - margin, y);
+        y += 10;
+        
+        // Información de la entrada
+        doc.setFont('helvetica', 'bold');
+        doc.text('Tipo de Movimiento:', margin, y);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Entrada por compra a proveedor', margin + 50, y);
+        y += 5;
+        
+        doc.setFont('helvetica', 'bold');
+        doc.text('Proveedor:', margin, y);
+        doc.setFont('helvetica', 'normal');
+        doc.text(datos.proveedor, margin + 30, y);
+        y += 5;
+        
+        doc.setFont('helvetica', 'bold');
+        doc.text('Fecha:', margin, y);
+        doc.setFont('helvetica', 'normal');
+        doc.text(datos.fecha, margin + 20, y);
+        y += 10;
+        
+        // Tabla de detalles
+        const headers = [['Código', 'Producto', 'Cant.', 'P. Unit.', 'Total']];
+        const data = [
+            [
+                datos.producto.codigo || 'N/A', 
+                datos.producto.nombre, 
+                datos.cantidad.toString(), 
+                `S/ ${datos.producto.precio_unitario?.toFixed(2) || '0.00'}`, 
+                `S/ ${(datos.cantidad * (datos.producto.precio_unitario || 0)).toFixed(2)}`
+            ],
+            ['', '', '', 'Subtotal:', `S/ ${(datos.cantidad * (datos.producto.precio_unitario || 0)).toFixed(2)}`],
+            ['', '', '', 'IGV (18%):', 'S/ 0.00'],
+            ['', '', '', 'TOTAL:', `S/ ${(datos.cantidad * (datos.producto.precio_unitario || 0)).toFixed(2)}`]
+        ];
+        
+        doc.autoTable({
+            startY: y,
+            head: headers,
+            body: data,
+            margin: { left: margin },
+            styles: { 
+                fontSize: 9,
+                cellPadding: 3,
+                lineColor: [200, 200, 200],
+                lineWidth: 0.1
+            },
+            headStyles: {
+                fillColor: [41, 128, 185],
+                textColor: 255,
+                fontStyle: 'bold'
+            },
+            columnStyles: {
+                0: { cellWidth: 20 },
+                1: { cellWidth: 80 },
+                2: { cellWidth: 15 },
+                3: { cellWidth: 25 },
+                4: { cellWidth: 25 }
+            },
+            didDrawPage: function(data) {
+                // Pie de página
+                const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
+                doc.setFontSize(8);
+                doc.text('Documento generado automáticamente', pageWidth / 2, pageHeight - 20, { align: 'center' });
+                doc.text('Horizont - Control de Inventarios', pageWidth / 2, pageHeight - 15, { align: 'center' });
+            }
+        });
+        
+        // Guardar el PDF
+        doc.save(`Entrada-Almacen-${datos.numeroEntrada}.pdf`);
+        
+        return true;
+    } catch (error) {
+        console.error('Error al generar el PDF de entrada de almacén:', error);
+        return false;
+    }
+}
+
 // Función para actualizar el stock de un producto
-async function updateProductStock(productId, quantityToAdd) {
+async function updateProductStock(productId, quantityToAdd, supplierId = null) {
     if (!productId || !quantityToAdd || quantityToAdd <= 0) return null;
     
     try {
-        // Obtener el stock actual del producto
+        // Obtener el stock actual del producto y su información
         const { data: product, error: productError } = await supabase
             .from('products')
-            .select('stock')
+            .select('*')
             .eq('id', productId)
             .single();
             
@@ -513,11 +632,49 @@ async function updateProductStock(productId, quantityToAdd) {
         // Actualizar el stock del producto
         const { data: updatedProduct, error: updateError } = await supabase
             .from('products')
-            .update({ stock: newStock })
+            .update({ 
+                stock: newStock,
+                updated_at: new Date().toISOString()
+            })
             .eq('id', productId)
             .select();
             
         if (updateError) throw updateError;
+        
+        // Si se proporcionó un ID de proveedor, generar el PDF de entrada de almacén
+        if (supplierId) {
+            // Obtener información del proveedor
+            const { data: supplier, error: supplierError } = await supabase
+                .from('suppliers')
+                .select('name')
+                .eq('id', supplierId)
+                .single();
+                
+            if (!supplierError && supplier) {
+                // Generar número de entrada (año-mes-dia-numero-aleatorio)
+                const ahora = new Date();
+                const numeroEntrada = `E-${ahora.getFullYear()}${String(ahora.getMonth() + 1).padStart(2, '0')}${String(ahora.getDate()).padStart(2, '0')}-${Math.floor(1000 + Math.random() * 9000)}`;
+                
+                // Generar PDF de entrada de almacén
+                generarEntradaAlmacenPDF({
+                    numeroEntrada: numeroEntrada,
+                    proveedor: supplier.name || 'Proveedor no especificado',
+                    fecha: ahora.toLocaleDateString('es-PE', { 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    }),
+                    producto: {
+                        codigo: product.code || product.id,
+                        nombre: product.name,
+                        precio_unitario: product.price || 0
+                    },
+                    cantidad: parseInt(quantityToAdd)
+                });
+            }
+        }
         
         return updatedProduct;
     } catch (error) {
@@ -577,8 +734,8 @@ async function saveSupplier() {
             
             // Si se especificó stock para agregar, actualizar el producto
             if (stockToAdd > 0 && productId) {
-                await updateProductStock(productId, stockToAdd);
-                showSuccess(`Proveedor actualizado y se agregaron ${stockToAdd} unidades al stock del producto`);
+                await updateProductStock(productId, stockToAdd, supplierId);
+                showSuccess(`Proveedor actualizado y se agregaron ${stockToAdd} unidades al stock del producto. Se generó la entrada de almacén.`);
             } else {
                 showSuccess('Proveedor actualizado correctamente');
             }
@@ -594,8 +751,9 @@ async function saveSupplier() {
             
             // Si se especificó stock para agregar, actualizar el producto
             if (stockToAdd > 0 && productId) {
-                await updateProductStock(productId, stockToAdd);
-                showSuccess(`Proveedor creado y se agregaron ${stockToAdd} unidades al stock del producto`);
+                // Usar el ID del proveedor recién creado
+                await updateProductStock(productId, stockToAdd, result[0]?.id);
+                showSuccess(`Proveedor creado y se agregaron ${stockToAdd} unidades al stock del producto. Se generó la entrada de almacén.`);
             } else {
                 showSuccess('Proveedor creado correctamente');
             }
